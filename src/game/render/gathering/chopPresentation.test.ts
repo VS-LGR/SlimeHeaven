@@ -27,6 +27,12 @@ import {
   chopMirroredOffsetX,
   chopVisualSideFromFacing,
   gatherSwingPresentationCycle,
+  gatheringF3DisplayFrame,
+  gatheringF3SpecialistFrameLabel,
+  gatheringF3ToolFrameLabel,
+  gatheringFlipX,
+  gatheringToolForTask,
+  gatheringToolVisibility,
   isChopToolActive,
   isPickaxeToolActive,
   pickaxeFrameForBodyFrame,
@@ -146,5 +152,81 @@ describe("pickaxe tool activity", () => {
     expect(TITO_PICKAXE.keys).toHaveLength(9);
     expect(TITO_PICKAXE.paths[0]).toBe("/assets/world/itens/Pickaxe/pickaxe1.png");
     expect(TITO_PICKAXE.paths[8]).toBe("/assets/world/itens/Pickaxe/pickaxe9.png");
+  });
+});
+
+describe("gathering presentation contract", () => {
+  const wood = {
+    id: "t",
+    type: "gather_wood" as const,
+    target: { x: 1, y: 1 },
+    nodeId: "n",
+    workTile: { x: 1, y: 1 },
+    state: "in_progress" as const,
+  };
+  const stone = { ...wood, type: "gather_stone" as const };
+
+  it("maps wood to axe and stone to pickaxe on one body clip", () => {
+    expect(gatheringToolForTask("gather_wood")).toBe("axe");
+    expect(gatheringToolForTask("gather_stone")).toBe("pickaxe");
+    expect(gatheringToolForTask("till_soil")).toBeNull();
+    expect(TITO_CHOP_BODY.animKey).toBe(TITO_GATHER_SWING_BODY_ANIM_KEY);
+    expect(TITO_CHOP_BODY.animKey).toBe("tito_gather_swing");
+  });
+
+  it("exposes matching 1-based F3 frames while keeping internal identity 0-8", () => {
+    expect(gatheringF3SpecialistFrameLabel("tito_gather_swing", 0)).toBe(1);
+    expect(gatheringF3SpecialistFrameLabel("tito_gather_swing", 8)).toBe(9);
+    expect(gatheringF3SpecialistFrameLabel("tito_gather_swing", 9)).toBe(9);
+    expect(gatheringF3SpecialistFrameLabel("farm_till", 0)).toBe(1);
+    expect(gatheringF3ToolFrameLabel("axe", 0)).toBe("1");
+    expect(gatheringF3ToolFrameLabel("pickaxe", 8)).toBe("9");
+    expect(gatheringF3ToolFrameLabel("axe", axeFrameForBodyFrame(0))).toBe(
+      String(gatheringF3DisplayFrame(0)),
+    );
+    expect(gatheringF3ToolFrameLabel("pickaxe", pickaxeFrameForBodyFrame(8))).toBe(
+      String(gatheringF3DisplayFrame(8)),
+    );
+    expect(gatheringF3ToolFrameLabel(null, null)).toBe("—");
+    expect(gatheringF3ToolFrameLabel("hoe", 0)).toBe("0");
+    for (let i = 0; i < 9; i += 1) {
+      expect(axeFrameForBodyFrame(i)).toBe(i);
+      expect(pickaxeFrameForBodyFrame(i)).toBe(i);
+    }
+  });
+
+  it("flips body and both tools together; north/south keep the retained side", () => {
+    expect(gatheringFlipX(1)).toBe(false);
+    expect(gatheringFlipX(-1)).toBe(true);
+    expect(chopVisualSideFromFacing(1)).toBe("west");
+    expect(chopVisualSideFromFacing(-1)).toBe("east");
+    const retainedEast: 1 | -1 = -1;
+    expect(gatheringFlipX(retainedEast)).toBe(true);
+    expect(chopVisualSideFromFacing(retainedEast)).toBe("east");
+    expect(axeWorldPosition(40, 80, 4, retainedEast)).toEqual(pickaxeWorldPosition(40, 80, 4, retainedEast));
+  });
+
+  it("uses the same specialist rate for wood and stone, including hungry 0.8", () => {
+    expect(titoGatherSwingFrameRate(1)).toBeCloseTo(TITO_GATHER_SWING_FRAME_RATE, 10);
+    expect(titoGatherSwingFrameRate(WORK_SPEED_HUNGRY)).toBeCloseTo(TITO_GATHER_SWING_FRAME_RATE * 0.8, 10);
+    expect(TITO_GATHER_SWING_CYCLE_MS).toBe(625);
+    expect(TITO_GATHER_SWING_CYCLE_MS / WORK_SPEED_HUNGRY).toBeCloseTo(781.25, 10);
+  });
+
+  it("hides both gathering props outside working and never shows axe and pickaxe together", () => {
+    expect(gatheringToolVisibility({ state: "working" }, wood)).toEqual({ axe: true, pickaxe: false });
+    expect(gatheringToolVisibility({ state: "working" }, stone)).toEqual({ axe: false, pickaxe: true });
+    expect(gatheringToolVisibility({ state: "working" }, wood).axe && gatheringToolVisibility({ state: "working" }, wood).pickaxe).toBe(false);
+    for (const state of ["idle", "carrying_to_storage", "delivering", "moving_to_task"] as const) {
+      expect(gatheringToolVisibility({ state }, wood)).toEqual({ axe: false, pickaxe: false });
+      expect(gatheringToolVisibility({ state }, stone)).toEqual({ axe: false, pickaxe: false });
+    }
+    expect(gatheringToolVisibility({ state: "working" }, undefined)).toEqual({ axe: false, pickaxe: false });
+  });
+
+  it("wood-to-stone and stone-to-wood switches drop the previous tool on the same semantic update", () => {
+    expect(gatheringToolVisibility({ state: "working" }, wood)).toEqual({ axe: true, pickaxe: false });
+    expect(gatheringToolVisibility({ state: "working" }, stone)).toEqual({ axe: false, pickaxe: true });
+    expect(gatheringToolVisibility({ state: "working" }, wood)).toEqual({ axe: true, pickaxe: false });
   });
 });

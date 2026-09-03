@@ -44,6 +44,11 @@ const WORK_FALLBACK: ResolvedGatheringAnim = {
   semantic: SLIME_ANIM.WORK,
 };
 
+/**
+ * Body clip is registered once as `tito_gather_swing`. Wood and stone share it.
+ * Tool choice is the live task type; missing body or matching tool falls back to
+ * generic work without delaying simulation completion.
+ */
 export function getGatheringAnimation(
   slimeId: string,
   slimeState: string,

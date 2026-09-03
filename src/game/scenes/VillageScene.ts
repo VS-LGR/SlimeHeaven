@@ -24,6 +24,7 @@ import { WaterClueSystem } from "../render/water/WaterClueSystem";
 import { FishingRenderer, type FishingVisualAnchor } from "../render/fishing/FishingRenderer";
 import { FarmPlotRenderer } from "../render/farming/FarmPlotRenderer";
 import { SpecialistToolRenderer, type FarmPresentationDebug } from "../render/specialist/SpecialistToolRenderer";
+import { gatheringF3SpecialistFrameLabel, gatheringF3ToolFrameLabel } from "../render/gathering/chopPresentation";
 import { FISHING_PRESENTATION } from "../render/fishing/fishingVisualConfig";
 import { nudgePingoRod } from "../render/fishing/pingoFishingVisualConfig";
 import { useGameUiStore, type SlimeInfo } from "@/src/store/gameUiStore";
@@ -576,11 +577,11 @@ function farmPresentationLine(debug: FarmPresentationDebug | null): string | nul
     `task: ${debug.task}`,
     `anim: ${debug.anim}`,
     `frame: ${debug.frame}`,
-    `specialistFrame: ${debug.frame + 1}`,
+    `specialistFrame: ${gatheringF3SpecialistFrameLabel(debug.specialist, debug.frame)}`,
     `visualSide: ${debug.visualSide}`,
     `specialist: ${debug.specialist}`,
     `tool: ${debug.tool ?? "none"}`,
-    `toolFrame: ${debug.toolFrame ?? "—"}`,
+    `toolFrame: ${gatheringF3ToolFrameLabel(debug.tool, debug.toolFrame)}`,
     `presentationCycle: ${debug.presentationCycle ?? "—"}`,
     `impact: ${debug.impact ? "true" : "false"}`,
   ].join(" / ");

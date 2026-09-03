@@ -184,6 +184,33 @@ describe("job loop", () => {
     expect(tito.state).toBe("carrying_to_storage");
   });
 
+  it("finishes hungry gather_stone from the existing work-speed multiplier, not clip length", () => {
+    const state = new GameState();
+    const tito = state.slimes[SLIME_IDS.TITO];
+    tito.satiety = DEBUG_HUNGRY_SATIETY;
+    const stone = createGatherTask(state, "gather_stone");
+    expect(stone).toBeDefined();
+    stone!.state = "in_progress";
+    stone!.assignedSlimeId = tito.id;
+    tito.currentTaskId = stone!.id;
+    startWorking(tito);
+
+    const genericTicks = WORK_DURATION_MS / SIMULATION_TICK_MS;
+    for (let i = 0; i < genericTicks; i += 1) {
+      tickSlimes(state);
+    }
+    expect(tito.workElapsedMs).toBeLessThan(WORK_DURATION_MS);
+    expect(tito.state).toBe("working");
+
+    while (tito.state === "working") {
+      tickSlimes(state);
+    }
+    expect(tito.workElapsedMs).toBeGreaterThanOrEqual(WORK_DURATION_MS);
+    expect(tito.state).toBe("carrying_to_storage");
+    expect(tito.carriedResource).toEqual({ type: "stone", amount: GATHER_AMOUNT });
+    expect(state.resources.stone).toBe(0);
+  });
+
   it("still finishes gather_stone at the generic work window", () => {
     const state = new GameState();
     const tito = state.slimes[SLIME_IDS.TITO];

@@ -25,6 +25,7 @@ import {
   axeWorldPosition,
   chopVisualSideFromFacing,
   gatherSwingPresentationCycle,
+  gatheringFlipX,
   isChopToolActive,
   isPickaxeToolActive,
   pickaxeFrameForBodyFrame,
@@ -318,7 +319,7 @@ export class SpecialistToolRenderer {
     }
     gear.axe.setOrigin(TITO_CHOP_ORIGIN.x, TITO_CHOP_ORIGIN.y);
     gear.axe.setPosition(axePos.x, axePos.y);
-    gear.axe.setFlipX(anchor.facing < 0);
+    gear.axe.setFlipX(gatheringFlipX(anchor.facing));
     gear.axe.setDepth(anchor.depth + 0.12);
     gear.axe.setVisible(true);
     gear.visualSide = chopVisualSideFromFacing(anchor.facing);
@@ -363,7 +364,7 @@ export class SpecialistToolRenderer {
     }
     gear.pickaxe.setOrigin(TITO_CHOP_ORIGIN.x, TITO_CHOP_ORIGIN.y);
     gear.pickaxe.setPosition(pickPos.x, pickPos.y);
-    gear.pickaxe.setFlipX(anchor.facing < 0);
+    gear.pickaxe.setFlipX(gatheringFlipX(anchor.facing));
     gear.pickaxe.setDepth(anchor.depth + 0.12);
     gear.pickaxe.setVisible(true);
     gear.visualSide = chopVisualSideFromFacing(anchor.facing);

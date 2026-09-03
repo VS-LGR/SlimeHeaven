@@ -3,6 +3,7 @@ import type { Task } from "@/src/simulation/entities/Task";
 import { WORK_DURATION_MS } from "@/src/simulation/constants";
 import {
   TITO_CHOP_AXE_FRAME_MAP,
+  TITO_CHOP_FRAME_COUNT,
   TITO_CHOP_TOOL_OFFSETS,
   TITO_GATHER_SWING_HIT_COUNT,
   TITO_PICKAXE_FRAME_MAP,
@@ -10,6 +11,63 @@ import {
 } from "./titoChopVisualConfig";
 
 export type ChopVisualSide = "west" | "east";
+export type GatheringToolName = "axe" | "pickaxe";
+
+/**
+ * Tito gathering presentation contract (observational; never gates finishWork):
+ * active semantic → one reusable body clip (`tito_gather_swing`) → exactly one tool
+ * → tool frame follows body frame → simulation independently controls completion.
+ *
+ * gather_wood  → tito_gather_swing + axe
+ * gather_stone → tito_gather_swing + pickaxe
+ */
+export function gatheringToolForTask(taskType: string | undefined): GatheringToolName | null {
+  if (taskType === "gather_wood") {
+    return "axe";
+  }
+  if (taskType === "gather_stone") {
+    return "pickaxe";
+  }
+  return null;
+}
+
+export function gatheringToolVisibility(
+  slime: Pick<SlimeState, "state">,
+  task: Task | undefined,
+): { axe: boolean; pickaxe: boolean } {
+  return {
+    axe: isChopToolActive(slime, task),
+    pickaxe: isPickaxeToolActive(slime, task),
+  };
+}
+
+/** Shared body/tool flip. West is the authored source; east uses flipX. */
+export function gatheringFlipX(facing: 1 | -1): boolean {
+  return facing < 0;
+}
+
+/** User-facing F3 specialist/tool frame. Internal texture indices stay 0-based. */
+export function gatheringF3DisplayFrame(internalFrame: number): number {
+  const clamped = Math.max(0, Math.min(internalFrame, TITO_CHOP_FRAME_COUNT - 1));
+  return clamped + 1;
+}
+
+export function gatheringF3SpecialistFrameLabel(specialist: string, internalFrame: number): number {
+  if (specialist === "tito_gather_swing") {
+    return gatheringF3DisplayFrame(internalFrame);
+  }
+  return internalFrame + 1;
+}
+
+export function gatheringF3ToolFrameLabel(tool: string | null, internalFrame: number | null): string {
+  if (internalFrame === null) {
+    return "—";
+  }
+  if (tool === "axe" || tool === "pickaxe") {
+    return String(gatheringF3DisplayFrame(internalFrame));
+  }
+  return String(internalFrame);
+}
 
 export function isChopToolActive(slime: Pick<SlimeState, "state">, task: Task | undefined): boolean {
   return slime.state === "working" && task?.type === "gather_wood";
