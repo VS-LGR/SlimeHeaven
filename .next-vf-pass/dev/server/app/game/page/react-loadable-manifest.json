@@ -1,0 +1,9 @@
+{
+  "[project]/src/ui/GameCanvas.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/src/ui/GameCanvas.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/src_game_Game_ts_1-uzqcf._.js",
+      "static/chunks/src_ui_GameCanvas_tsx_0wrn-d0._.js"
+    ]
+  }
+}

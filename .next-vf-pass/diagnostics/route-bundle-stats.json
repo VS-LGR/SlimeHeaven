@@ -1,0 +1,36 @@
+[
+  {
+    "route": "/game",
+    "firstLoadUncompressedJsBytes": 477860,
+    "firstLoadChunkPaths": [
+      ".next-vf-pass\\static\\chunks\\3fntmmi971322.js",
+      ".next-vf-pass\\static\\chunks\\36bzmf38s9ry2.js",
+      ".next-vf-pass\\static\\chunks\\09lgyggnhjlha.js",
+      ".next-vf-pass\\static\\chunks\\2l_y_qqi24r7y.js",
+      ".next-vf-pass\\static\\chunks\\3byuobrkyz9bj.js",
+      ".next-vf-pass\\static\\chunks\\turbopack-1cy2wf1ze7pd-.js"
+    ]
+  },
+  {
+    "route": "/",
+    "firstLoadUncompressedJsBytes": 453121,
+    "firstLoadChunkPaths": [
+      ".next-vf-pass\\static\\chunks\\3fntmmi971322.js",
+      ".next-vf-pass\\static\\chunks\\09lgyggnhjlha.js",
+      ".next-vf-pass\\static\\chunks\\2l_y_qqi24r7y.js",
+      ".next-vf-pass\\static\\chunks\\3byuobrkyz9bj.js",
+      ".next-vf-pass\\static\\chunks\\turbopack-1cy2wf1ze7pd-.js"
+    ]
+  },
+  {
+    "route": "/_not-found",
+    "firstLoadUncompressedJsBytes": 453121,
+    "firstLoadChunkPaths": [
+      ".next-vf-pass\\static\\chunks\\3fntmmi971322.js",
+      ".next-vf-pass\\static\\chunks\\09lgyggnhjlha.js",
+      ".next-vf-pass\\static\\chunks\\2l_y_qqi24r7y.js",
+      ".next-vf-pass\\static\\chunks\\3byuobrkyz9bj.js",
+      ".next-vf-pass\\static\\chunks\\turbopack-1cy2wf1ze7pd-.js"
+    ]
+  }
+]

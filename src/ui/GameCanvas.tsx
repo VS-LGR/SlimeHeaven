@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { useGameUiStore } from "@/src/store/gameUiStore";
+
+export function GameCanvas() {
+  const parentRef = useRef<HTMLDivElement>(null);
+  const gameRef = useRef<{ destroy: (removeCanvas: boolean) => void } | null>(null);
+
+  useEffect(() => {
+    const parent = parentRef.current;
+    if (!parent) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "F3") {
+        return;
+      }
+      event.preventDefault();
+      useGameUiStore.getState().toggleDebug();
+    };
+
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+
+    void import("@/src/game/Game").then(({ createGame }) => {
+      if (cancelled || !parentRef.current) {
+        return;
+      }
+      gameRef.current = createGame(parentRef.current);
+    });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+      gameRef.current?.destroy(true);
+      gameRef.current = null;
+    };
+  }, []);
+
+  return (
+    <div
+      ref={parentRef}
+      className="flex h-full w-full items-center justify-center"
+    />
+  );
+}
