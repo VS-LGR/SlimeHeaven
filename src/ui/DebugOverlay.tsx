@@ -57,6 +57,7 @@ export function DebugOverlay() {
   const fishingEligibility = useGameUiStore((state) => state.fishingEligibility);
   const fishingOpportunity = useGameUiStore((state) => state.fishingOpportunity);
   const farmPresentation = useGameUiStore((state) => state.farmPresentation);
+  const buildingPlacementDebug = useGameUiStore((state) => state.buildingPlacementDebug);
   const waterBodyCount = useGameUiStore((state) => state.waterBodyCount);
   const accessPointCount = useGameUiStore((state) => state.accessPointCount);
   const selectedSlime = useGameUiStore((state) => state.selectedSlime);
@@ -155,6 +156,27 @@ export function DebugOverlay() {
         ) : null}
         <p>Growing crops: {growingCrops}</p>
         <p>Ready crops: {readyCrops}</p>
+        <p className="mt-1 text-lime-300">Buildings</p>
+        {buildingPlacementDebug ? (
+          <>
+            <p>buildMode: {String(buildingPlacementDebug.buildMode)}</p>
+            <p>buildingType: {buildingPlacementDebug.buildingType}</p>
+            <p>
+              cost: {buildingPlacementDebug.costWood},{buildingPlacementDebug.costStone}
+            </p>
+            <p>affordable: {String(buildingPlacementDebug.affordable)}</p>
+            <p>footprintOrigin: {buildingPlacementDebug.footprintOrigin}</p>
+            <p>footprint: {buildingPlacementDebug.footprint}</p>
+            <p>entranceTile: {buildingPlacementDebug.entranceTile}</p>
+            <p>placementValid: {String(buildingPlacementDebug.placementValid)}</p>
+            <p>
+              invalidReasons: [
+              {buildingPlacementDebug.invalidReasons.join(", ")}]
+            </p>
+          </>
+        ) : (
+          <p>buildMode: false</p>
+        )}
         <p>Hungry slimes: {hungrySlimes}</p>
         <p>Starving slimes: {starvingSlimes}</p>
         {selectedSlime ? (
@@ -162,6 +184,24 @@ export function DebugOverlay() {
             <p className="mt-1 text-lime-300">Selected slime</p>
             <p>{selectedSlime.name}</p>
             <p>{selectedSlime.capabilitiesDebug}</p>
+            {selectedSlime.constructionActivity ? (
+              <>
+                <p>activity: {selectedSlime.constructionActivity}</p>
+                <p>constructionSiteId: {selectedSlime.constructionSiteId ?? "—"}</p>
+                <p>capabilityEligible: {String(selectedSlime.constructionCapabilityEligible)}</p>
+                <p>presentation: {selectedSlime.constructionPresentation ?? "—"}</p>
+                <p>tool: {selectedSlime.constructionTool ?? "none"}</p>
+              </>
+            ) : null}
+            {selectedSlime.residencyStatus ? (
+              <>
+                <p>residencyStatus: {selectedSlime.residencyStatus}</p>
+                <p>homeBuildingType: {selectedSlime.homeBuildingType ?? "—"}</p>
+                <p>homeBuildingId: {selectedSlime.homeBuildingId ?? "—"}</p>
+                <p>homeStatus: {selectedSlime.homeStatus ?? "—"}</p>
+                <p>homeEntranceTile: {selectedSlime.homeEntranceTile ?? "—"}</p>
+              </>
+            ) : null}
             <p>
               TECH {selectedSlime.technique} STR {selectedSlime.strength} INST {selectedSlime.instinct}{" "}
               LUCK {selectedSlime.luck}
@@ -235,6 +275,33 @@ function TileInspectLines({ inspect }: { inspect: TileInspect | null }) {
         </>
       ) : null}
       <p>Object: {inspect.object ?? "—"}</p>
+      {inspect.buildingId ? (
+        <>
+          <p>buildingId: {inspect.buildingId}</p>
+          <p>buildingType: {inspect.buildingType}</p>
+          <p>footprintOrigin: {inspect.buildingFootprintOrigin}</p>
+          <p>footprint: {inspect.buildingFootprint}</p>
+          <p>entranceTile: {inspect.buildingEntranceTile}</p>
+          <p>residentTypeId: {inspect.residentTypeId ?? "—"}</p>
+          <p>uniqueHome: {inspect.uniqueHome == null ? "—" : String(inspect.uniqueHome)}</p>
+          <p>startingHome: {inspect.startingHome == null ? "—" : String(inspect.startingHome)}</p>
+          <p>homeStatus: {inspect.homeStatus ?? "—"}</p>
+        </>
+      ) : null}
+      {inspect.constructionSiteId ? (
+        <>
+          <p>constructionSiteId: {inspect.constructionSiteId}</p>
+          <p>buildingType: {inspect.constructionBuildingType}</p>
+          <p>status: {inspect.constructionStatus}</p>
+          <p>workCompletedMs: {inspect.constructionWorkCompletedMs}</p>
+          <p>workRequiredMs: {inspect.constructionWorkRequiredMs}</p>
+          <p>progressPercent: {inspect.constructionProgressPercent}</p>
+          <p>assignedSlimeId: {inspect.constructionAssignedSlimeId ?? "—"}</p>
+          <p>taskId: {inspect.constructionTaskId ?? "—"}</p>
+          <p>footprintOrigin: {inspect.constructionFootprintOrigin}</p>
+          <p>entranceTile: {inspect.constructionEntranceTile}</p>
+        </>
+      ) : null}
       <p>
         Walk/build: {inspect.walkable ? "yes" : "no"} / {inspect.buildable ? "yes" : "no"}
       </p>

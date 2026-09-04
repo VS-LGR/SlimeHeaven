@@ -5,6 +5,7 @@ import { SATIETY_MAX } from "@/src/simulation/needsConfig";
 import { FISH, FISH_ID_LIST } from "@/src/simulation/data/fish";
 import { starString } from "@/src/simulation/slimeAttributes";
 import { fishingPhaseLabel } from "@/src/simulation/entities/FishingPresentation";
+import { BUILDINGS, type BuildingTypeId } from "@/src/simulation/data/buildings";
 
 function conditionLabel(hunger: string): string {
   if (hunger === "fed") {
@@ -28,6 +29,9 @@ export function GameHud() {
   const food = useGameUiStore((state) => state.food);
   const worldTool = useGameUiStore((state) => state.worldTool);
   const setWorldTool = useGameUiStore((state) => state.setWorldTool);
+  const selectedBuildingTypeId = useGameUiStore((state) => state.selectedBuildingTypeId);
+  const setSelectedBuildingTypeId = useGameUiStore((state) => state.setSelectedBuildingTypeId);
+  const availableBuildingTypeIds = useGameUiStore((state) => state.availableBuildingTypeIds);
   const selectedSlime = useGameUiStore((state) => state.selectedSlime);
   const collectionOpen = useGameUiStore((state) => state.collectionOpen);
   const toggleCollection = useGameUiStore((state) => state.toggleCollection);
@@ -60,6 +64,33 @@ export function GameHud() {
           active={worldTool === "fish"}
           onClick={() => setWorldTool(toggleTool(worldTool, "fish"))}
         />
+        <ToolButton
+          label="Build"
+          active={worldTool === "build"}
+          onClick={() => setWorldTool(toggleTool(worldTool, "build"))}
+        />
+        {worldTool === "build" && availableBuildingTypeIds.length === 0 ? (
+          <span className="text-lime-100/80">No building plans available</span>
+        ) : null}
+        {worldTool === "build"
+          ? availableBuildingTypeIds.map((typeId) => {
+              const def = BUILDINGS[typeId];
+              const affordable = wood >= def.cost.wood && stone >= def.cost.stone;
+              return (
+                <ToolButton
+                  key={typeId}
+                  label={def.name}
+                  subtitle={`${def.cost.wood} Wood · ${def.cost.stone} Stone`}
+                  active={selectedBuildingTypeId === typeId}
+                  muted={!affordable}
+                  onClick={() => setSelectedBuildingTypeId(typeId)}
+                />
+              );
+            })
+          : null}
+        {worldTool === "build" && availableBuildingTypeIds.length > 0 ? (
+          <BuildAffordHint typeId={selectedBuildingTypeId} wood={wood} stone={stone} />
+        ) : null}
         <ToolButton label="Collection" active={collectionOpen} onClick={toggleCollection} />
       </div>
 
@@ -185,26 +216,58 @@ function catchHeadline(toast: { kind: "catch" | "bite"; isNew: boolean; slimeNam
   return `${(toast.slimeName ?? "SLIME").toUpperCase()} CAUGHT`;
 }
 
+function BuildAffordHint({
+  typeId,
+  wood,
+  stone,
+}: {
+  typeId: BuildingTypeId;
+  wood: number;
+  stone: number;
+}) {
+  const cost = BUILDINGS[typeId].cost;
+  const missing: string[] = [];
+  if (wood < cost.wood) {
+    missing.push("wood");
+  }
+  if (stone < cost.stone) {
+    missing.push("stone");
+  }
+  if (missing.length === 0) {
+    return null;
+  }
+  return (
+    <span className="text-rose-200">
+      Need {missing.join(" and ")}
+    </span>
+  );
+}
+
 function ToolButton({
   label,
+  subtitle,
   active,
+  muted,
   onClick,
 }: {
   label: string;
+  subtitle?: string;
   active: boolean;
+  muted?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      className={`rounded border px-2 py-0.5 ${
+      className={`rounded border px-2 py-0.5 leading-tight ${
         active
           ? "border-lime-300/70 bg-lime-800 text-lime-50"
           : "border-lime-300/30 bg-lime-950/80 text-lime-100 hover:bg-lime-900"
-      }`}
+      } ${muted ? "opacity-60" : ""}`}
       onClick={onClick}
     >
-      {label}
+      <span className="block">{label}</span>
+      {subtitle ? <span className="block text-[10px] text-lime-100/80">{subtitle}</span> : null}
     </button>
   );
 }

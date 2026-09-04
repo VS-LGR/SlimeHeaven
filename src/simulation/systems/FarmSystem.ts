@@ -27,6 +27,12 @@ export function isValidFarmTerrain(state: GameState, x: number, y: number): bool
   if (state.grid.objectAt(x, y)) {
     return false;
   }
+  if (state.buildingAt(x, y)) {
+    return false;
+  }
+  if (state.constructionSiteAt(x, y)) {
+    return false;
+  }
   return true;
 }
 

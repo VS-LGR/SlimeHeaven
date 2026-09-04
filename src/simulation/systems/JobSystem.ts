@@ -5,7 +5,7 @@ import type { ResourceNode } from "../entities/ResourceNode";
 import type { FarmPlot } from "../entities/FarmPlot";
 import { farmNodeId } from "../entities/FarmPlot";
 import type { FarmTaskType, GatherTaskType, Task } from "../entities/Task";
-import { jobCategory, resourceTypeForTask } from "../entities/Task";
+import { isConstructionTask, jobCategory, resourceTypeForTask } from "../entities/Task";
 import { SLIME_IDS, type SlimeState } from "../entities/SlimeState";
 import { RESOURCE_IDS } from "../resources";
 import { isIdleAvailable } from "./slimeAvailability";
@@ -16,6 +16,8 @@ import { FISHING } from "../fishingConfig";
 import { JOB_ATTRIBUTE_WEIGHTS, getAttributeContribution } from "../slimeAttributes";
 import { canPerformTaskCapabilities } from "../slimeCapabilities";
 import { startPlotWorkRecoverHop, startTillRecoverHop, tillStanceWorkTile } from "./tillStance";
+import type { ConstructionSite } from "../entities/ConstructionSite";
+import { buildingById, entranceTile } from "../data/buildings";
 
 const SLIME_ASSIGN_ORDER = [SLIME_IDS.PINGO, SLIME_IDS.MOMO, SLIME_IDS.TITO];
 
@@ -146,6 +148,42 @@ export function createFarmTask(state: GameState, type: FarmTaskType, plot: FarmP
   return task;
 }
 
+export function createConstructTask(state: GameState, site: ConstructionSite): Task | undefined {
+  if (site.status === "completed" || site.status === "cancelled") {
+    return undefined;
+  }
+  if (nodeHasActiveTask(state, site.id)) {
+    return undefined;
+  }
+  const def = buildingById(site.buildingTypeId);
+  const origin = { x: site.tileX, y: site.tileY };
+  const entrance = entranceTile(origin, def);
+  const task: Task = {
+    id: state.nextTaskId("construct_building"),
+    type: "construct_building",
+    target: origin,
+    nodeId: site.id,
+    constructionSiteId: site.id,
+    workTile: { x: entrance.x, y: entrance.y },
+    state: "available",
+    requiredCapabilities: ["build"],
+  };
+  state.tasks[task.id] = task;
+  return task;
+}
+
+function bindConstructionAssignment(state: GameState, task: Task, slime: SlimeState): void {
+  if (!isConstructionTask(task.type)) {
+    return;
+  }
+  const site = state.constructionSites[task.constructionSiteId ?? task.nodeId];
+  if (!site || site.status === "completed" || site.status === "cancelled") {
+    return;
+  }
+  site.assignedSlimeId = slime.id;
+  site.status = "building";
+}
+
 export function assignAvailableTasks(state: GameState): void {
   const openTasks = Object.values(state.tasks)
     .filter((task) => task.state === "available")
@@ -160,6 +198,7 @@ export function assignAvailableTasks(state: GameState): void {
     task.state = "assigned";
     task.assignedSlimeId = slime.id;
     slime.currentTaskId = task.id;
+    bindConstructionAssignment(state, task, slime);
   }
 }
 
@@ -181,7 +220,7 @@ export function beginAssignedTask(state: GameState, slime: SlimeState): void {
     if (task.type === "fish_activity") {
       return;
     }
-    startWorking(slime, task.type === "till_soil" ? task.target : undefined);
+    startWorking(slime, task.type === "till_soil" || isConstructionTask(task.type) ? task.target : undefined);
   }
 }
 
@@ -237,6 +276,7 @@ export function cancelTask(
   task: Task,
   slime: SlimeState | undefined,
   message: string,
+  options?: { recreateConstruction?: boolean },
 ): void {
   if (isFishingTask(task.type)) {
     const opportunity = state.opportunities.find((entry) => entry.taskId === task.id);
@@ -245,9 +285,15 @@ export function cancelTask(
       return;
     }
   }
+  const siteId = isConstructionTask(task.type) ? (task.constructionSiteId ?? task.nodeId) : undefined;
+  const site = siteId ? state.constructionSites[siteId] : undefined;
   task.state = "cancelled";
   task.assignedSlimeId = undefined;
   state.warnOnce(`task:${task.id}`, message);
+  if (site && site.status !== "completed" && site.status !== "cancelled") {
+    site.assignedSlimeId = undefined;
+    site.status = "awaiting_builder";
+  }
   if (slime) {
     slime.carriedResource = undefined;
     const recoverPlot =
@@ -262,6 +308,14 @@ export function cancelTask(
         startPlotWorkRecoverHop(slime, recoverPlot);
       }
     }
+  }
+  if (
+    options?.recreateConstruction !== false &&
+    site &&
+    site.status !== "completed" &&
+    site.status !== "cancelled"
+  ) {
+    createConstructTask(state, site);
   }
 }
 

@@ -29,6 +29,14 @@ import type { FishingOpportunity, FishingCandidateScore } from "./entities/Fishi
 import type { InterestPoint, InterestTag } from "./entities/InterestPoint";
 import { rebuildInterestPoints } from "./systems/InterestPointSystem";
 import type { JobEligibilityLine, JobFeedback } from "./slimeCapabilities";
+import { buildingById } from "./data/buildings";
+import type { PlacedBuilding } from "./entities/PlacedBuilding";
+import type { ConstructionSite } from "./entities/ConstructionSite";
+import { initializeStartingHomes } from "./systems/BuildingSystem";
+
+export interface GameStateOptions {
+  seedStartingHomes?: boolean;
+}
 
 function initialWanderTicks(offset: number): number {
   return IDLE_WANDER_DELAY_TICKS.min + offset;
@@ -50,6 +58,8 @@ export class GameState {
   tasks: Record<string, Task>;
   resources: ResourceStock;
   farms: Record<string, FarmPlot>;
+  buildings: Record<string, PlacedBuilding>;
+  constructionSites: Record<string, ConstructionSite>;
   activities: AquaticActivity[];
   opportunities: FishingOpportunity[];
   fishingSessions: FishingSession[];
@@ -66,10 +76,16 @@ export class GameState {
   private nextActivitySeq = 1;
   private nextSessionSeq = 1;
   private nextOpportunitySeq = 1;
+  private nextBuildingSeq = 1;
+  private nextSiteSeq = 1;
   private warnedKeys = new Set<string>();
   private farmDirty = new Set<string>();
 
-  constructor(grid: Grid = createVillageMap(), rng: Rng = createRng(PLAY_RNG_SEED)) {
+  constructor(
+    grid: Grid = createVillageMap(),
+    rng: Rng = createRng(PLAY_RNG_SEED),
+    options: GameStateOptions = {},
+  ) {
     this.grid = grid;
     this.rng = rng;
     this.storage = { x: STORAGE_TILE.x, y: STORAGE_TILE.y };
@@ -82,6 +98,8 @@ export class GameState {
     this.tasks = {};
     this.resources = emptyStock();
     this.farms = {};
+    this.buildings = {};
+    this.constructionSites = {};
     this.activities = [];
     this.opportunities = [];
     this.fishingSessions = [];
@@ -93,6 +111,9 @@ export class GameState {
     this.interestPoints = [];
     this.interestPointsByTag = {};
     this.spawnSlimes();
+    if (options.seedStartingHomes !== false) {
+      initializeStartingHomes(this);
+    }
     rebuildInterestPoints(this);
   }
 
@@ -144,6 +165,18 @@ export class GameState {
     return id;
   }
 
+  nextBuildingId(): string {
+    const id = `building_${this.nextBuildingSeq}`;
+    this.nextBuildingSeq += 1;
+    return id;
+  }
+
+  nextSiteId(): string {
+    const id = `site_${this.nextSiteSeq}`;
+    this.nextSiteSeq += 1;
+    return id;
+  }
+
   warnOnce(key: string, message: string): void {
     if (this.warnedKeys.has(key)) {
       return;
@@ -160,6 +193,40 @@ export class GameState {
 
   farmAt(x: number, y: number): FarmPlot | undefined {
     return this.farms[farmKey(x, y)];
+  }
+
+  buildingAt(x: number, y: number): PlacedBuilding | undefined {
+    return Object.values(this.buildings).find((building) => {
+      const def = buildingById(building.typeId);
+      return (
+        x >= building.tileX &&
+        x < building.tileX + def.footprint.width &&
+        y >= building.tileY &&
+        y < building.tileY + def.footprint.height
+      );
+    });
+  }
+
+  constructionSiteAt(x: number, y: number): ConstructionSite | undefined {
+    return Object.values(this.constructionSites).find((site) => {
+      if (site.status === "completed" || site.status === "cancelled") {
+        return false;
+      }
+      const def = buildingById(site.buildingTypeId);
+      return (
+        x >= site.tileX &&
+        x < site.tileX + def.footprint.width &&
+        y >= site.tileY &&
+        y < site.tileY + def.footprint.height
+      );
+    });
+  }
+
+  refreshTileBlocking(x: number, y: number): void {
+    const occupied = Boolean(
+      this.grid.objectAt(x, y) || this.buildingAt(x, y) || this.constructionSiteAt(x, y),
+    );
+    this.grid.refreshTerrainOccupancy(x, y, occupied);
   }
 
   markFarmDirty(x: number, y: number): void {
@@ -193,4 +260,12 @@ export class GameState {
       return node.tile.x === x && node.tile.y === y;
     });
   }
+}
+
+/** Empty village for construction/placement tests. Production uses starting homes. */
+export function createBareGameState(
+  grid: Grid = createVillageMap(),
+  rng: Rng = createRng(PLAY_RNG_SEED),
+): GameState {
+  return new GameState(grid, rng, { seedStartingHomes: false });
 }

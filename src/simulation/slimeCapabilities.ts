@@ -1,5 +1,5 @@
 import type { Task, TaskType } from "./entities/Task";
-import { isFarmTask, isFishingTask, isGatherTask } from "./entities/Task";
+import { isFarmTask, isFishingTask, isGatherTask, isConstructionTask } from "./entities/Task";
 
 /** Known productive tags. New tags may be added without rewriting JobSystem. */
 export const SLIME_CAPABILITIES = [
@@ -7,6 +7,7 @@ export const SLIME_CAPABILITIES = [
   "farming",
   "gathering",
   "construction",
+  "build",
   "exploration",
 ] as const;
 
@@ -22,6 +23,7 @@ export const CAPABILITY_LABELS: Record<KnownSlimeCapability, string> = {
   farming: "Farming",
   gathering: "Gathering",
   construction: "Construction",
+  build: "Build",
   exploration: "Exploration",
 };
 
@@ -85,6 +87,9 @@ export function requiredCapabilitiesForTaskType(type: TaskType): readonly string
   }
   if (isGatherTask(type)) {
     return ["gathering"];
+  }
+  if (isConstructionTask(type)) {
+    return ["build"];
   }
   return [];
 }

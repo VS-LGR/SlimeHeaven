@@ -10,7 +10,10 @@ export type FarmTaskType = (typeof FARM_TASK_TYPES)[number];
 export const FISHING_TASK_TYPES = ["fish_activity"] as const;
 export type FishingTaskType = (typeof FISHING_TASK_TYPES)[number];
 
-export type TaskType = GatherTaskType | FarmTaskType | FishingTaskType;
+export const CONSTRUCTION_TASK_TYPES = ["construct_building"] as const;
+export type ConstructionTaskType = (typeof CONSTRUCTION_TASK_TYPES)[number];
+
+export type TaskType = GatherTaskType | FarmTaskType | FishingTaskType | ConstructionTaskType;
 
 export type JobCategory = "gathering" | "farming" | "fishing" | "construction";
 
@@ -32,6 +35,7 @@ export interface Task {
   assignedSlimeId?: string;
   /** Override type-default requirements. Empty array = universal job. */
   requiredCapabilities?: readonly string[];
+  constructionSiteId?: string;
 }
 
 export function isFarmTask(type: TaskType): boolean {
@@ -46,12 +50,19 @@ export function isFishingTask(type: TaskType): boolean {
   return (FISHING_TASK_TYPES as readonly string[]).includes(type);
 }
 
+export function isConstructionTask(type: TaskType): boolean {
+  return (CONSTRUCTION_TASK_TYPES as readonly string[]).includes(type);
+}
+
 export function jobCategory(type: TaskType): JobCategory {
   if (isFarmTask(type)) {
     return "farming";
   }
   if (isFishingTask(type)) {
     return "fishing";
+  }
+  if (isConstructionTask(type)) {
+    return "construction";
   }
   return "gathering";
 }

@@ -8,6 +8,9 @@ export const SLIME_HOP_HEIGHT_PX = 7;
 export const WORK_DURATION_MS = 1250;
 export const GATHER_AMOUNT = 2;
 
+/** Authoritative accumulated construction work. Not animation duration. */
+export const BASE_CONSTRUCTION_WORK_MS = 5000;
+
 /** Idle wait before a possible 1-tile wander, in ticks. */
 export const IDLE_WANDER_DELAY_TICKS = {
   min: 10,

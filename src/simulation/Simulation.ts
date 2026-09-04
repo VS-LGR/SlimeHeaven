@@ -33,6 +33,9 @@ import {
 import { tickAmbientBehaviors, forceAmbientBehavior, forceSocialGreet, clearAllAmbientBehaviors } from "./systems/AmbientBehaviorSystem";
 import type { AmbientBehaviorId } from "./ambientConfig";
 import type { ClueType, FishId } from "./data/fish";
+import { placeBuilding, cancelConstructionSitesInRect } from "./systems/BuildingSystem";
+import type { BuildingTypeId } from "./data/buildings";
+import type { ConstructionSite } from "./entities/ConstructionSite";
 
 export class Simulation {
   readonly state: GameState;
@@ -165,8 +168,13 @@ export class Simulation {
     designateFarmRect(this.state, ax, ay, bx, by);
   }
 
+  placeBuilding(typeId: BuildingTypeId, tileX: number, tileY: number): ConstructionSite | null {
+    return placeBuilding(this.state, typeId, { x: tileX, y: tileY });
+  }
+
   removeFarm(ax: number, ay: number, bx: number, by: number): void {
     removeFarmRect(this.state, ax, ay, bx, by);
+    cancelConstructionSitesInRect(this.state, ax, ay, bx, by);
   }
 
   clearFarms(): void {

@@ -3,8 +3,11 @@ import type { FishCollectionEntry, FishId } from "@/src/simulation/data/fish";
 import { emptyFishCollection } from "@/src/simulation/data/fish";
 import type { FishingPhase } from "@/src/simulation/entities/FishingSession";
 import type { FishingPresentationPhase } from "@/src/simulation/entities/FishingPresentation";
+import type { BuildingTypeId } from "@/src/simulation/data/buildings";
+import { DEFAULT_BUILDING_TYPE_ID } from "@/src/simulation/data/buildings";
+import type { BuildingPlacementReason } from "@/src/simulation/systems/BuildingSystem";
 
-export type WorldToolMode = "off" | "designate" | "remove" | "fish";
+export type WorldToolMode = "off" | "designate" | "remove" | "fish" | "build";
 
 export interface TileInspect {
   terrain: string;
@@ -26,6 +29,25 @@ export interface TileInspect {
   shoreMask: string | null;
   shoreVisual: string | null;
   waterDepth: "shallow" | "deep" | null;
+  buildingId: string | null;
+  buildingType: string | null;
+  buildingFootprintOrigin: string | null;
+  buildingFootprint: string | null;
+  buildingEntranceTile: string | null;
+  residentTypeId: string | null;
+  uniqueHome: boolean | null;
+  startingHome: boolean | null;
+  homeStatus: string | null;
+  constructionSiteId: string | null;
+  constructionBuildingType: string | null;
+  constructionStatus: string | null;
+  constructionWorkCompletedMs: number | null;
+  constructionWorkRequiredMs: number | null;
+  constructionProgressPercent: number | null;
+  constructionAssignedSlimeId: string | null;
+  constructionTaskId: string | null;
+  constructionFootprintOrigin: string | null;
+  constructionEntranceTile: string | null;
 }
 
 export interface SlimeInfo {
@@ -49,6 +71,29 @@ export interface SlimeInfo {
   luck: number;
   specialties: string[];
   capabilitiesDebug: string;
+  constructionActivity: string | null;
+  constructionSiteId: string | null;
+  constructionCapabilityEligible: boolean | null;
+  constructionPresentation: string | null;
+  constructionTool: string | null;
+  residencyStatus: string | null;
+  homeBuildingType: string | null;
+  homeBuildingId: string | null;
+  homeStatus: string | null;
+  homeEntranceTile: string | null;
+}
+
+export interface BuildingPlacementDebug {
+  buildMode: boolean;
+  buildingType: string;
+  costWood: number;
+  costStone: number;
+  affordable: boolean;
+  footprintOrigin: string;
+  footprint: string;
+  entranceTile: string;
+  placementValid: boolean;
+  invalidReasons: BuildingPlacementReason[];
 }
 
 export interface CatchToast {
@@ -112,6 +157,8 @@ export interface DebugActions {
 export interface GameUiSnapshot {
   debugVisible: boolean;
   worldTool: WorldToolMode;
+  selectedBuildingTypeId: BuildingTypeId;
+  availableBuildingTypeIds: BuildingTypeId[];
   collectionOpen: boolean;
   fps: number;
   cameraX: number;
@@ -162,6 +209,7 @@ export interface GameUiSnapshot {
   fishingEligibility: string[];
   fishingOpportunity: string | null;
   farmPresentation: string | null;
+  buildingPlacementDebug: BuildingPlacementDebug | null;
   ambientDebug: string[];
   waterBodyCount: number;
   accessPointCount: number;
@@ -175,6 +223,7 @@ interface GameUiStore extends GameUiSnapshot {
   debugActions: DebugActions | null;
   toggleDebug: () => void;
   setWorldTool: (tool: WorldToolMode) => void;
+  setSelectedBuildingTypeId: (typeId: BuildingTypeId) => void;
   toggleCollection: () => void;
   setRuntime: (patch: Partial<Omit<GameUiSnapshot, "debugVisible">>) => void;
   setDebugActions: (actions: DebugActions) => void;
@@ -183,6 +232,8 @@ interface GameUiStore extends GameUiSnapshot {
 const EMPTY_SNAPSHOT: GameUiSnapshot = {
   debugVisible: false,
   worldTool: "off",
+  selectedBuildingTypeId: DEFAULT_BUILDING_TYPE_ID,
+  availableBuildingTypeIds: [],
   collectionOpen: false,
   fps: 0,
   cameraX: 0,
@@ -233,6 +284,7 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   fishingEligibility: [],
   fishingOpportunity: null,
   farmPresentation: null,
+  buildingPlacementDebug: null,
   ambientDebug: [],
   waterBodyCount: 0,
   accessPointCount: 0,
@@ -247,6 +299,7 @@ export const useGameUiStore = create<GameUiStore>((set) => ({
   debugActions: null,
   toggleDebug: () => set((state) => ({ debugVisible: !state.debugVisible })),
   setWorldTool: (worldTool) => set({ worldTool }),
+  setSelectedBuildingTypeId: (selectedBuildingTypeId) => set({ selectedBuildingTypeId }),
   toggleCollection: () => set((state) => ({ collectionOpen: !state.collectionOpen })),
   setRuntime: (patch) => set(patch),
   setDebugActions: (actions) => set({ debugActions: actions }),

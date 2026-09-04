@@ -10,12 +10,16 @@ import type { SlimeState } from "../entities/SlimeState";
 import {
   beginAssignedTask,
   beginCarryToStorage,
+  cancelTask,
   deliver,
   releaseSlime,
   slimeAtDestination,
   startWorking,
 } from "./JobSystem";
+import { isConstructionTask } from "../entities/Task";
+import type { Task } from "../entities/Task";
 import { completeHarvest, completePlant, completeTill } from "./FarmSystem";
+import { completeConstruction } from "./BuildingSystem";
 import { startPlotWorkRecoverHop, startTillRecoverHop } from "./tillStance";
 import { startEating } from "./NeedsSystem";
 import { beginFishingOnArrival, releaseOrphanedFishingSlime } from "./FishingSystem";
@@ -89,10 +93,41 @@ function tickHoppingIdle(slime: SlimeState): void {
   }
 }
 
+function tickConstructionWork(state: GameState, slime: SlimeState, task: Task): void {
+  const site = state.constructionSites[task.constructionSiteId ?? task.nodeId];
+  if (!site || site.status === "cancelled" || site.status === "completed") {
+    cancelTask(state, task, slime, `Construction site missing for ${task.id}; cancelled.`, {
+      recreateConstruction: false,
+    });
+    return;
+  }
+  if (site.assignedSlimeId && site.assignedSlimeId !== slime.id) {
+    cancelTask(state, task, slime, `Construction site ${site.id} already has a builder.`, {
+      recreateConstruction: false,
+    });
+    return;
+  }
+
+  site.assignedSlimeId = slime.id;
+  site.status = "building";
+  const delta = SIMULATION_TICK_MS * workSpeedMultiplier(slime.satiety);
+  slime.workElapsedMs += delta;
+  site.workCompletedMs = Math.min(site.workRequiredMs, site.workCompletedMs + delta);
+  if (site.workCompletedMs < site.workRequiredMs) {
+    return;
+  }
+  completeConstruction(state, site.id);
+}
+
 function finishWork(state: GameState, slime: SlimeState): void {
   const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;
   if (!task) {
     slime.state = "idle";
+    return;
+  }
+
+  if (isConstructionTask(task.type)) {
+    tickConstructionWork(state, slime, task);
     return;
   }
 
@@ -164,7 +199,10 @@ function tickSlime(state: GameState, slime: SlimeState): void {
       if (slime.state === "moving_to_fishing" || task.type === "fish_activity") {
         beginFishingOnArrival(state, slime);
       } else {
-        startWorking(slime, task.type === "till_soil" ? task.target : undefined);
+        startWorking(
+          slime,
+          task.type === "till_soil" || isConstructionTask(task.type) ? task.target : undefined,
+        );
       }
       return;
     }
@@ -195,6 +233,11 @@ function tickSlime(state: GameState, slime: SlimeState): void {
   }
 
   if (slime.state === "working") {
+    const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;
+    if (task && isConstructionTask(task.type)) {
+      tickConstructionWork(state, slime, task);
+      return;
+    }
     slime.workElapsedMs += SIMULATION_TICK_MS * workSpeedMultiplier(slime.satiety);
     if (slime.workElapsedMs < WORK_DURATION_MS) {
       return;

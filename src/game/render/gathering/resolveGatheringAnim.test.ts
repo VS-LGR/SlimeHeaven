@@ -273,4 +273,17 @@ describe("gather_stone resolver", () => {
     expect(isPickaxeToolActive({ state: "idle" }, task("gather_stone"))).toBe(false);
     expect(isPickaxeToolActive({ state: "idle" }, undefined)).toBe(false);
   });
+
+  it("uses generic work without tools for construct_building", () => {
+    setTitoChopBodyReady(true);
+    setTitoChopAxeReady(true);
+    setTitoPickaxeReady(true);
+    expect(getGatheringAnimation(SLIME_IDS.TITO, "working", "construct_building", () => true)).toEqual({
+      kind: "fallback",
+      anim: SLIME_ANIM.WORK,
+      semantic: SLIME_ANIM.WORK,
+    });
+    expect(isChopToolActive({ state: "working" }, task("construct_building"))).toBe(false);
+    expect(isPickaxeToolActive({ state: "working" }, task("construct_building"))).toBe(false);
+  });
 });

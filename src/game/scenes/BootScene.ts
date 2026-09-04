@@ -8,6 +8,7 @@ import {
   TILESET_SOURCE_WIDTH,
 } from "../config";
 import { worldImageLoads } from "@/src/world/tileTypes";
+import { buildingImageLoads } from "@/src/simulation/data/buildings";
 import { createPlaceholderTextures } from "../render/createPlaceholderTextures";
 import { createSlimeAnimations, preloadSlimeVisuals } from "../render/loadSlimeVisuals";
 import { createFishingAnimations, preloadFishingVisuals } from "../render/fishing/loadFishingVisuals";
@@ -27,6 +28,12 @@ export class BootScene extends Phaser.Scene {
     for (const { key, path } of worldImageLoads()) {
       this.load.image(key, path);
     }
+    for (const { key, path } of buildingImageLoads()) {
+      this.load.image(key, path);
+    }
+    this.load.on("loaderror", (file: { key?: string }) => {
+      console.warn(`Failed to load texture ${file.key ?? "unknown"}`);
+    });
     preloadSlimeVisuals(this);
     preloadFishingVisuals(this);
     preloadFarmingVisuals(this);
@@ -62,6 +69,11 @@ export class BootScene extends Phaser.Scene {
     createGatheringAnimations(this);
     this.textures.get(TILESET_KEY).setFilter(Phaser.Textures.FilterMode.NEAREST);
     for (const { key } of worldImageLoads()) {
+      if (this.textures.exists(key)) {
+        this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
+    }
+    for (const { key } of buildingImageLoads()) {
       if (this.textures.exists(key)) {
         this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
       }

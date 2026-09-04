@@ -4,6 +4,7 @@ import { CameraController } from "../input/CameraController";
 import { SelectionController } from "../input/SelectionController";
 import { FarmDesignationController } from "../input/FarmDesignationController";
 import { FishingController } from "../input/FishingController";
+import { BuildPlacementController } from "../input/BuildPlacementController";
 import { inspectWorldTile } from "../inspectWorld";
 import { DETAIL_DEFS, OBJECT_DEFS } from "@/src/world/tileTypes";
 import { tileToWorld } from "@/src/world/constants";
@@ -23,14 +24,22 @@ import { WaterRenderer } from "../render/water/WaterRenderer";
 import { WaterClueSystem } from "../render/water/WaterClueSystem";
 import { FishingRenderer, type FishingVisualAnchor } from "../render/fishing/FishingRenderer";
 import { FarmPlotRenderer } from "../render/farming/FarmPlotRenderer";
+import { BuildingRenderer } from "../render/buildings/BuildingRenderer";
+import { ConstructionSiteRenderer } from "../render/buildings/ConstructionSiteRenderer";
 import { SpecialistToolRenderer, type FarmPresentationDebug } from "../render/specialist/SpecialistToolRenderer";
 import { gatheringF3SpecialistFrameLabel, gatheringF3ToolFrameLabel } from "../render/gathering/chopPresentation";
 import { FISHING_PRESENTATION } from "../render/fishing/fishingVisualConfig";
 import { nudgePingoRod } from "../render/fishing/pingoFishingVisualConfig";
 import { useGameUiStore, type SlimeInfo } from "@/src/store/gameUiStore";
+import type { BuildingPlacementDebug } from "@/src/store/gameUiStore";
+import type { BuildingPlacementEvaluation } from "@/src/simulation/systems/BuildingSystem";
+import { buildingById, entranceTile } from "@/src/simulation/data/buildings";
+import { residentTypeIdForSlime } from "@/src/simulation/data/residents";
+import { placedHomeForResident, playerBuildableBuildingTypes, residentHomeStatus } from "@/src/simulation/residentHomes";
 import type { SlimeState } from "@/src/simulation/entities/SlimeState";
-import type { Task } from "@/src/simulation/entities/Task";
-import { formatCapabilitiesDebug, knownSpecialtyLabels } from "@/src/simulation/slimeCapabilities";
+import { formatCapabilitiesDebug, knownSpecialtyLabels, canPerformTaskCapabilities } from "@/src/simulation/slimeCapabilities";
+import { isConstructionTask } from "@/src/simulation/entities/Task";
+import { gatheringToolForTask } from "../render/gathering/chopPresentation";
 
 const UI_PUSH_MS = 100;
 
@@ -40,8 +49,11 @@ export class VillageScene extends Phaser.Scene {
   private slimeRenderer: SlimeRenderer | undefined;
   private waterRenderer: WaterRenderer | undefined;
   private farmPlots: FarmPlotRenderer | undefined;
+  private buildings: BuildingRenderer | undefined;
+  private constructionSites: ConstructionSiteRenderer | undefined;
   private farmTool: FarmDesignationController | undefined;
   private fishingTool: FishingController | undefined;
+  private buildTool: BuildPlacementController | undefined;
   private fishingRenderer: FishingRenderer | undefined;
   private specialistTools: SpecialistToolRenderer | undefined;
   private waterClues: WaterClueSystem | undefined;
@@ -93,6 +105,8 @@ export class VillageScene extends Phaser.Scene {
     }
 
     this.farmPlots = new FarmPlotRenderer(this);
+    this.constructionSites = new ConstructionSiteRenderer(this);
+    this.buildings = new BuildingRenderer(this);
 
     for (let y = 0; y < grid.height; y += 1) {
       for (let x = 0; x < grid.width; x += 1) {
@@ -130,7 +144,9 @@ export class VillageScene extends Phaser.Scene {
     });
     this.slimeRenderer = new SlimeRenderer(this, simulation);
     this.specialistTools = new SpecialistToolRenderer(this);
-    this.waterRenderer = new WaterRenderer(this, grid, () => this.fishingTool?.ownsPointer() ?? false);
+    this.waterRenderer = new WaterRenderer(this, grid, () =>
+      Boolean(this.fishingTool?.ownsPointer() || this.buildTool?.isToolActive()),
+    );
     this.waterClues = new WaterClueSystem(this, this.waterRenderer.getWaterMask(), (x, y, type) => {
       this.waterRenderer?.spawnRipple(x, y, type);
     });
@@ -139,6 +155,7 @@ export class VillageScene extends Phaser.Scene {
     });
     this.farmTool = new FarmDesignationController(this, simulation);
     this.fishingTool = new FishingController(this, simulation);
+    this.buildTool = new BuildPlacementController(this, simulation);
     this.selection = new SelectionController(
       this,
       grid,
@@ -252,8 +269,11 @@ export class VillageScene extends Phaser.Scene {
     simulation.advanceFishingClock(this.time.now);
     this.syncFarmVisuals();
     this.farmPlots?.sync(simulation);
+    this.constructionSites?.sync(simulation);
+    this.buildings?.sync(simulation);
     this.farmTool?.sync();
     this.fishingTool?.sync();
+    this.buildTool?.sync();
     this.slimeRenderer?.sync(alpha, this.time.now);
     const showVisualDebug = useGameUiStore.getState().debugVisible;
     this.specialistTools?.sync(
@@ -320,6 +340,7 @@ export class VillageScene extends Phaser.Scene {
       wood: state.resources.wood,
       stone: state.resources.stone,
       food: state.resources.food,
+      availableBuildingTypeIds: playerBuildableBuildingTypes(state),
       farmTiles: farms.length,
       growingCrops: farms.filter((plot) => plot.state === "growing" || plot.state === "planted").length,
       readyCrops: farms.filter((plot) => plot.state === "ready").length,
@@ -361,6 +382,7 @@ export class VillageScene extends Phaser.Scene {
             entry.state !== "caught" && entry.state !== "escaped" && entry.state !== "expired",
         )?.state ?? null,
       farmPresentation: farmPresentationLine(this.specialistTools?.lastFarmPresentation() ?? null),
+      buildingPlacementDebug: buildingDebugFromEvaluation(this.buildTool?.debugSnapshot() ?? null),
       ambientDebug: Object.values(state.slimes).map((slime) => {
         const reserved = state.interestPoints.find((point) => point.reservedBy === slime.id);
         return `${slime.name} ${slimeMode(slime)} ${slime.ambientBehaviorId ?? "—"} ${
@@ -398,7 +420,7 @@ export class VillageScene extends Phaser.Scene {
   }
 
   private handleSlimeClick(pointer: Phaser.Input.Pointer): boolean {
-    if (this.farmTool?.isToolActive() || this.fishingTool?.ownsPointer()) {
+    if (this.farmTool?.isToolActive() || this.fishingTool?.ownsPointer() || this.buildTool?.isToolActive()) {
       return true;
     }
     if (this.simulation && sessionOwnsInput(this.simulation.state.fishing)) {
@@ -524,25 +546,30 @@ export class VillageScene extends Phaser.Scene {
       return null;
     }
     const debug = this.slimeRenderer?.visualDebug(slime);
-    return slimeInfo(slime, simulation.state.tasks, debug);
+    return slimeInfo(slime, simulation.state, debug);
   }
 }
 
 function slimeInfo(
   slime: SlimeState | undefined,
-  tasks: Record<string, Task>,
+  state: Simulation["state"],
   debug?: SlimeVisualDebug,
 ): SlimeInfo | null {
   if (!slime) {
     return null;
   }
-  const task = slime.currentTaskId ? tasks[slime.currentTaskId] : undefined;
+  const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;
   let taskLabel = "none";
   if (slime.state === "moving_to_food" || slime.state === "eating") {
     taskLabel = "Eat";
   } else if (task) {
     taskLabel = task.type.replaceAll("_", " ");
   }
+  const constructing = Boolean(task && isConstructionTask(task.type));
+  const residentTypeId = residentTypeIdForSlime(slime.id);
+  const home = residentTypeId ? placedHomeForResident(state, residentTypeId) : undefined;
+  const homeDef = home ? buildingById(home.typeId) : undefined;
+  const homeEntrance = home && homeDef ? entranceTile({ x: home.tileX, y: home.tileY }, homeDef) : null;
   return {
     id: slime.id,
     name: slime.name,
@@ -566,6 +593,16 @@ function slimeInfo(
     luck: slime.attributes.luck,
     specialties: knownSpecialtyLabels(slime.capabilities),
     capabilitiesDebug: formatCapabilitiesDebug(slime.capabilities),
+    constructionActivity: constructing ? "construct_building" : null,
+    constructionSiteId: constructing ? (task?.constructionSiteId ?? task?.nodeId ?? null) : null,
+    constructionCapabilityEligible: constructing && task ? canPerformTaskCapabilities(slime, task) : null,
+    constructionPresentation: constructing && slime.state === "working" ? "generic_work" : null,
+    constructionTool: constructing ? gatheringToolForTask(task?.type) ?? "none" : null,
+    residencyStatus: slime.residencyStatus,
+    homeBuildingType: home?.typeId ?? null,
+    homeBuildingId: home?.id ?? null,
+    homeStatus: residentTypeId ? residentHomeStatus(state, residentTypeId) : null,
+    homeEntranceTile: homeEntrance ? `${homeEntrance.x},${homeEntrance.y}` : null,
   };
 }
 
@@ -602,4 +639,25 @@ function fishingVisualDebugLine(anchor: FishingVisualAnchor | undefined): string
     `pose:${anchor.rodPose}`,
     `frame:${anchor.animFrame}`,
   ].join(" ");
+}
+
+function buildingDebugFromEvaluation(
+  evaluation: BuildingPlacementEvaluation | null,
+): BuildingPlacementDebug | null {
+  if (!evaluation) {
+    return null;
+  }
+    const def = buildingById(evaluation.typeId);
+    return {
+      buildMode: true,
+      buildingType: evaluation.typeId,
+      costWood: evaluation.cost.wood,
+      costStone: evaluation.cost.stone,
+      affordable: evaluation.affordable,
+      footprintOrigin: `${evaluation.origin.x},${evaluation.origin.y}`,
+      footprint: `${def.footprint.width}x${def.footprint.height}`,
+      entranceTile: `${evaluation.entrance.x},${evaluation.entrance.y}`,
+      placementValid: evaluation.valid,
+      invalidReasons: evaluation.reasons,
+    };
 }

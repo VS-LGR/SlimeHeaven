@@ -364,5 +364,62 @@ Do not start Milestone 05 until asked.
 
 ### Not Started (intentionally out of scope)
 
-- pickaxe / `gather_stone` specialist clip, Milestone 05
+- pickaxe / `gather_stone` specialist clip
+
+## Milestone 05.1 — Building Catalog & Placement Foundation
+
+**Closed after implementation.** Data-driven residential catalog for `Small_Blue_House.png` and `House_Brown.png`. Immediate free placement (no construction jobs, costs, occupancy, or building removal). Simulation owns `PlacedBuilding` records; Phaser only previews and syncs sprites. Collision uses existing `Grid` walkable flags (2×2 footprint, walkable south entrance).
+
+### Completed
+
+- Catalog IDs `small_blue_house` / `brown_house` with native textures (78×86 / 66×65 RGBA), 2×2 footprint, south entrance metadata
+- Build tool + house selector; preview uses the real PNG at reduced opacity plus valid/invalid overlays
+- Placement validation: bounds, water, storage, objects/nodes, farms, buildings, fishing access land, walkable entrance
+- F3 building preview + hovered instance fields
+- Tests in `buildings.test.ts` and `buildingPlacement.test.ts`; farm/fish/gather assignment suites stay green
+
+### Not Started (intentionally deferred)
+
+- Construction jobs, timers, materials, site sprites
+- Costs / refunds, housing capacity, interiors, upgrades, occupancy
+- Persistence, Remove-tool deletion of buildings, storage final art
+
+## Milestone 05.2 — Construction Sites, Costs & Builder Jobs
+
+**Closed after implementation.** Confirmed placement consumes catalog wood/stone, creates a construction site (not a house), assigns Tito via the `build` capability, and completes from simulation work ticks into one `PlacedBuilding`. Phaser only draws a procedural site placeholder and the existing 05.1 house sprites.
+
+### Completed
+
+- Catalog costs: Small Blue House 8 wood / 2 stone; Brown House 6 wood / 4 stone
+- `ConstructionSite` records, `construct_building` tasks, `BASE_CONSTRUCTION_WORK_MS = 5000`
+- Tito `build` capability; Pingo and Momo remain ineligible
+- Remove tool cancels incomplete sites with a full one-time refund
+- F3 placement cost/affordability, site progress, and builder presentation fields
+
+### Not Started (intentionally deferred)
+
+- Material hauling, multi-worker sites, custom builder animation, hammer, scaffolding art
+- Interiors, housing capacity, happiness, upgrades, repairs, completed-building demolition
+- Persistence, construction sound effects
+
+## Milestone 05.3A — Unique Resident Homes & Starting Village
+
+**Closed after implementation.** Pingo, Tito, and Momo each have one unique exterior home. Fresh games seed three completed `PlacedBuilding` records at authored map origins. Starting homes are not repeatable in the Build menu. Construction, gathering, farming, and fishing authority are unchanged. Visitors are not implemented.
+
+### Completed
+
+- `green_house` catalog entry (Momo) with `Green_House.png` / `Green_House_BP.png` at 93×84 RGBA
+- Unique `residentHome` metadata: Pingo → `small_blue_house`, Tito → `brown_house`, Momo → `green_house`
+- Authored starting origins `(5,4)` `(8,4)` `(11,4)`; idempotent `initializeStartingHomes`
+- Simulation uniqueness: at most one completed home or active site per resident
+- Build HUD: `No building plans available` when every unique starting home is owned
+- Resident/home queries and F3 fields (`residencyStatus`, `homeStatus`, `residentTypeId`)
+- Visitor attraction contract documented in `docs/VISITOR_ATTRACTION.md`
+- Manual `/game` check: three completed homes once each, empty Build selector (`No building plans available`), F3 resident/home `completed` fields, Tito wood delivery, Momo till/plant, Pingo fishing travel
+
+### Not Started (intentionally deferred)
+
+- Visitor scheduler, irrigator, inventor slime, invitation dialogue, fourth resident
+- House interiors, generic population capacity, housing slots
+
 

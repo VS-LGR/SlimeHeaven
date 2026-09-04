@@ -103,6 +103,50 @@ export class Grid {
     return this.getTile(x, y)?.walkable === true;
   }
 
+  captureOccupancy(
+    x: number,
+    y: number,
+  ): { x: number; y: number; walkable: boolean; buildable: boolean } | undefined {
+    const tile = this.getTile(x, y);
+    if (!tile) {
+      return undefined;
+    }
+    return { x, y, walkable: tile.walkable, buildable: tile.buildable };
+  }
+
+  restoreOccupancy(snapshot: {
+    x: number;
+    y: number;
+    walkable: boolean;
+    buildable: boolean;
+  }): void {
+    const tile = this.getTile(snapshot.x, snapshot.y);
+    if (!tile) {
+      return;
+    }
+    tile.walkable = snapshot.walkable;
+    tile.buildable = snapshot.buildable;
+  }
+
+  blockTile(x: number, y: number): void {
+    const tile = this.getTile(x, y);
+    if (!tile) {
+      return;
+    }
+    tile.walkable = false;
+    tile.buildable = false;
+  }
+
+  refreshTerrainOccupancy(x: number, y: number, occupied: boolean): void {
+    const tile = this.getTile(x, y);
+    if (!tile) {
+      return;
+    }
+    const def = TILE_DEFS[tile.terrain];
+    tile.walkable = def.walkable && !occupied;
+    tile.buildable = def.buildable && !occupied;
+  }
+
   objectAt(x: number, y: number): WorldObject | undefined {
     return this.objects.find((object) => {
       const def = OBJECT_DEFS[object.type];

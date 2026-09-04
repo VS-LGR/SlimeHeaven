@@ -15,7 +15,7 @@ describe("slime capabilities", () => {
     const state = new GameState();
     expect(state.slimes[SLIME_IDS.PINGO].capabilities).toEqual(["fishing", "exploration"]);
     expect(state.slimes[SLIME_IDS.MOMO].capabilities).toEqual(["farming"]);
-    expect(state.slimes[SLIME_IDS.TITO].capabilities).toEqual(["gathering", "construction"]);
+    expect(state.slimes[SLIME_IDS.TITO].capabilities).toEqual(["gathering", "construction", "build"]);
     for (const slime of Object.values(state.slimes)) {
       expect(slime.capabilities).toEqual(uniqueCapabilities(slime.capabilities));
     }
@@ -43,6 +43,7 @@ describe("slime capabilities", () => {
     expect(requiredCapabilitiesForTask({ type: "harvest_crop" })).toEqual(["farming"]);
     expect(requiredCapabilitiesForTask({ type: "gather_wood" })).toEqual(["gathering"]);
     expect(requiredCapabilitiesForTask({ type: "gather_stone" })).toEqual(["gathering"]);
+    expect(requiredCapabilitiesForTask({ type: "construct_building" })).toEqual(["build"]);
   });
 
   it("honors an explicit requiredCapabilities override including empty universal jobs", () => {

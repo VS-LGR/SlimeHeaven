@@ -12,6 +12,7 @@ import {
 } from "../ambientPersonality";
 import type { AmbientBehaviorId } from "../ambientConfig";
 import { uniqueCapabilities, type SlimeCapability } from "../slimeCapabilities";
+import type { ResidencyStatus } from "../data/residents";
 
 export const SLIME_IDS = {
   PINGO: "slime_pingo",
@@ -55,6 +56,7 @@ export interface SlimeState {
   satiety: number;
   attributes: SlimeAttributes;
   capabilities: SlimeCapability[];
+  residencyStatus: ResidencyStatus;
   interest: AmbientInterestProfile;
   faceTile?: GridPosition;
   ambientBehaviorId?: AmbientBehaviorId;
@@ -110,7 +112,7 @@ export const SLIME_SPAWNS: ReadonlyArray<{
     wanderOffsetTicks: 8,
     attributes: { technique: 3, strength: 5, instinct: 2, luck: 2 },
     interest: TITO_AMBIENT_INTEREST,
-    capabilities: ["gathering", "construction"],
+    capabilities: ["gathering", "construction", "build"],
   },
 ];
 
@@ -133,6 +135,7 @@ export function createSlimeState(
     satiety: SATIETY_INITIAL,
     attributes: clampAttributes(def.attributes),
     capabilities: uniqueCapabilities(def.capabilities),
+    residencyStatus: "resident",
     interest: def.interest ?? DEFAULT_AMBIENT_INTEREST,
     ambientUntilTick: 0,
     ambientCooldownUntilTick: 0,

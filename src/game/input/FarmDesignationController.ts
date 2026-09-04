@@ -122,7 +122,8 @@ export class FarmDesignationController {
     for (let y = y0; y <= y1; y += 1) {
       for (let x = x0; x <= x1; x += 1) {
         const valid = removing
-          ? Boolean(this.simulation.state.farmAt(x, y))
+          ? Boolean(this.simulation.state.farmAt(x, y)) ||
+            Boolean(this.simulation.state.constructionSiteAt(x, y))
           : isValidFarmTerrain(this.simulation.state, x, y) &&
             !this.simulation.state.farmAt(x, y);
         this.drawTile(x, y, valid ? VALID_FILL : INVALID_FILL);
