@@ -422,4 +422,147 @@ Do not start Milestone 05 until asked.
 - Visitor scheduler, irrigator, inventor slime, invitation dialogue, fourth resident
 - House interiors, generic population capacity, housing slots
 
+## Milestone 05.4A — Fullscreen HUD Foundation & Top Status Panels
+
+**Closed after implementation.** Game route fills the browser viewport. Phaser canvas tracks the parent at 1:1 CSS pixels with integer camera zoom from the 480×270 reference. React HUD overlays Top Left status and Top Right resources from the approved Art Lab PNGs. Simulation, resources, visitors, homes, and 4 TPS are unchanged.
+
+### Completed
+
+- Fullscreen `/game` shell (`100dvw/100dvh`, no letterboxed canvas frame)
+- Phaser `Scale.NONE` + `scale.resize` to the parent; integer `fitZoom`; Simulation instance preserved
+- HUD root: screen-space, `pointer-events: none`; Top Left / Top Right approved assets at native 1×
+- Wood / stone / food from `gameUiStore`; Harmony locked placeholder; no fabricated day/time/weather
+- Existing Farm / Remove / Fish / Build / Collection / slime panel / F3 retained
+- Temporary HUD font: Geist Mono (`font-mono`)
+- Supported 1× panel floor ≈ 1004px at 2vw safe margins; below that panels overlap (no mobile redesign)
+
+### Not Started (intentionally deferred)
+
+- Slime Card (`UI_Slime_Card.png`)
+- Bottom toolbar art, Journal, Collection restyle
+- Day/night, weather, seasons, Harmony gameplay
+
+## Milestone 05.4A.1 — Viewport Stability & HUD Composition Fix
+
+**Closed after implementation.** Mouse wheel no longer changes camera zoom or canvas size. Top panels use 16px screen-edge insets, panel-local coordinates, prototype `Dia 1` / `09:30` / `Primavera`, a compact resource row, an inactive harmony block, and a disabled settings control. PNG assets were not modified.
+
+### Completed
+
+- Removed `CameraController` wheel-to-zoom; resize remains the only `setZoom` writer
+- HUD scale `clamp(0.65, min(100vw/1920, 100vh/1080), 1)` independent of wheel
+- Panel-local % composition; smaller resource icons; settings uses `UI_Icon_Config.png`
+- Prototype world-status source `prototype_placeholder`; Harmony remains out of simulation
+
+### Known remaining differences from the mockup
+
+- Temporary font is still Geist Mono (no bundled pixel face)
+- Bottom toolbar and Slime Card remain prototype chrome
+- Harmony bar is CSS, not a dedicated authored bar PNG
+
+## Milestone 05.4A.2 — Independent HUD sizing & fullscreen canvas fill
+
+**Closed after implementation.** Top Left / Top Right composition uses independent display pixels (not PNG IHDR, not one global `--hud-scale` on internals). Canvas always fills the game viewport; when the logical camera view exceeds the map, camera bounds expand and the world is centered so extra camera background is not one-sided. PNG assets under `public/assets/UI/` were not modified. Fora de escopo BPx (jogo / apresentação).
+
+### Completed
+
+- `hudLayout.ts`: 1920 reference boxes for panels, icons, and labels; `--hud-left-scale` / `--hud-right-scale` (CSS clamp floors 0.78 / 0.74)
+- Top Left 270×172; sun 46×44; `Dia 1` on wood; `09:30` in parchment; flower + `Primavera` on the lower strip
+- Top Right 520×105; resource icons 50×50 with values beside; inactive Harmony (`—%` / `Harmonia`); disabled settings
+- `applyGameViewport` always `scale.resize`s; canvas CSS 100% of parent; `cameraBoundsForView` centers overflow
+- Resize remains the only `setZoom` writer; wheel does not change zoom or canvas size
+
+### Browser checks (device metrics)
+
+| Viewport | Canvas fill | Zoom | HUD in view / no overlap |
+|---|---|---|---|
+| 2048×1150 | yes | 4x | Left 270×172; Right 520×105 |
+| 1920×1080 | yes | 4x | Left 270×172; Right 520×105; wheel unchanged |
+| 1600×900 | yes | 3x | Left 225×143; Right 433×88 |
+| 1366×768 | yes | 2x | Panels y-aligned |
+| 1280×720 | yes | 2x | Left 211×134; Right 385×78 |
+
+Camera stayed on world center (320, 240) when the view overflowed. Hovered tile after click: 12,6. Selected tile was not set by the automation click (Phaser `leftButtonDown`).
+
+### Known remaining differences from the mockup
+
+- Geist Mono remains the temporary HUD face
+- `Dia 1` sits on authored wood (the cream inset is the time parchment, not a two-line cream like some mockup overlays)
+- Harmony bar is CSS, not dedicated bar art; label is `Harmonia`
+- Settings overlays the existing Top Right wooden tab (PNG not split)
+- Bottom toolbar and Slime Card remain prototype chrome
+
+## Milestone 05.4A.3 — Configurable HUD cards and mockup-accurate composition
+
+**Closed after implementation.** Top Left and Top Right are self-contained cards: native PNG as card-local coordinates, `transform: scale` on the card only, clipped safe slots for every text/icon group. `Dia 1` and `09:30` sit in the two painted parchment halves (measured from the PNG). Resource icons are 48×48 inside the 57px cream slot. Harmony stays inactive (`—%` / `Harmonia`). Settings stays disabled. PNGs were not modified. Fora de escopo BPx.
+
+### Completed
+
+- Central config in `src/ui/hud/hudLayout.ts` (`HUD_LAYOUT`) with independent card, icon, and text scales
+- `HudCard` applies viewport×card scale once; children use local pixels
+- Safe slots `overflow: hidden`; resource values `0`/`9`/`99`/`999` fit their groups
+- `HUD_LAYOUT_DEBUG` remains `false`
+- Wheel still does not change camera, canvas, or HUD scale
+
+### Browser checks (device metrics)
+
+| Viewport | Left | Right | Scales (transform) | Overlap |
+|---|---|---|---|---|
+| 2048×1150 | 243×155 | 720×145 | 1 / 1 | no |
+| 1920×1080 | 243×155 | 720×145 | 1 / 1 | no; wheel unchanged |
+| 1600×900 | 204×130 | 600×121 | 0.84 / 0.83 | no |
+| 1366×768 | 204×130 | 518×104 | 0.84 / 0.72 | no |
+| 1280×720 | 204×130 | 518×104 | 0.84 / 0.72 | no |
+
+### Known remaining differences from the mockup
+
+- Geist Mono remains temporary
+- Harmony is `—%` / `Harmonia`, not a simulated `72%` / `Vila Aconchegante`
+- Season remains the authored hanging plaque (PNG)
+- Bottom toolbar and Slime Card remain prototype chrome
+
+## Milestone 05.4A.4 — Configurable HUD size and true fullscreen world cover
+
+**Closed after implementation.** Presentation-only; fora de escopo BPx. Card-local HUD composition from 05.4A.3 is unchanged. HUD size is now a developer config that can exceed `1`. The Phaser camera uses integer **cover** zoom on the 640×480 world so widescreen viewports are filled instead of pillarboxed. PNG assets under `public/assets/UI/` were not modified.
+
+### Completed
+
+- `HUD_SCALE_CONFIG` in `src/ui/hud/hudLayout.ts`: presets `compact` 0.85, `normal` 1, `large` 1.25, `extraLarge` 1.5 (default), `double` 2, `quadruple` 4; independent `topLeftMultiplier` / `topRightMultiplier`; numeric `scale` override; safe-fit only when cards would leave the viewport or overlap
+- Outer card scale is applied once via `--hud-left-scale` / `--hud-right-scale` written from `useHudScale` (resize / ResizeObserver only)
+- `computeCoverZoom`: `ceil(max(vw/worldW, vh/worldH))`; camera bounds stay on the world; crop is centered at (320, 240)
+- Game route / `html` / `body` / shell / canvas fill `100vw` × `100dvh` with `overflow: hidden`; no letterbox wrapper
+- Wheel still does not change camera zoom, cover zoom, canvas size, or HUD scale
+
+### Browser checks (device metrics)
+
+| Viewport | Canvas CSS / renderer | Cover zoom | HUD requested / applied | Safe-fit | Overlap / clip | Lateral void |
+|---|---|---|---|---|---|---|
+| 2048×1150 | 2048×1150 | 4 | 1.5 / 1.5 | no | no | none |
+| 1920×1080 | 1920×1080 | 3 | 1.5 / 1.5 | no | no | none |
+| 1600×900 | 1600×900 | 3 | 1.5 / 1.5 | no | no | none |
+| 1366×768 | 1366×768 | 3 | 1.5 / 1.38 | yes | no | none (was pillarboxed at contain 2x) |
+| 1280×720 | 1280×720 | 2 | 1.5 / 1.29 | yes | no | none |
+
+Pointer: center click → tile 9,7 (world ~320,240); left edge → 5,7; right edge → 14,7, matching `canvasPointerToWorld` after cover crop. Wheel left zoom 2x and HUD 1.5 requested / safe-fit applied unchanged.
+
+## Milestone 05.4A.4.1 — HUD scale recalibration
+
+**Closed after calibration.** Default HUD scale moved from `extraLarge` **1.5** to **`defaultScale: 1.25`** (`preset: "large"`). `quadruple` was removed. `double` (2x) remains an optional development/accessibility preset. Card internals, cover zoom, and PNG assets were not changed.
+
+At 1920×1080 both cards apply **1.25** (requested, not safe-fit): Top Left **303.75×193.75**, Top Right **900×181.25** (46.9% of width). Safe-fit still cannot enlarge the requested scale. Multipliers left at `1`.
+
+| Viewport | Canvas | HUD requested / applied | Top Left | Top Right | Right width share | Safe-fit |
+|---|---|---|---|---|---|---|
+| 1920×1080 | 1920×1080 | 1.25 / 1.25 | 304×194 | 900×181 | 47% | no |
+| 1600×900 | 1600×900 | 1.25 / 1.25 | 304×194 | 900×181 | 56% | no |
+| 1366×768 | 1366×768 | 1.25 / 1.25 | 304×194 | 900×181 | 66% | no |
+| 1280×720 | 1280×720 | 1.25 / 1.25 | 304×194 | 900×181 | 70% | no |
+
+### Known remaining differences from the mockup
+
+- Geist Mono remains temporary
+- Harmony is `—%` / `Harmonia`, not a simulated `72%` / `Vila Aconchegante`
+- Season remains the authored hanging plaque (PNG)
+- Bottom toolbar and Slime Card remain prototype chrome
+- Widescreen cover crops vertical world (expected 4:3 vs 16:9 tradeoff)
+
 

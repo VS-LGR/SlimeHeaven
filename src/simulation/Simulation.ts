@@ -31,6 +31,7 @@ import {
   cancelFishingOpportunity,
 } from "./systems/FishingOpportunitySystem";
 import { tickAmbientBehaviors, forceAmbientBehavior, forceSocialGreet, clearAllAmbientBehaviors } from "./systems/AmbientBehaviorSystem";
+import { tickVisitors, spawnLilyVisitor, inviteVisitor } from "./systems/VisitorSystem";
 import type { AmbientBehaviorId } from "./ambientConfig";
 import type { ClueType, FishId } from "./data/fish";
 import { placeBuilding, cancelConstructionSitesInRect } from "./systems/BuildingSystem";
@@ -78,6 +79,7 @@ export class Simulation {
     tickFishing(this.state);
     assignAvailableTasks(this.state);
     tickAmbientBehaviors(this.state);
+    tickVisitors(this.state);
     tickSlimes(this.state);
   }
 
@@ -142,6 +144,14 @@ export class Simulation {
     clearAllAmbientBehaviors(this.state);
   }
 
+  spawnLilyVisitor() {
+    return spawnLilyVisitor(this.state);
+  }
+
+  inviteVisitor(slimeId: string) {
+    return inviteVisitor(this.state, slimeId);
+  }
+
   clueSnapshot(): Array<{
     id: string;
     worldX: number;
@@ -191,7 +201,9 @@ export class Simulation {
 
   setAllSlimesHungry(satiety: number = DEBUG_HUNGRY_SATIETY): void {
     for (const slime of Object.values(this.state.slimes)) {
-      slime.satiety = satiety;
+      if (slime.residencyStatus === "resident") {
+        slime.satiety = satiety;
+      }
     }
   }
 

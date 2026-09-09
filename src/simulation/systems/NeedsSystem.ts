@@ -1,6 +1,7 @@
 import { findPath } from "@/src/world/pathfinding";
 import type { GameState } from "../GameState";
-import { SLIME_IDS, type SlimeState } from "../entities/SlimeState";
+import { isVillageResident } from "../data/residents";
+import type { SlimeState } from "../entities/SlimeState";
 import {
   clampSatiety,
   EAT_FOOD_COST,
@@ -9,8 +10,6 @@ import {
 } from "../needsConfig";
 import { cancelTask, releaseSlime } from "./JobSystem";
 import { cancelAmbientBehavior } from "./AmbientBehaviorSystem";
-
-const SLIME_ORDER = [SLIME_IDS.PINGO, SLIME_IDS.MOMO, SLIME_IDS.TITO];
 
 export function tryConsumeFood(state: GameState, amount: number): boolean {
   if (state.resources.food < amount) {
@@ -25,8 +24,10 @@ export function isSeekingFood(slime: SlimeState): boolean {
 }
 
 export function tickNeeds(state: GameState): void {
-  for (const id of SLIME_ORDER) {
-    const slime = state.slimes[id];
+  for (const slime of Object.values(state.slimes)) {
+    if (!isVillageResident(slime)) {
+      continue;
+    }
     slime.satiety = clampSatiety(slime.satiety - SATIETY_DECAY_PER_TICK);
     maybeSeekFood(state, slime);
   }

@@ -16,7 +16,10 @@ const GameHud = dynamic(() => import("./GameHud").then((mod) => mod.GameHud), {
 
 export function GameShell() {
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-[#14110e]">
+    <div
+      className="relative m-0 h-dvh w-screen max-w-none overflow-hidden p-0"
+      data-game-shell="true"
+    >
       <GameCanvas />
       <GameHud />
       <DebugOverlay />

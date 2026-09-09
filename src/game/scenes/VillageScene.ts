@@ -17,7 +17,7 @@ import { FISHING } from "@/src/simulation/fishingConfig";
 import { fightMarkerT } from "@/src/simulation/systems/FishingSystem";
 import { fightingSession, isLiveFishingPhase, sessionOwnsInput } from "@/src/simulation/entities/FishingSession";
 import { fishingPresentationPhase } from "@/src/simulation/entities/FishingPresentation";
-import { slimeMode } from "@/src/simulation/systems/slimeAvailability";
+import { slimeMode, isJobAssignable } from "@/src/simulation/systems/slimeAvailability";
 import { SLIME_IDS } from "@/src/simulation/entities/SlimeState";
 import { SlimeRenderer, type SlimeVisualDebug } from "../render/SlimeRenderer";
 import { WaterRenderer } from "../render/water/WaterRenderer";
@@ -34,7 +34,10 @@ import { useGameUiStore, type SlimeInfo } from "@/src/store/gameUiStore";
 import type { BuildingPlacementDebug } from "@/src/store/gameUiStore";
 import type { BuildingPlacementEvaluation } from "@/src/simulation/systems/BuildingSystem";
 import { buildingById, entranceTile } from "@/src/simulation/data/buildings";
-import { residentTypeIdForSlime } from "@/src/simulation/data/residents";
+import { residentTypeIdForSlime, isVillageResident, isVisitorLifecycle } from "@/src/simulation/data/residents";
+import { CHARACTERS } from "@/src/simulation/data/characters";
+import { VISITOR_ARRIVAL } from "@/src/simulation/data/visitorArrival";
+import { visitorIntent } from "@/src/simulation/systems/VisitorSystem";
 import { placedHomeForResident, playerBuildableBuildingTypes, residentHomeStatus } from "@/src/simulation/residentHomes";
 import type { SlimeState } from "@/src/simulation/entities/SlimeState";
 import { formatCapabilitiesDebug, knownSpecialtyLabels, canPerformTaskCapabilities } from "@/src/simulation/slimeCapabilities";
@@ -216,6 +219,25 @@ export class VillageScene extends Phaser.Scene {
       forceTitoInspectNature: () => simulation.forceAmbient(SLIME_IDS.TITO, "inspect_nature"),
       forceSocialGreet: () => simulation.forceSocialGreet(),
       clearAmbientBehaviors: () => simulation.clearAmbientBehaviors(),
+      spawnLilyVisitor: () => {
+        const result = simulation.spawnLilyVisitor();
+        useGameUiStore.getState().setRuntime({
+          jobToast: { message: result.message, hideAt: Date.now() + 2800 },
+        });
+      },
+    });
+    useGameUiStore.getState().setHudActions({
+      inviteSelectedVisitor: () => {
+        const selectedId = useGameUiStore.getState().selectedSlimeId;
+        if (!selectedId) {
+          return;
+        }
+        const result = simulation.inviteVisitor(selectedId);
+        useGameUiStore.getState().setRuntime({
+          jobToast: { message: result.message, hideAt: Date.now() + 4000 },
+          selectedSlime: this.selectedSlimeInfo(selectedId),
+        });
+      },
     });
 
     useGameUiStore.getState().setRuntime({
@@ -324,7 +346,9 @@ export class VillageScene extends Phaser.Scene {
     const farms = Object.values(state.farms);
     const selectedId = useGameUiStore.getState().selectedSlimeId;
     const water = this.waterRenderer?.debugSnapshot();
-    const hungers = Object.values(state.slimes).map((slime) => hungerState(slime.satiety));
+    const hungers = Object.values(state.slimes)
+      .filter((slime) => isVillageResident(slime))
+      .map((slime) => hungerState(slime.satiety));
     this.selection?.refreshInspect();
     useGameUiStore.getState().setRuntime({
       fps: Math.round(this.game.loop.actualFps),
@@ -383,15 +407,18 @@ export class VillageScene extends Phaser.Scene {
         )?.state ?? null,
       farmPresentation: farmPresentationLine(this.specialistTools?.lastFarmPresentation() ?? null),
       buildingPlacementDebug: buildingDebugFromEvaluation(this.buildTool?.debugSnapshot() ?? null),
-      ambientDebug: Object.values(state.slimes).map((slime) => {
-        const reserved = state.interestPoints.find((point) => point.reservedBy === slime.id);
-        return `${slime.name} ${slimeMode(slime)} ${slime.ambientBehaviorId ?? "—"} ${
-          slime.ambientTargetId ?? "—"
-        } cd:${Math.max(0, slime.ambientCooldownUntilTick - state.tickIndex)} r:${reserved?.id ?? "—"}`;
-      }),
+      ambientDebug: Object.values(state.slimes)
+        .filter((slime) => isVillageResident(slime))
+        .map((slime) => {
+          const reserved = state.interestPoints.find((point) => point.reservedBy === slime.id);
+          return `${slime.name} ${slimeMode(slime)} ${slime.ambientBehaviorId ?? "—"} ${
+            slime.ambientTargetId ?? "—"
+          } cd:${Math.max(0, slime.ambientCooldownUntilTick - state.tickIndex)} r:${reserved?.id ?? "—"}`;
+        }),
       waterBodyCount: state.waterBodies.length,
       accessPointCount: state.fishingAccessPoints.length,
       fishCollection: state.fishCollection,
+      visitorDebug: visitorDebugLines(state, this.slimeRenderer),
     });
   }
 
@@ -603,7 +630,54 @@ function slimeInfo(
     homeBuildingId: home?.id ?? null,
     homeStatus: residentTypeId ? residentHomeStatus(state, residentTypeId) : null,
     homeEntranceTile: homeEntrance ? `${homeEntrance.x},${homeEntrance.y}` : null,
+    visitorInterestLabel: residentTypeId ? CHARACTERS[residentTypeId].visitorInterestLabel : null,
+    visitorIntent: isVisitorLifecycle(slime) ? visitorIntent(slime) : null,
+    eligibleForJobs: isVisitorLifecycle(slime) ? false : isJobAssignable(state, slime),
+    needsActive: isVillageResident(slime),
+    consumesFood: isVillageResident(slime),
+    currentAnimation: lilyAnimationLabel(slime.id, debug?.anim ?? "idle"),
+    activeSpecialistAnimation: isVisitorLifecycle(slime) ? "none" : null,
   };
+}
+
+function lilyAnimationLabel(slimeId: string, anim: string): string {
+  if (slimeId !== SLIME_IDS.LILY) {
+    return anim;
+  }
+  if (anim === "hop") {
+    return "lily_hop";
+  }
+  if (anim === "idle") {
+    return "lily_idle";
+  }
+  return anim;
+}
+
+function visitorDebugLines(
+  state: Simulation["state"],
+  renderer: SlimeRenderer | undefined,
+): string[] {
+  const lily = state.slimes[SLIME_IDS.LILY];
+  if (!lily) {
+    return [];
+  }
+  const debug = renderer?.visualDebug(lily);
+  const dest = lily.destination ? `${lily.destination.x},${lily.destination.y}` : "—";
+  return [
+    `visitorInstanceId: ${lily.id}`,
+    `residentTypeId: lily`,
+    `residencyStatus: ${lily.residencyStatus}`,
+    `arrivalTile: ${VISITOR_ARRIVAL.arrivalTile.x},${VISITOR_ARRIVAL.arrivalTile.y}`,
+    `currentTile: ${lily.tileX},${lily.tileY}`,
+    `visitorIntent: ${visitorIntent(lily)}`,
+    `wanderDestination: ${dest}`,
+    "eligibleForJobs: false",
+    "needsActive: false",
+    "consumesFood: false",
+    `homeStatus: ${residentHomeStatus(state, "lily")}`,
+    `currentAnimation: ${lilyAnimationLabel(lily.id, debug?.anim ?? "idle")}`,
+    "activeSpecialistAnimation: none",
+  ];
 }
 
 function farmPresentationLine(debug: FarmPresentationDebug | null): string | null {

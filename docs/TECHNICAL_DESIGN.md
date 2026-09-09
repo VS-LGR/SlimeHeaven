@@ -79,11 +79,14 @@ Phaser:
 - `roundPixels: true`
 - object textures use `FilterMode.NEAREST`
 - CSS `image-rendering: pixelated`
-- Internal buffer 480×270, integer canvas scale
-- Camera: WASD / arrows, discrete zoom 1 / 2 / 3 / 4, map bounds, right/middle drag pan
+- Canvas fills the browser viewport (1:1 CSS pixels). The 20×15 map is 640×480 world pixels.
+- Integer camera zoom covers the viewport: `ceil(max(viewport/worldWidth, viewport/worldHeight))`. The 4:3 world is cropped on widescreen instead of pillarboxed or stretched.
+- Camera: WASD / arrows, map bounds, right/middle drag pan. Mouse wheel does not zoom.
+- DOM HUD is a screen-space overlay (`GameHud`); it does not live in world or camera space
+- Camera zoom is set only from viewport resize (`computeCoverZoom`); mouse wheel does not zoom. HUD scale is a separate React configuration.
 
 Do not rescale the tileset. Do not slice it as 16×16.
 
 ## Debug
 
-F3 toggles a React overlay: FPS, camera, zoom, hovered / selected tile, map dimensions, `TILE_SIZE`, food, farm/hunger counts, water VFX, fishing ownership (phase / presentation / assigned / access reservation / hook UI owner), fishing candidate eligibility, slime `CAP:` tags, ambient mode per slime, optional InterestPoint overlay. Always-on HUD shows Wood / Stone / Food, Farm / Remove Farm / Fish tools, Collection, slime specialties + attribute stars, and a compact fishing context panel while a session is live.
+F3 toggles a React overlay: FPS, camera, zoom, hovered / selected tile, map dimensions, `TILE_SIZE`, food, farm/hunger counts, water VFX, fishing ownership (phase / presentation / assigned / access reservation / hook UI owner), fishing candidate eligibility, slime `CAP:` tags, ambient mode per slime, optional InterestPoint overlay. Always-on HUD: authored Top Left status + Top Right resources (wood / stone / food; Harmony locked), Farm / Remove Farm / Fish / Build tools, Collection, slime specialties + attribute stars, and a compact fishing context panel while a session is live.

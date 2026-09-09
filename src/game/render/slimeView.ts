@@ -115,6 +115,7 @@ function animForState(
     slime.state === "moving_to_task" ||
     slime.state === "moving_to_fishing" ||
     slime.state === "moving_to_ambient" ||
+    slime.state === "wandering" ||
     slime.state === "carrying_to_storage" ||
     slime.state === "moving_to_food"
   ) {

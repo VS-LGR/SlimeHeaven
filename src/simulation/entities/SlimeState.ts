@@ -18,6 +18,7 @@ export const SLIME_IDS = {
   PINGO: "slime_pingo",
   MOMO: "slime_momo",
   TITO: "slime_tito",
+  LILY: "slime_lily",
 } as const;
 
 export type SlimeId = (typeof SLIME_IDS)[keyof typeof SLIME_IDS];
@@ -34,6 +35,7 @@ export type SlimeFsmState =
   | "fishing_wait"
   | "fishing_bite"
   | "moving_to_ambient"
+  | "wandering"
   | "ambient";
 
 export interface SlimeState {
@@ -74,7 +76,7 @@ export interface SlimeState {
   jobAffinity?: Partial<Record<JobCategory, number>>;
 }
 
-export const SLIME_SPAWNS: ReadonlyArray<{
+export interface SlimeSpawnDef {
   id: SlimeId;
   name: string;
   x: number;
@@ -83,7 +85,9 @@ export const SLIME_SPAWNS: ReadonlyArray<{
   attributes: SlimeAttributes;
   interest: AmbientInterestProfile;
   capabilities: readonly SlimeCapability[];
-}> = [
+}
+
+export const SLIME_SPAWNS: readonly SlimeSpawnDef[] = [
   {
     id: SLIME_IDS.PINGO,
     name: "Pingo",
@@ -117,8 +121,9 @@ export const SLIME_SPAWNS: ReadonlyArray<{
 ];
 
 export function createSlimeState(
-  def: (typeof SLIME_SPAWNS)[number],
+  def: SlimeSpawnDef,
   wanderTicks: number,
+  residencyStatus: ResidencyStatus = "resident",
 ): SlimeState {
   return {
     id: def.id,
@@ -135,7 +140,7 @@ export function createSlimeState(
     satiety: SATIETY_INITIAL,
     attributes: clampAttributes(def.attributes),
     capabilities: uniqueCapabilities(def.capabilities),
-    residencyStatus: "resident",
+    residencyStatus,
     interest: def.interest ?? DEFAULT_AMBIENT_INTEREST,
     ambientUntilTick: 0,
     ambientCooldownUntilTick: 0,

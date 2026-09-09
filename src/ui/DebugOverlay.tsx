@@ -61,6 +61,7 @@ export function DebugOverlay() {
   const waterBodyCount = useGameUiStore((state) => state.waterBodyCount);
   const accessPointCount = useGameUiStore((state) => state.accessPointCount);
   const selectedSlime = useGameUiStore((state) => state.selectedSlime);
+  const visitorDebug = useGameUiStore((state) => state.visitorDebug);
   const debugActions = useGameUiStore((state) => state.debugActions);
 
   if (!debugVisible) {
@@ -69,7 +70,11 @@ export function DebugOverlay() {
 
   return (
     <aside
-      className="pointer-events-auto absolute left-3 top-3 z-20 max-h-[calc(100dvh-1.5rem)] min-w-44 max-w-[16rem] overflow-y-auto overscroll-contain rounded border border-white/15 bg-black/70 px-3 py-2 font-mono text-[11px] leading-5 text-lime-100 shadow-lg"
+      className="pointer-events-auto absolute z-20 max-h-[calc(100dvh-12rem)] min-w-44 max-w-[16rem] overflow-y-auto overscroll-contain rounded border border-white/15 bg-black/70 px-3 py-2 font-mono text-[11px] leading-5 text-lime-100 shadow-lg"
+      style={{
+        left: "max(env(safe-area-inset-left, 0px), var(--hud-safe-x))",
+        top: "calc(max(env(safe-area-inset-top, 0px), var(--hud-safe-y)) + var(--hud-left-panel-height) + var(--hud-gap))",
+      }}
       onWheel={(event) => event.stopPropagation()}
     >
       <p className="mb-1 tracking-widest text-lime-300">DEBUG</p>
@@ -118,6 +123,7 @@ export function DebugOverlay() {
           <DebugButton label="Force Tito inspect nature" onClick={debugActions.forceTitoInspectNature} />
           <DebugButton label="Force social greet" onClick={debugActions.forceSocialGreet} />
           <DebugButton label="Clear ambient" onClick={debugActions.clearAmbientBehaviors} />
+          <DebugButton label="Spawn Lily visitor (debug)" onClick={debugActions.spawnLilyVisitor} />
         </div>
       ) : null}
       <div>
@@ -200,6 +206,16 @@ export function DebugOverlay() {
                 <p>homeBuildingId: {selectedSlime.homeBuildingId ?? "—"}</p>
                 <p>homeStatus: {selectedSlime.homeStatus ?? "—"}</p>
                 <p>homeEntranceTile: {selectedSlime.homeEntranceTile ?? "—"}</p>
+                {selectedSlime.visitorIntent ? (
+                  <>
+                    <p>visitorIntent: {selectedSlime.visitorIntent}</p>
+                    <p>eligibleForJobs: {String(selectedSlime.eligibleForJobs)}</p>
+                    <p>needsActive: {String(selectedSlime.needsActive)}</p>
+                    <p>consumesFood: {String(selectedSlime.consumesFood)}</p>
+                    <p>currentAnimation: {selectedSlime.currentAnimation ?? "—"}</p>
+                    <p>activeSpecialistAnimation: {selectedSlime.activeSpecialistAnimation ?? "none"}</p>
+                  </>
+                ) : null}
               </>
             ) : null}
             <p>
@@ -246,6 +262,14 @@ export function DebugOverlay() {
         {ambientDebug.map((line) => (
           <p key={line}>{line}</p>
         ))}
+        {visitorDebug.length > 0 ? (
+          <>
+            <p className="mt-1 text-lime-300">Visitor (debug)</p>
+            {visitorDebug.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </>
+        ) : null}
       </div>
     </aside>
   );

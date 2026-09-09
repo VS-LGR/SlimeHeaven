@@ -1,10 +1,6 @@
 import Phaser from "phaser";
-import {
-  CAMERA_PAN_SPEED,
-  DEFAULT_ZOOM,
-  ZOOM_LEVELS,
-  type ZoomLevel,
-} from "../config";
+import { CAMERA_PAN_SPEED } from "../config";
+import { cameraBoundsForView, computeCoverZoom } from "../viewport";
 
 export class CameraController {
   private readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
@@ -14,23 +10,23 @@ export class CameraController {
     left: Phaser.Input.Keyboard.Key;
     right: Phaser.Input.Keyboard.Key;
   } | undefined;
-  private zoomIndex: number;
   private dragLastX = 0;
   private dragLastY = 0;
   private dragging = false;
   private userPanned = false;
+  private readonly onResize: () => void;
+  private readonly worldWidth: number;
+  private readonly worldHeight: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
     bounds: { width: number; height: number },
   ) {
-    this.zoomIndex = ZOOM_LEVELS.indexOf(DEFAULT_ZOOM);
-
+    this.worldWidth = bounds.width;
+    this.worldHeight = bounds.height;
     const camera = scene.cameras.main;
-    camera.setBounds(0, 0, bounds.width, bounds.height);
-    camera.setZoom(DEFAULT_ZOOM);
     camera.roundPixels = true;
-    camera.centerOn(bounds.width / 2, bounds.height / 2);
+    this.applyCoverZoom(false);
 
     scene.input.mouse?.disableContextMenu();
 
@@ -44,22 +40,6 @@ export class CameraController {
         right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
     }
-
-    scene.input.on(
-      "wheel",
-      (
-        _pointer: Phaser.Input.Pointer,
-        _over: unknown,
-        _dx: number,
-        dy: number,
-      ) => {
-        if (dy > 0) {
-          this.nudgeZoom(-1);
-        } else if (dy < 0) {
-          this.nudgeZoom(1);
-        }
-      },
-    );
 
     scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       if (pointer.rightButtonDown() || pointer.middleButtonDown()) {
@@ -79,13 +59,23 @@ export class CameraController {
       if (!this.dragging) {
         return;
       }
-      const camera = this.scene.cameras.main;
-      const zoom = camera.zoom;
-      camera.scrollX -= (pointer.x - this.dragLastX) / zoom;
-      camera.scrollY -= (pointer.y - this.dragLastY) / zoom;
+      const dragCamera = this.scene.cameras.main;
+      const zoom = dragCamera.zoom;
+      dragCamera.scrollX -= (pointer.x - this.dragLastX) / zoom;
+      dragCamera.scrollY -= (pointer.y - this.dragLastY) / zoom;
       this.dragLastX = pointer.x;
       this.dragLastY = pointer.y;
     });
+
+    this.onResize = () => this.handleResize();
+    scene.scale.on("resize", this.onResize);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      scene.scale.off("resize", this.onResize);
+    });
+  }
+
+  handleResize(): void {
+    this.applyCoverZoom(true);
   }
 
   update(deltaMs: number): void {
@@ -152,21 +142,29 @@ export class CameraController {
     );
   }
 
-  private nudgeZoom(direction: number): void {
-    const nextIndex = Phaser.Math.Clamp(
-      this.zoomIndex + direction,
-      0,
-      ZOOM_LEVELS.length - 1,
-    );
-    if (nextIndex === this.zoomIndex) {
-      return;
-    }
-
+  private applyCoverZoom(preserveCenter: boolean): void {
     const camera = this.scene.cameras.main;
-    const center = camera.midPoint.clone();
-    this.zoomIndex = nextIndex;
-    const zoom = ZOOM_LEVELS[this.zoomIndex] as ZoomLevel;
-    camera.setZoom(zoom);
-    camera.centerOn(center.x, center.y);
+    const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
+    if (camera.width !== width || camera.height !== height) {
+      camera.setSize(width, height);
+    }
+    const center = preserveCenter ? { x: camera.midPoint.x, y: camera.midPoint.y } : null;
+    camera.setZoom(computeCoverZoom(width, height, this.worldWidth, this.worldHeight));
+    const view = visibleView(camera);
+    const bounds = cameraBoundsForView(this.worldWidth, this.worldHeight, view.width, view.height);
+    camera.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+    if (!center) {
+      camera.centerOn(this.worldWidth / 2, this.worldHeight / 2);
+    } else {
+      camera.centerOn(center.x, center.y);
+    }
   }
+}
+
+function visibleView(camera: Phaser.Cameras.Scene2D.Camera): { width: number; height: number } {
+  return {
+    width: camera.width / camera.zoom,
+    height: camera.height / camera.zoom,
+  };
 }

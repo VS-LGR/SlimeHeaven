@@ -43,7 +43,8 @@ export function GameCanvas() {
   return (
     <div
       ref={parentRef}
-      className="flex h-full w-full items-center justify-center"
+      className="absolute inset-0 m-0 h-full w-full max-w-none overflow-hidden p-0"
+      data-game-canvas="true"
     />
   );
 }

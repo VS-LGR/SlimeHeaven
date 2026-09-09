@@ -13,7 +13,7 @@ import {
   entranceTile,
   footprintTiles,
 } from "./data/buildings";
-import { RESIDENT_TYPE_IDS, residentTypeIdForSlime } from "./data/residents";
+import { residentTypeIdForSlime } from "./data/residents";
 import { STARTING_HOMES } from "./data/startingHomes";
 import {
   constructionSiteForResident,
@@ -43,9 +43,12 @@ describe("unique resident homes 05.3A", () => {
     expect(homeDefinitionForResident("pingo")?.id).toBe("small_blue_house");
     expect(homeDefinitionForResident("tito")?.id).toBe("brown_house");
     expect(homeDefinitionForResident("momo")?.id).toBe("green_house");
-    const claimed = Object.values(BUILDINGS).map((def) => def.residentHome?.residentTypeId);
-    expect(claimed.sort()).toEqual([...RESIDENT_TYPE_IDS].sort());
-    expect(new Set(claimed).size).toBe(RESIDENT_TYPE_IDS.length);
+    expect(homeDefinitionForResident("lily")).toBeUndefined();
+    const claimed = Object.values(BUILDINGS)
+      .map((def) => def.residentHome?.residentTypeId)
+      .filter((id): id is NonNullable<typeof id> => Boolean(id));
+    expect(claimed.sort()).toEqual(["momo", "pingo", "tito"]);
+    expect(new Set(claimed).size).toBe(claimed.length);
     for (const def of Object.values(BUILDINGS)) {
       expect(def.residentHome?.unique).toBe(true);
       expect(def.residentHome?.startingHome).toBe(true);

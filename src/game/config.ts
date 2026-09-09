@@ -1,13 +1,11 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "@/src/world/constants";
+import { GAME_HEIGHT, GAME_WIDTH } from "./viewport";
 
-export { TILE_SIZE };
-
-export const GAME_WIDTH = 480;
-export const GAME_HEIGHT = 270;
+export { TILE_SIZE, GAME_WIDTH, GAME_HEIGHT };
 
 export const ZOOM_LEVELS = [1, 2, 3, 4] as const;
-export type ZoomLevel = (typeof ZOOM_LEVELS)[number];
+export type ZoomLevel = number;
 export const DEFAULT_ZOOM: ZoomLevel = 2;
 
 /** Screen-space pan speed in CSS pixels per second. */
@@ -44,11 +42,13 @@ export const REGISTRY_KEYS = {
 } as const;
 
 export function createPhaserConfig(parent: HTMLElement): Phaser.Types.Core.GameConfig {
+  const width = Math.max(1, parent.clientWidth || GAME_WIDTH);
+  const height = Math.max(1, parent.clientHeight || GAME_HEIGHT);
   return {
     type: Phaser.AUTO,
     parent,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
+    width,
+    height,
     backgroundColor: "#1a1f18",
     pixelArt: true,
     antialias: false,
@@ -56,8 +56,8 @@ export function createPhaserConfig(parent: HTMLElement): Phaser.Types.Core.GameC
     banner: false,
     scale: {
       mode: Phaser.Scale.NONE,
-      width: GAME_WIDTH,
-      height: GAME_HEIGHT,
+      width,
+      height,
     },
     render: {
       pixelArt: true,
@@ -66,11 +66,4 @@ export function createPhaserConfig(parent: HTMLElement): Phaser.Types.Core.GameC
       powerPreference: "low-power",
     },
   };
-}
-
-export function integerCanvasScale(parentWidth: number, parentHeight: number): number {
-  return Math.max(
-    1,
-    Math.floor(Math.min(parentWidth / GAME_WIDTH, parentHeight / GAME_HEIGHT)),
-  );
 }

@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistMono.variable} h-full`}>
-      <body className="h-full overflow-hidden bg-[#14110e]">{children}</body>
+    <html lang="en" className={`${geistMono.variable} h-dvh w-screen overflow-hidden p-0`}>
+      <body className="m-0 h-dvh w-screen overflow-hidden p-0">{children}</body>
     </html>
   );
 }

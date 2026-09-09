@@ -1,5 +1,6 @@
 import type { GameState } from "../GameState";
 import type { SlimeState } from "../entities/SlimeState";
+import { isVillageResident } from "../data/residents";
 import { EAT_FOOD_COST, hungerState } from "../needsConfig";
 
 export function isFishingBusy(slime: SlimeState): boolean {
@@ -32,6 +33,9 @@ export function isIdleAvailable(state: GameState, slime: SlimeState): boolean {
 }
 
 export function isJobAssignable(state: GameState, slime: SlimeState): boolean {
+  if (!isVillageResident(slime)) {
+    return false;
+  }
   if (hungerState(slime.satiety) === "starving" && state.resources.food >= EAT_FOOD_COST) {
     return false;
   }
@@ -54,6 +58,9 @@ export function isJobAssignable(state: GameState, slime: SlimeState): boolean {
 }
 
 export function isAmbientEligible(state: GameState, slime: SlimeState): boolean {
+  if (!isVillageResident(slime)) {
+    return false;
+  }
   if (isProductiveBusy(slime) || isAmbientState(slime)) {
     return false;
   }

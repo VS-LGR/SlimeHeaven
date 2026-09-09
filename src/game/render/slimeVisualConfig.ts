@@ -44,10 +44,40 @@ export function playableSlimeAnim(anim: SlimeAnimName): CoreSlimeAnim {
   return SLIME_ANIM.WORK;
 }
 
+export function resolveCoreClip(visual: FinalSlimeVisual, anim: CoreSlimeAnim): SlimeAnimClip {
+  return visual.anims[anim] ?? visual.anims.idle;
+}
+
+/** Per-clip sequential PNG list. Frame count belongs to the clip, not a global constant. */
+export function sequentialClip(options: {
+  textureKeyPrefix: string;
+  directory: string;
+  fileStem: string;
+  frameCount: number;
+  frameRate: number;
+  repeat: number;
+  extras?: { syncToHopT?: boolean; buildupFrames?: number };
+}): SlimeAnimClip {
+  const textureKeys: string[] = [];
+  const paths: string[] = [];
+  for (let i = 1; i <= options.frameCount; i += 1) {
+    textureKeys.push(`${options.textureKeyPrefix}-${i}`);
+    paths.push(`${options.directory}/${options.fileStem}${i}.png`);
+  }
+  return {
+    textureKeys,
+    paths,
+    frameRate: options.frameRate,
+    repeat: options.repeat,
+    ...options.extras,
+  };
+}
+
 export const SLIME_COLORS: Record<SlimeId, { fill: string; eye: string }> = {
   [SLIME_IDS.PINGO]: { fill: "#4ea3e0", eye: "#1a2430" },
   [SLIME_IDS.MOMO]: { fill: "#62c46a", eye: "#1a2430" },
   [SLIME_IDS.TITO]: { fill: "#e89a45", eye: "#1a2430" },
+  [SLIME_IDS.LILY]: { fill: "#f4a0c8", eye: "#1a2430" },
 };
 
 export type SlimeVisualKind = "final" | "placeholder";
@@ -70,7 +100,13 @@ export interface FinalSlimeVisual {
   originY: number;
   shadowFeetPadPx: number;
   shadowScale: number;
-  anims: Record<CoreSlimeAnim, SlimeAnimClip>;
+  anims: {
+    idle: SlimeAnimClip;
+    hop: SlimeAnimClip;
+    work?: SlimeAnimClip;
+  };
+  /** Catalog-only specialist clips. Never selected by visitor Idle/Hop. */
+  specialistClips?: Record<string, SlimeAnimClip>;
 }
 
 export interface PlaceholderSlimeVisual {
@@ -157,6 +193,44 @@ export const SLIME_VISUALS: Record<SlimeId, SlimeVisual> = {
       idle: folderClip("tito", "Idle", SLIME_ANIM.IDLE, 4, 6, -1),
       hop: folderClip("tito", "Hop", SLIME_ANIM.HOP, 6, 9, 0, { syncToHopT: true, buildupFrames: 1 }),
       work: folderClip("tito", "Work", SLIME_ANIM.WORK, 6, 8, -1),
+    },
+  },
+  [SLIME_IDS.LILY]: {
+    kind: "final",
+    frameWidth: 90,
+    frameHeight: 69,
+    originX: SLIME_ORIGIN_X,
+    originY: SLIME_ORIGIN_Y,
+    shadowFeetPadPx: 1,
+    shadowScale: 0.8,
+    anims: {
+      idle: sequentialClip({
+        textureKeyPrefix: "lily-idle",
+        directory: "/assets/slimes/Lily/Idle",
+        fileStem: "Lily_idle",
+        frameCount: 6,
+        frameRate: 6,
+        repeat: -1,
+      }),
+      hop: sequentialClip({
+        textureKeyPrefix: "lily-hop",
+        directory: "/assets/slimes/Lily/Hop",
+        fileStem: "Lily_hop",
+        frameCount: 10,
+        frameRate: 9,
+        repeat: 0,
+        extras: { syncToHopT: true, buildupFrames: 1 },
+      }),
+    },
+    specialistClips: {
+      flowerGrown: sequentialClip({
+        textureKeyPrefix: "lily-flower-grown",
+        directory: "/assets/slimes/Lily/Flower_Grown",
+        fileStem: "Lily_Flower_Grown",
+        frameCount: 10,
+        frameRate: 8,
+        repeat: 0,
+      }),
     },
   },
 };

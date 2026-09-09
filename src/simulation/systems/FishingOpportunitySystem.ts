@@ -22,6 +22,7 @@ import {
   type JobEligibilityLine,
   type JobFeedback,
 } from "../slimeCapabilities";
+import { isVillageResident } from "../data/residents";
 
 export function opportunityById(state: GameState, id: string | null): FishingOpportunity | undefined {
   if (!id) {
@@ -157,7 +158,9 @@ export function diagnoseFishingCandidates(
   state: GameState,
   points: FishingAccessPoint[],
 ): JobEligibilityLine[] {
-  return Object.values(state.slimes).map((slime) => {
+  return Object.values(state.slimes)
+    .filter((slime) => isVillageResident(slime))
+    .map((slime) => {
     const capable = hasRequiredCapabilities(slime, FISHING_REQUIRED);
     const available = isIdleAvailable(state, slime);
     const reachable =

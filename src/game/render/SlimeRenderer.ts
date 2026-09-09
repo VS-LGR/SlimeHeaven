@@ -17,6 +17,7 @@ import {
   slimeShadowKey,
   usesFinalArt,
   playableSlimeAnim,
+  resolveCoreClip,
   type SlimeAnimName,
 } from "./slimeVisualConfig";
 import { usesPingoFishingClip } from "./fishing/resolveFishingAnim";
@@ -65,6 +66,8 @@ export class SlimeRenderer {
   private timeMs = 0;
   private readonly specialistAnchors: SpecialistAnchor[] = [];
 
+  private readonly missingVisualWarned = new Set<string>();
+
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly simulation: Simulation,
@@ -94,7 +97,23 @@ export class SlimeRenderer {
     this.specialistAnchors.length = 0;
     const selectedId = useGameUiStore.getState().selectedSlimeId;
 
+    const liveIds = new Set(Object.keys(this.simulation.state.slimes));
+    for (const id of [...this.sprites.keys()]) {
+      if (!liveIds.has(id)) {
+        const leftover = this.sprites.get(id);
+        leftover?.shadow.destroy();
+        leftover?.body.destroy();
+        leftover?.carry.destroy();
+        leftover?.emote.destroy();
+        this.sprites.delete(id);
+        this.facingById.delete(id);
+      }
+    }
+
     for (const slime of Object.values(this.simulation.state.slimes)) {
+      if (!this.sprites.has(slime.id)) {
+        this.sprites.set(slime.id, this.createSprites(slime));
+      }
       const sprites = this.sprites.get(slime.id);
       if (!sprites) {
         continue;
@@ -182,12 +201,15 @@ export class SlimeRenderer {
     let best: { id: SlimeId; dist: number } | undefined;
     for (const slime of Object.values(this.simulation.state.slimes)) {
       const view = this.viewFor(slime);
+      const visual = SLIME_VISUALS[slime.id];
+      const halfW = visual.kind === "final" ? Math.max(16, visual.frameWidth / 2) : 16;
+      const hitH = visual.kind === "final" ? Math.max(20, visual.frameHeight) : 20;
       const dx = worldX - view.groundX;
-      const dy = worldY - (view.groundY - 10);
-      const dist = dx * dx + dy * dy;
-      if (dist > 16 * 16) {
+      const dy = worldY - (view.groundY - hitH / 2);
+      if (Math.abs(dx) > halfW || Math.abs(dy) > hitH / 2) {
         continue;
       }
+      const dist = dx * dx + dy * dy;
       if (!best || dist < best.dist) {
         best = { id: slime.id, dist };
       }
@@ -308,7 +330,7 @@ export class SlimeRenderer {
       body.anims.msPerFrame = 1000 / titoGatherSwingFrameRate(workSpeedMultiplier(slime.satiety));
       return;
     }
-    const clip = visual.anims[playableSlimeAnim(view.anim)];
+    const clip = resolveCoreClip(visual, playableSlimeAnim(view.anim));
     if (clip.syncToHopT) {
       const frames = clip.textureKeys;
       const idx = Math.min(frames.length - 1, Math.floor(view.hopT * frames.length));
@@ -347,7 +369,7 @@ export class SlimeRenderer {
     ) {
       return body.anims.currentFrame?.index ?? 0;
     }
-    const clip = visual.anims[playableSlimeAnim(view.anim)];
+    const clip = resolveCoreClip(visual, playableSlimeAnim(view.anim));
     if (clip.syncToHopT) {
       return Math.min(clip.textureKeys.length - 1, Math.floor(view.hopT * clip.textureKeys.length));
     }
@@ -357,7 +379,14 @@ export class SlimeRenderer {
   private initialBodyTexture(slime: SlimeState): string {
     const visual = SLIME_VISUALS[slime.id];
     if (visual.kind === "final") {
-      return visual.anims.idle.textureKeys[0];
+      const key = visual.anims.idle.textureKeys[0];
+      if (this.scene.textures.exists(key)) {
+        return key;
+      }
+      if (!this.missingVisualWarned.has(slime.id)) {
+        this.missingVisualWarned.add(slime.id);
+        console.warn(`Missing slime texture ${key}; using placeholder for ${slime.id}.`);
+      }
     }
     return slimeBodyKey(slime.id);
   }

@@ -25,6 +25,7 @@ import { startEating } from "./NeedsSystem";
 import { beginFishingOnArrival, releaseOrphanedFishingSlime } from "./FishingSystem";
 import { syncOpportunityFromSlime } from "./FishingOpportunitySystem";
 import { finishAmbientArrival, tickAmbientActing } from "./AmbientBehaviorSystem";
+import { cancelVisitorWander, finishVisitorWander, visitorPathStillValid } from "./VisitorSystem";
 
 function startHop(slime: SlimeState, nextX: number, nextY: number): void {
   slime.hopFrom = { x: slime.tileX, y: slime.tileY };
@@ -215,6 +216,21 @@ function tickSlime(state: GameState, slime: SlimeState): void {
     const arrived = advanceHop(slime);
     if (arrived && dest && slimeAtDestination(slime, dest)) {
       finishAmbientArrival(state, slime);
+    }
+    return;
+  }
+
+  if (slime.state === "wandering") {
+    if (!visitorPathStillValid(state, slime)) {
+      cancelVisitorWander(slime);
+      return;
+    }
+    const dest = slime.destination;
+    const arrived = advanceHop(slime);
+    if (arrived && dest && slimeAtDestination(slime, dest)) {
+      finishVisitorWander(state, slime);
+    } else if (arrived && !dest) {
+      finishVisitorWander(state, slime);
     }
     return;
   }

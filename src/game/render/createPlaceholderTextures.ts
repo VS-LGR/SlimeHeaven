@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { SLIME_SPAWNS } from "@/src/simulation/entities/SlimeState";
+import { SLIME_IDS } from "@/src/simulation/entities/SlimeState";
 import {
   CARRY_TEXTURE,
   SLIME_COLORS,
@@ -8,7 +8,6 @@ import {
   STORAGE_TEXTURE_KEY,
   slimeBodyKey,
   slimeShadowKey,
-  usesFinalArt,
 } from "./slimeVisualConfig";
 import { FISHING_BOBBER_KEY } from "./fishing/FishingRenderer";
 
@@ -137,13 +136,10 @@ function paintBobber(ctx: CanvasRenderingContext2D): void {
 }
 
 export function createPlaceholderTextures(scene: Phaser.Scene): void {
-  for (const def of SLIME_SPAWNS) {
-    if (usesFinalArt(def.id)) {
-      continue;
-    }
-    const key = slimeBodyKey(def.id);
+  for (const id of Object.values(SLIME_IDS)) {
+    const key = slimeBodyKey(id);
     const ctx = canvasContext(scene, key, SLIME_FRAME_WIDTH, SLIME_FRAME_HEIGHT);
-    const colors = SLIME_COLORS[def.id];
+    const colors = SLIME_COLORS[id];
     paintSlime(ctx, colors.fill, colors.eye);
     commit(scene, key);
   }

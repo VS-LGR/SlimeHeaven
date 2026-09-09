@@ -81,6 +81,13 @@ export interface SlimeInfo {
   homeBuildingId: string | null;
   homeStatus: string | null;
   homeEntranceTile: string | null;
+  visitorInterestLabel: string | null;
+  visitorIntent: string | null;
+  eligibleForJobs: boolean | null;
+  needsActive: boolean | null;
+  consumesFood: boolean | null;
+  currentAnimation: string | null;
+  activeSpecialistAnimation: string | null;
 }
 
 export interface BuildingPlacementDebug {
@@ -152,6 +159,11 @@ export interface DebugActions {
   forceTitoInspectNature: () => void;
   forceSocialGreet: () => void;
   clearAmbientBehaviors: () => void;
+  spawnLilyVisitor: () => void;
+}
+
+export interface HudActions {
+  inviteSelectedVisitor: () => void;
 }
 
 export interface GameUiSnapshot {
@@ -217,16 +229,19 @@ export interface GameUiSnapshot {
   fishingHud: FishingHudState | null;
   catchToast: CatchToast | null;
   jobToast: JobToast | null;
+  visitorDebug: string[];
 }
 
 interface GameUiStore extends GameUiSnapshot {
   debugActions: DebugActions | null;
+  hudActions: HudActions | null;
   toggleDebug: () => void;
   setWorldTool: (tool: WorldToolMode) => void;
   setSelectedBuildingTypeId: (typeId: BuildingTypeId) => void;
   toggleCollection: () => void;
   setRuntime: (patch: Partial<Omit<GameUiSnapshot, "debugVisible">>) => void;
   setDebugActions: (actions: DebugActions) => void;
+  setHudActions: (actions: HudActions) => void;
 }
 
 const EMPTY_SNAPSHOT: GameUiSnapshot = {
@@ -292,15 +307,18 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   fishingHud: null,
   catchToast: null,
   jobToast: null,
+  visitorDebug: [],
 };
 
 export const useGameUiStore = create<GameUiStore>((set) => ({
   ...EMPTY_SNAPSHOT,
   debugActions: null,
+  hudActions: null,
   toggleDebug: () => set((state) => ({ debugVisible: !state.debugVisible })),
   setWorldTool: (worldTool) => set({ worldTool }),
   setSelectedBuildingTypeId: (selectedBuildingTypeId) => set({ selectedBuildingTypeId }),
   toggleCollection: () => set((state) => ({ collectionOpen: !state.collectionOpen })),
   setRuntime: (patch) => set(patch),
   setDebugActions: (actions) => set({ debugActions: actions }),
+  setHudActions: (actions) => set({ hudActions: actions }),
 }));

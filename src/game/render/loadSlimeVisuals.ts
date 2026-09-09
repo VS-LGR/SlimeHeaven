@@ -13,8 +13,18 @@ export function preloadSlimeVisuals(scene: Phaser.Scene): void {
       continue;
     }
     for (const clip of Object.values(visual.anims)) {
+      if (!clip) {
+        continue;
+      }
       for (let i = 0; i < clip.textureKeys.length; i += 1) {
         scene.load.image(clip.textureKeys[i], clip.paths[i]);
+      }
+    }
+    if (visual.specialistClips) {
+      for (const clip of Object.values(visual.specialistClips)) {
+        for (let i = 0; i < clip.textureKeys.length; i += 1) {
+          scene.load.image(clip.textureKeys[i], clip.paths[i]);
+        }
       }
     }
   }
@@ -29,6 +39,9 @@ export function createSlimeAnimations(scene: Phaser.Scene): void {
     for (const [animName, clip] of Object.entries(visual.anims) as Array<
       [CoreSlimeAnim, (typeof visual.anims)[CoreSlimeAnim]]
     >) {
+      if (!clip) {
+        continue;
+      }
       for (const key of clip.textureKeys) {
         scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
       }
@@ -42,6 +55,15 @@ export function createSlimeAnimations(scene: Phaser.Scene): void {
         frameRate: clip.frameRate,
         repeat: clip.repeat,
       });
+    }
+    if (visual.specialistClips) {
+      for (const clip of Object.values(visual.specialistClips)) {
+        for (const key of clip.textureKeys) {
+          if (scene.textures.exists(key)) {
+            scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+          }
+        }
+      }
     }
   }
 }

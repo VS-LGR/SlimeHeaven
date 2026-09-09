@@ -9,6 +9,7 @@ import {
   type AmbientBehaviorId,
 } from "../ambientConfig";
 import type { AmbientInterestProfile } from "../ambientPersonality";
+import { isVillageResident } from "../data/residents";
 import { isAmbientEligible } from "./slimeAvailability";
 import {
   chebyshev,
@@ -18,8 +19,6 @@ import {
   standTileFor,
 } from "./InterestPointSystem";
 import type { InterestPoint } from "../entities/InterestPoint";
-
-const SLIME_ORDER = [SLIME_IDS.PINGO, SLIME_IDS.MOMO, SLIME_IDS.TITO];
 
 export function behaviorScore(
   def: AmbientBehaviorDefinition,
@@ -55,8 +54,10 @@ export function clearAllAmbientBehaviors(state: GameState): void {
 }
 
 export function tickAmbientBehaviors(state: GameState): void {
-  for (const id of SLIME_ORDER) {
-    const slime = state.slimes[id];
+  for (const slime of Object.values(state.slimes)) {
+    if (!isVillageResident(slime)) {
+      continue;
+    }
     if (slime.ambientEmote && state.tickIndex >= slime.ambientEmoteUntilTick) {
       slime.ambientEmote = null;
     }
