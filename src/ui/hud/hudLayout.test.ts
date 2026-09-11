@@ -22,6 +22,8 @@ import {
   slotStyle,
   slimeCardFitsViewport,
   slimeCardScreenRect,
+  slimeCardStarStride,
+  slimeCardAttributeClusterWidth,
   slimeCardUsesNativeArtworkSize,
   topPanelRects,
 } from "./hudLayout";
@@ -256,10 +258,62 @@ describe("Slime Card layout 05.4D", () => {
     expect(HUD_LAYOUT.slimeCard.cream.x).toBe(44);
     expect(HUD_LAYOUT.slimeCard.cream.y).toBe(68);
     expect(HUD_LAYOUT.slimeCard.portrait.x).toBeLessThan(HUD_LAYOUT.slimeCard.identity.x);
-    expect(HUD_LAYOUT.slimeCard.portraitBody).toBeLessThan(80);
+    expect(HUD_LAYOUT.slimeCard.portrait.width).toBeGreaterThanOrEqual(96);
+    expect(HUD_LAYOUT.slimeCard.portrait.height).toBe(HUD_LAYOUT.slimeCard.portrait.width);
+    expect(HUD_LAYOUT.slimeCard.portraitBody).toBeLessThan(HUD_LAYOUT.slimeCard.portrait.width);
     expect(HUD_LAYOUT.slimeCard.portraitBody).toBeGreaterThan(40);
-    expect(HUD_LAYOUT.slimeCard.attributeRow.starCanvas).toBeGreaterThanOrEqual(28);
-    expect(HUD_LAYOUT.slimeCard.attributeRow.iconCanvas).toBeGreaterThanOrEqual(40);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.iconCanvas).toBe(52);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.starCanvas).toBe(56);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.starStride).toBe(31);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.height).toBe(64);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.iconCanvas).toBeGreaterThan(40);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.starCanvas).toBeGreaterThan(40);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.starStride).toBeLessThan(
+      HUD_LAYOUT.slimeCard.attributeRow.starCanvas,
+    );
+    expect(HUD_LAYOUT.slimeCard.attributeRow.iconCanvas).toBeLessThan(HUD_ASSET_SIZES.actionIcon.width);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.starCanvas).toBeLessThan(HUD_ASSET_SIZES.star.width);
+    expect(HUD_LAYOUT.slimeCard.hunger.y).toBeGreaterThanOrEqual(198);
+    expect(HUD_LAYOUT.slimeCard.attributes.y).toBeGreaterThan(
+      HUD_LAYOUT.slimeCard.hunger.y + HUD_LAYOUT.slimeCard.hunger.height,
+    );
+    expect(slimeCardAttributeClusterWidth(5)).toBeLessThanOrEqual(HUD_LAYOUT.slimeCard.attributes.width + 1);
+    expect(slimeCardStarStride(5, HUD_ASSET_SIZES.star.width, 180)).toBeLessThan(HUD_ASSET_SIZES.star.width);
+    expect(HUD_LAYOUT.slimeCard.attributes.height).toBeGreaterThanOrEqual(
+      HUD_LAYOUT.slimeCard.attributeRow.height * 4,
+    );
+    expect(HUD_LAYOUT.slimeCard.activity.align).toBe("center");
+    expect(HUD_LAYOUT.slimeCard.home.align).toBe("center");
+    expect(HUD_LAYOUT.slimeCard.hunger.align).toBe("center");
+    expect(HUD_LAYOUT.slimeCard.hunger.x).toBe(HUD_LAYOUT.slimeCard.attributes.x);
+    expect(HUD_LAYOUT.slimeCard.footer.x).toBe(HUD_LAYOUT.slimeCard.attributes.x);
+    expect(HUD_LAYOUT.slimeCard.hunger.width).toBe(HUD_LAYOUT.slimeCard.attributes.width);
+    expect(HUD_LAYOUT.slimeCard.footer.width).toBe(HUD_LAYOUT.slimeCard.attributes.width);
+    expect(HUD_LAYOUT.slimeCard.home.x).toBeGreaterThan(HUD_LAYOUT.slimeCard.activity.x);
+    expect(HUD_LAYOUT.slimeCard.invite.y).toBeGreaterThan(HUD_LAYOUT.slimeCard.activity.y);
+    const cream = HUD_LAYOUT.slimeCard.cream;
+    const creamRight = cream.x + cream.width;
+    const creamBottom = cream.y + cream.height;
+    for (const slot of [
+      HUD_LAYOUT.slimeCard.portrait,
+      HUD_LAYOUT.slimeCard.identity,
+      HUD_LAYOUT.slimeCard.attributes,
+      HUD_LAYOUT.slimeCard.footer,
+    ]) {
+      expect(slot.x).toBeGreaterThanOrEqual(cream.x);
+      expect(slot.y).toBeGreaterThanOrEqual(cream.y);
+      expect(slot.x + slot.width).toBeLessThanOrEqual(creamRight);
+      expect(slot.y + slot.height).toBeLessThanOrEqual(creamBottom);
+    }
+    expect(HUD_LAYOUT.slimeCard.hunger.y).toBeGreaterThan(
+      HUD_LAYOUT.slimeCard.portrait.y + HUD_LAYOUT.slimeCard.portrait.height,
+    );
+    expect(HUD_LAYOUT.slimeCard.attributes.y).toBeGreaterThan(
+      HUD_LAYOUT.slimeCard.hunger.y + HUD_LAYOUT.slimeCard.hunger.height,
+    );
+    expect(HUD_LAYOUT.slimeCard.footer.y).toBeGreaterThan(
+      HUD_LAYOUT.slimeCard.attributes.y + HUD_LAYOUT.slimeCard.attributes.height,
+    );
   });
 
   it("keeps the card inside supported desktop viewports without covering the toolbar", () => {

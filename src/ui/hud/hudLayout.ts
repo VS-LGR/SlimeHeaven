@@ -365,7 +365,8 @@ export const HUD_LAYOUT = {
   /**
    * Official 368×586 wooden frame with floral corners. Cream parchment measured
    * from the PNG: gold trim ~36/56; strict cream 44,68 264×472 (to 308,540).
-   * Header is portrait-left + identity-right, matching the player-facing mock.
+   * Header is portrait-left + identity-right; hunger; four unique stat rows;
+   * two-column ATIVIDADE | MORADIA footer.
    */
   slimeCard: {
     card: {
@@ -373,19 +374,19 @@ export const HUD_LAYOUT = {
       height: HUD_ASSET_SIZES.slimeCard.height,
     },
     cream: { x: 44, y: 68, width: 264, height: 472, overflow: "hidden" } satisfies HudSlotConfig,
-    close: { x: 278, y: 74, width: 24, height: 24, overflow: "visible" } satisfies HudSlotConfig,
-    portrait: { x: 50, y: 80, width: 92, height: 92, overflow: "hidden" } satisfies HudSlotConfig,
-    portraitRadius: 12,
+    close: { x: 280, y: 82, width: 24, height: 24, overflow: "visible" } satisfies HudSlotConfig,
+    portrait: { x: 54, y: 80, width: 100, height: 100, overflow: "hidden" } satisfies HudSlotConfig,
+    portraitRadius: 18,
     /** Longest opaque idle-body edge, in card-local px. All slimes share this. */
-    portraitBody: 62,
-    identity: { x: 150, y: 80, width: 120, height: 92, overflow: "hidden" } satisfies HudSlotConfig,
+    portraitBody: 64,
+    identity: { x: 162, y: 80, width: 110, height: 100, overflow: "hidden" } satisfies HudSlotConfig,
     name: {
-      x: 142,
-      y: 84,
-      width: 128,
-      height: 26,
-      fontSize: 20,
-      lineHeight: 24,
+      x: 162,
+      y: 82,
+      width: 110,
+      height: 28,
+      fontSize: 24,
+      lineHeight: 28,
       letterSpacing: 0,
       fontWeight: 800,
       align: "left" as const,
@@ -393,10 +394,10 @@ export const HUD_LAYOUT = {
       scale: 1,
     } satisfies HudTextConfig,
     status: {
-      x: 142,
-      y: 110,
-      width: 128,
-      height: 16,
+      x: 162,
+      y: 112,
+      width: 110,
+      height: 18,
       fontSize: 12,
       lineHeight: 16,
       letterSpacing: 0.2,
@@ -406,11 +407,11 @@ export const HUD_LAYOUT = {
       scale: 1,
     } satisfies HudTextConfig,
     role: {
-      x: 142,
-      y: 126,
-      width: 128,
-      height: 36,
-      fontSize: 13,
+      x: 162,
+      y: 132,
+      width: 110,
+      height: 44,
+      fontSize: 14,
       lineHeight: 16,
       letterSpacing: 0,
       fontWeight: 700,
@@ -419,42 +420,60 @@ export const HUD_LAYOUT = {
       scale: 1,
     } satisfies HudTextConfig,
     hunger: {
-      x: 50,
-      y: 180,
-      width: 252,
-      height: 28,
-      fontSize: 13,
+      x: 52,
+      y: 202,
+      width: 248,
+      height: 24,
+      fontSize: 14,
       lineHeight: 18,
       letterSpacing: 0,
       fontWeight: 800,
-      align: "left" as const,
+      align: "center" as const,
       color: "#3a2416",
       scale: 1,
     } satisfies HudTextConfig,
-    attributes: { x: 50, y: 214, width: 252, height: 216, overflow: "visible" } satisfies HudSlotConfig,
-    attributeRow: { height: 52, iconCanvas: 40, starCanvas: 30, starGap: 2 },
+    /**
+     * Card-local calibration (asset 368×586). Row starts land near 234 / 296 /
+     * 358 / 420 so the footer can stay anchored at y 488.
+     * Icon/star canvases are larger than the visible glyph because the PNGs
+     * carry transparent padding (icons ~49/75, stars 36/76).
+     */
+    attributes: { x: 52, y: 228, width: 248, height: 256, overflow: "visible" } satisfies HudSlotConfig,
+    attributeRow: {
+      height: 64,
+      iconCanvas: 52,
+      iconStarGap: 16,
+      starCanvas: 56,
+      starStride: 31,
+      starGap: 0,
+      /** Opaque glyph padding differs; these keep perceived weight comparable. */
+      iconCanvasByKey: {
+        instinct: 58,
+        luck: 54,
+      },
+    },
     tooltipOffset: 6,
-    footer: { x: 50, y: 436, width: 252, height: 100, overflow: "hidden" } satisfies HudSlotConfig,
+    footer: { x: 52, y: 488, width: 248, height: 48, overflow: "hidden" } satisfies HudSlotConfig,
     activityLabel: {
-      x: 50,
-      y: 442,
-      width: 250,
-      height: 16,
+      x: 52,
+      y: 492,
+      width: 118,
+      height: 14,
       fontSize: 11,
-      lineHeight: 16,
-      letterSpacing: 0.4,
-      fontWeight: 700,
+      lineHeight: 14,
+      letterSpacing: 0.6,
+      fontWeight: 800,
       align: "center" as const,
       color: "#6E3E2E",
       scale: 1,
     } satisfies HudTextConfig,
     activity: {
-      x: 50,
-      y: 458,
-      width: 250,
-      height: 22,
+      x: 52,
+      y: 506,
+      width: 118,
+      height: 26,
       fontSize: 15,
-      lineHeight: 20,
+      lineHeight: 18,
       letterSpacing: 0,
       fontWeight: 800,
       align: "center" as const,
@@ -462,32 +481,32 @@ export const HUD_LAYOUT = {
       scale: 1,
     } satisfies HudTextConfig,
     homeLabel: {
-      x: 50,
-      y: 484,
-      width: 250,
-      height: 16,
+      x: 182,
+      y: 492,
+      width: 118,
+      height: 14,
       fontSize: 11,
-      lineHeight: 16,
-      letterSpacing: 0.4,
-      fontWeight: 700,
+      lineHeight: 14,
+      letterSpacing: 0.6,
+      fontWeight: 800,
       align: "center" as const,
       color: "#6E3E2E",
       scale: 1,
     } satisfies HudTextConfig,
     home: {
-      x: 50,
-      y: 500,
-      width: 250,
-      height: 20,
-      fontSize: 14,
+      x: 182,
+      y: 506,
+      width: 118,
+      height: 26,
+      fontSize: 15,
       lineHeight: 18,
       letterSpacing: 0,
-      fontWeight: 700,
+      fontWeight: 800,
       align: "center" as const,
       color: "#3a2416",
       scale: 1,
     } satisfies HudTextConfig,
-    invite: { x: 50, y: 0, width: 252, height: 28, overflow: "visible" } satisfies HudSlotConfig,
+    invite: { x: 52, y: 512, width: 248, height: 22, overflow: "hidden" } satisfies HudSlotConfig,
     chrome: {
       cream: "#FBDDAF",
       wood: "#6E3E2E",
@@ -864,6 +883,31 @@ export function slimeCardUsesNativeArtworkSize(): boolean {
     HUD_LAYOUT.slimeCard.card.width === HUD_ASSET_SIZES.slimeCard.width &&
     HUD_LAYOUT.slimeCard.card.height === HUD_ASSET_SIZES.slimeCard.height
   );
+}
+
+/** Compact cluster: icon column + five stars packed by stride (not full canvas). */
+export function slimeCardAttributeClusterWidth(starSlots = 5): number {
+  const row = HUD_LAYOUT.slimeCard.attributeRow;
+  const iconColumn = row.iconCanvas + row.iconStarGap;
+  const stride = row.starStride;
+  return iconColumn + row.starCanvas + stride * Math.max(0, starSlots - 1);
+}
+
+export function slimeCardStarStripWidth(starSlots = 5): number {
+  const row = HUD_LAYOUT.slimeCard.attributeRow;
+  return row.starCanvas + row.starStride * Math.max(0, starSlots - 1);
+}
+
+/** Horizontal step between native-size stars so a 5-star strip fits the row. */
+export function slimeCardStarStride(
+  count: number,
+  starWidth: number,
+  availableWidth: number,
+): number {
+  if (count <= 1) {
+    return starWidth;
+  }
+  return (availableWidth - starWidth) / (count - 1);
 }
 
 /** @deprecated Use computeLeftHudScale / computeRightHudScale. */

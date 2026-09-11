@@ -35,6 +35,8 @@ describe("slime card presentation 05.4D", () => {
       luck: "Sorte",
     });
     expect(SLIME_CARD_ICON_ASSETS.speak).toBe(HUD_ASSETS.iconSpeak);
+    expect(new Set(Object.values(SLIME_CARD_ATTRIBUTE_ICON_ASSETS)).size).toBe(4);
+    expect(new Set(Object.values(SLIME_CARD_ATTRIBUTE_LABELS)).size).toBe(4);
   });
 
   it("does not wire attribute icons to the action toolbar", () => {

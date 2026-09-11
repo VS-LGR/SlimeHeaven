@@ -83,6 +83,22 @@ describe("slime card model 05.4D", () => {
       CHARACTERS.pingo.attributes.instinct,
       CHARACTERS.pingo.attributes.luck,
     ]);
+    expect(pingo.attributes.map((row) => row.filled)).toEqual([
+      CHARACTERS.pingo.attributes.technique,
+      CHARACTERS.pingo.attributes.strength,
+      CHARACTERS.pingo.attributes.instinct,
+      CHARACTERS.pingo.attributes.luck,
+    ]);
+    expect(pingo.attributes.map((row) => row.key)).toEqual(["technique", "strength", "instinct", "luck"]);
+    expect(pingo.attributes.map((row) => row.label)).toEqual(["Técnica", "Força", "Instinto", "Sorte"]);
+    expect(pingo.attributes.map((row) => row.icon)).toEqual([
+      "/assets/UI/UI_Icon_Technique.png",
+      "/assets/UI/UI_Icon_Strength.png",
+      "/assets/UI/UI_Icon_Instintic.png",
+      "/assets/UI/UI_Icon_Luck.png",
+    ]);
+    expect(new Set(pingo.attributes.map((row) => row.icon)).size).toBe(4);
+    expect(new Set(pingo.attributes.map((row) => row.label)).size).toBe(4);
     expect(pingo.specialtyLine).toBe("Pescador · Exploração");
     expect(pingo.home).toBe("Casa do Pingo");
     expect(pingo.hunger).toBe("Satisfeito");
@@ -94,6 +110,21 @@ describe("slime card model 05.4D", () => {
     ].join("\n");
     expect(cardSource).not.toMatch(/technique:\s*4/);
     expect(cardSource).not.toMatch(/Pingo.*Technique 4/);
+    const slimeCard = readFileSync("src/ui/hud/SlimeCard.tsx", "utf8");
+    expect(slimeCard).toMatch(/key=\{row\.key\}/);
+    expect(slimeCard).toMatch(/src=\{row\.icon\}/);
+    expect(slimeCard).toMatch(/\{row\.label\}/);
+    expect(slimeCard).toMatch(/data-hud-footer-columns/);
+    expect(slimeCard).toMatch(/data-hud-hunger-columns/);
+    expect(slimeCard).toMatch(/data-hud-attribute-grid/);
+    expect(slimeCard).toMatch(/data-hud-star-col/);
+    expect(slimeCard).toMatch(/gridTemplateColumns/);
+    expect(slimeCard).toMatch(/slimeCardAttributeClusterWidth/);
+    expect(slimeCard).toMatch(/justifyContent:\s*["']center["']/);
+    expect(slimeCard).not.toMatch(/HUD_ASSET_SIZES\.actionIcon/);
+    expect(slimeCard).not.toMatch(/HUD_ASSET_SIZES\.star/);
+    expect(slimeCard).not.toMatch(/SLIME_CARD_ICON_ASSETS\.technique/);
+    expect(slimeCard).not.toMatch(/Técnica/);
   });
 
   it("presents Momo and Tito from catalog homes and capabilities", () => {

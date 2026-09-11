@@ -4,7 +4,7 @@
 
 import { useEffect, useState, type MouseEvent, type PointerEvent } from "react";
 import { useGameUiStore } from "@/src/store/gameUiStore";
-import { HUD_LAYOUT, slotStyle } from "./hudLayout";
+import { HUD_LAYOUT, slimeCardAttributeClusterWidth, slimeCardStarStripWidth, slotStyle } from "./hudLayout";
 import { SLIME_CARD_ASSET, SLIME_CARD_ICON_ASSETS } from "./hudAssets";
 import { HudSlot, HudSlotLabel } from "./HudCard";
 import { selectSlimeCardModel, portraitDrawScale, type SlimeCardPortraitSpec } from "./slimeCardModel";
@@ -99,8 +99,9 @@ export function SlimeCard() {
             style={{
               flexDirection: "column",
               alignItems: "flex-start",
-              justifyContent: "center",
+              justifyContent: "flex-start",
               gap: 4,
+              paddingTop: 2,
             }}
           >
             <HudSlotLabel text={layout.name} ariaLabel={`Nome: ${model.name}`} valueKey="slime-name" fill={false}>
@@ -111,14 +112,13 @@ export function SlimeCard() {
               data-hud-value="slime-status"
               aria-label={model.residencyLabel}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
+                display: "inline-block",
                 maxWidth: "100%",
                 padding: "1px 7px",
                 borderRadius: 8,
                 background: "rgba(110, 62, 46, 0.12)",
                 color: chrome.wood,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 800,
                 lineHeight: "16px",
                 letterSpacing: 0.2,
@@ -149,37 +149,52 @@ export function SlimeCard() {
             ) : null}
           </HudSlot>
           {model.hunger ? (
-            <HudSlot name="slime-hunger" slot={slotFromText(layout.hunger)} style={{ justifyContent: "space-between" }}>
-              <span className="flex min-w-0 items-center gap-2">
-                <HudSlotLabel text={{ ...layout.hunger, fontSize: 12, fontWeight: 700, color: chrome.wood }} fill={false}>
-                  Fome
-                </HudSlotLabel>
-                <span className="flex items-center gap-0.5" aria-hidden="true">
-                  {Array.from({ length: HUNGER_PIP_TOTAL }, (_, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        width: 11,
-                        height: 8,
-                        borderRadius: 2,
-                        background: index < model.hungerPips ? "#C4A35A" : "rgba(110, 62, 46, 0.18)",
-                        boxShadow: `inset 0 0 0 1px ${chrome.wood}`,
-                      }}
-                    />
-                  ))}
-                </span>
-              </span>
-              <HudSlotLabel
-                text={layout.hunger}
-                ariaLabel={`Fome: ${model.hunger}`}
-                valueKey="slime-hunger"
-                fill={false}
+            <HudSlot
+              name="slime-hunger"
+              slot={slotFromText(layout.hunger)}
+              style={{ justifyContent: "center", paddingLeft: 0, paddingRight: 0 }}
+            >
+              <div
+                data-hud-hunger-columns="true"
+                className="grid min-w-0 w-full"
+                style={{ gridTemplateColumns: "1fr 1fr", alignItems: "center", justifyItems: "center" }}
               >
-                {model.hunger}
-              </HudSlotLabel>
+                <span className="flex min-w-0 w-full items-center justify-center gap-2">
+                  <HudSlotLabel
+                    text={{ ...layout.hunger, fontSize: 15, fontWeight: 700, color: chrome.wood }}
+                    fill={false}
+                  >
+                    Fome
+                  </HudSlotLabel>
+                  <span className="flex items-center gap-1" aria-hidden="true">
+                    {Array.from({ length: HUNGER_PIP_TOTAL }, (_, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          width: 14,
+                          height: 10,
+                          borderRadius: 2,
+                          background: index < model.hungerPips ? "#C4A35A" : "rgba(110, 62, 46, 0.18)",
+                          boxShadow: `inset 0 0 0 1px ${chrome.wood}`,
+                        }}
+                      />
+                    ))}
+                  </span>
+                </span>
+                <span className="flex min-w-0 w-full items-center justify-center">
+                  <HudSlotLabel
+                    text={layout.hunger}
+                    ariaLabel={`Fome: ${model.hunger}`}
+                    valueKey="slime-hunger"
+                    fill={false}
+                  >
+                    {model.hunger}
+                  </HudSlotLabel>
+                </span>
+              </div>
             </HudSlot>
           ) : model.homeDetail ? (
-            <HudSlot name="slime-home-detail" slot={slotFromText(layout.hunger)}>
+            <HudSlot name="slime-home-detail" slot={slotFromText(layout.hunger)} style={{ justifyContent: "center" }}>
               <span
                 className="pointer-events-none m-0 min-w-0 font-mono"
                 data-hud-value="slime-home-detail"
@@ -190,10 +205,11 @@ export function SlimeCard() {
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
-                  fontSize: 12,
-                  lineHeight: "16px",
+                  fontSize: 14,
+                  lineHeight: "18px",
                   fontWeight: 700,
                   color: chrome.wood,
+                  textAlign: "center",
                   maxWidth: "100%",
                 }}
               >
@@ -201,32 +217,32 @@ export function SlimeCard() {
               </span>
             </HudSlot>
           ) : null}
-          <div data-hud-slot="slime-attributes" style={slotStyle(layout.attributes)}>
-            <div className="flex h-full w-full flex-col justify-between">
-              {model.attributes.map((row) => (
-                <AttributeRow key={row.key} row={row} />
-              ))}
-            </div>
-          </div>
+          <AttributeGrid rows={model.attributes} />
           <HudSlot
             name="slime-footer"
             slot={layout.footer}
             style={{
               flexDirection: "column",
               alignItems: "stretch",
-              justifyContent: "flex-start",
-              gap: 8,
+              justifyContent: "flex-end",
+              gap: 4,
               overflow: "hidden",
             }}
           >
-            <FooterLine label="Atividade" value={model.activity} valueKey="slime-activity" />
-            {model.home ? <FooterLine label="Moradia" value={model.home} valueKey="slime-home" /> : null}
+              <div
+                data-hud-footer-columns="true"
+                className="grid min-w-0 w-full"
+                style={{ gridTemplateColumns: "1fr 1fr", alignItems: "start", justifyItems: "center" }}
+              >
+              <FooterLine label="Atividade" value={model.activity} valueKey="slime-activity" />
+              <FooterLine label="Moradia" value={model.home ?? "—"} valueKey="slime-home" />
+            </div>
             {model.showInvite ? (
               <button
                 type="button"
                 data-hud-interactive="true"
                 data-hud-slime-invite="true"
-                className="pointer-events-auto mt-auto w-full cursor-pointer border-0 font-mono hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#6E3E2E]"
+                className="pointer-events-auto w-full shrink-0 cursor-pointer border-0 font-mono hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#6E3E2E]"
                 style={{
                   height: layout.invite.height,
                   background: chrome.cream,
@@ -284,17 +300,28 @@ function slotFromText(text: { x: number; y: number; width: number; height: numbe
   return { x: text.x, y: text.y, width: text.width, height: text.height, overflow: "hidden" as const };
 }
 
-function FooterLine({ label, value, valueKey }: { label: string; value: string; valueKey: string }) {
+function FooterLine({
+  label,
+  value,
+  valueKey,
+}: {
+  label: string;
+  value: string;
+  valueKey: string;
+}) {
   return (
-    <div className="flex min-w-0 flex-col" style={{ gap: 1 }}>
+    <div
+      className="flex min-w-0 w-full flex-col items-center"
+      style={{ gap: 2, textAlign: "center" }}
+    >
       <span
         className="pointer-events-none font-mono"
         style={{
           color: chrome.wood,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
           letterSpacing: 0.6,
-          lineHeight: "12px",
+          lineHeight: "14px",
           textTransform: "uppercase",
         }}
       >
@@ -311,9 +338,10 @@ function FooterLine({ label, value, valueKey }: { label: string; value: string; 
           WebkitBoxOrient: "vertical",
           overflow: "hidden",
           color: chrome.ink,
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: 800,
           lineHeight: "18px",
+          textAlign: "center",
         }}
       >
         {value}
@@ -322,38 +350,112 @@ function FooterLine({ label, value, valueKey }: { label: string; value: string; 
   );
 }
 
-function AttributeRow({
-  row,
+const STAR_SLOTS = 5;
+
+function AttributeGrid({
+  rows,
 }: {
-  row: ReturnType<typeof selectSlimeCardModel>["attributes"][number];
+  rows: ReturnType<typeof selectSlimeCardModel>["attributes"];
 }) {
-  const { iconCanvas, starCanvas, starGap, height } = layout.attributeRow;
+  const { iconCanvas, iconStarGap, starCanvas, starStride, height: rowHeight } = layout.attributeRow;
+  const starStripWidth = slimeCardStarStripWidth(STAR_SLOTS);
+  const clusterWidth = slimeCardAttributeClusterWidth(STAR_SLOTS);
   return (
     <div
-      className="group relative flex cursor-default items-center"
-      data-hud-attribute={row.key}
-      data-hud-interactive="true"
-      tabIndex={0}
-      style={{ height, width: "100%", minWidth: 0, gap: 8 }}
+      data-hud-slot="slime-attributes"
+      style={{
+        ...slotStyle(layout.attributes),
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        overflow: "visible",
+      }}
     >
-      <span
-        className="pointer-events-none absolute z-20 whitespace-nowrap font-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
-        data-hud-attribute-tooltip={row.key}
+      <div
+        data-hud-attribute-grid="true"
         style={{
-          left: 0,
-          bottom: `calc(100% + ${layout.tooltipOffset}px)`,
-          background: chrome.cream,
-          color: chrome.ink,
-          boxShadow: `inset 0 0 0 1px ${chrome.wood}`,
-          borderRadius: 3,
-          fontSize: 12,
-          fontWeight: 800,
-          padding: "3px 8px",
+          display: "grid",
+          width: clusterWidth,
+          height: rowHeight * rows.length,
+          gridTemplateColumns: `${iconCanvas}px ${starStripWidth}px`,
+          columnGap: iconStarGap,
+          gridTemplateRows: `repeat(${rows.length}, ${rowHeight}px)`,
+          alignItems: "center",
+          justifyItems: "center",
         }}
       >
-        {row.label}
-      </span>
-      <span className="flex shrink-0 flex-col items-center" style={{ width: iconCanvas + 4 }}>
+        {rows.map((row, rowIndex) => (
+          <AttributeCells
+            key={row.key}
+            row={row}
+            rowIndex={rowIndex}
+            iconCanvas={iconCanvasFor(row.key)}
+            starCanvas={starCanvas}
+            starStride={starStride}
+            starStripWidth={starStripWidth}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function iconCanvasFor(key: string): number {
+  const { iconCanvas, iconCanvasByKey } = layout.attributeRow;
+  return iconCanvasByKey[key as keyof typeof iconCanvasByKey] ?? iconCanvas;
+}
+
+function AttributeCells({
+  row,
+  rowIndex,
+  iconCanvas,
+  starCanvas,
+  starStride,
+  starStripWidth,
+}: {
+  row: ReturnType<typeof selectSlimeCardModel>["attributes"][number];
+  rowIndex: number;
+  iconCanvas: number;
+  starCanvas: number;
+  starStride: number;
+  starStripWidth: number;
+}) {
+  const gridRow = rowIndex + 1;
+  return (
+    <>
+      <div
+        className="group relative flex cursor-default flex-col items-center justify-center"
+        data-hud-attribute={row.key}
+        data-hud-attribute-value={row.key}
+        data-hud-attribute-stars={row.filled}
+        data-hud-interactive="true"
+        tabIndex={0}
+        aria-label={`${row.label}: ${row.value} de 5`}
+        style={{
+          gridColumn: 1,
+          gridRow,
+          width: layout.attributeRow.iconCanvas,
+          gap: 1,
+        }}
+      >
+        <span
+          className="pointer-events-none absolute z-20 whitespace-nowrap font-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+          data-hud-attribute-tooltip={row.key}
+          style={{
+            left: "50%",
+            transform: "translateX(-50%)",
+            bottom: `calc(100% + ${layout.tooltipOffset}px)`,
+            background: chrome.cream,
+            color: chrome.ink,
+            boxShadow: `inset 0 0 0 1px ${chrome.wood}`,
+            borderRadius: 3,
+            fontSize: 13,
+            fontWeight: 800,
+            padding: "3px 8px",
+          }}
+        >
+          {row.label}
+        </span>
         <img
           src={row.icon}
           alt=""
@@ -364,49 +466,55 @@ function AttributeRow({
           style={{ ...PIXEL, width: iconCanvas, height: iconCanvas }}
         />
         <span
-          className="pointer-events-none w-full truncate text-center font-mono"
+          className="pointer-events-none font-mono"
           data-hud-attribute-label={row.key}
           style={{
             color: chrome.wood,
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: 800,
-            lineHeight: "11px",
+            lineHeight: "12px",
             letterSpacing: 0,
+            textAlign: "center",
+            whiteSpace: "nowrap",
           }}
         >
           {row.label}
         </span>
-      </span>
-      <span
-        className="ml-auto flex shrink-0 items-center"
-        aria-label={`${row.label}: ${row.value} de 5`}
-        data-hud-attribute-value={row.key}
-        data-hud-attribute-stars={row.filled}
+      </div>
+      <div
+        data-hud-star-strip={row.key}
+        style={{
+          gridColumn: 2,
+          gridRow,
+          position: "relative",
+          width: starStripWidth,
+          height: starCanvas,
+        }}
       >
-        {Array.from({ length: row.filled }, (_, index) => (
-          <img
-            key={`filled-${index}`}
-            src={SLIME_CARD_ICON_ASSETS.star}
-            alt=""
-            draggable={false}
-            aria-hidden="true"
-            className="block max-w-none"
-            style={{ ...PIXEL, width: starCanvas, height: starCanvas, marginLeft: index === 0 ? 0 : starGap }}
-          />
-        ))}
-        {Array.from({ length: row.empty }, (_, index) => (
-          <img
-            key={`empty-${index}`}
-            src={SLIME_CARD_ICON_ASSETS.starEmpty}
-            alt=""
-            draggable={false}
-            aria-hidden="true"
-            className="block max-w-none"
-            style={{ ...PIXEL, width: starCanvas, height: starCanvas, marginLeft: starGap }}
-          />
-        ))}
-      </span>
-    </div>
+        {Array.from({ length: STAR_SLOTS }, (_, starIndex) => {
+          const filled = starIndex < row.filled;
+          return (
+            <img
+              key={`${row.key}-star-${starIndex}`}
+              src={filled ? SLIME_CARD_ICON_ASSETS.star : SLIME_CARD_ICON_ASSETS.starEmpty}
+              alt=""
+              draggable={false}
+              aria-hidden="true"
+              data-hud-star-row={row.key}
+              data-hud-star-col={starIndex}
+              className="absolute block max-w-none"
+              style={{
+                ...PIXEL,
+                left: starIndex * starStride,
+                top: 0,
+                width: starCanvas,
+                height: starCanvas,
+              }}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
 
