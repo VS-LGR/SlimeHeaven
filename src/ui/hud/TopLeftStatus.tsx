@@ -27,21 +27,31 @@ export function TopLeftStatus() {
         <HudSlot
           name="time"
           slot={layout.time.slot}
-          style={{ paddingLeft: 4, paddingRight: 4, alignItems: "flex-start", paddingTop: 2 }}
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            paddingLeft: 4,
+            paddingRight: 4,
+          }}
         >
           <HudSlotLabel text={layout.time.text} ariaLabel={`Time: ${status.timeLabel}`}>
             {status.timeLabel}
           </HudSlotLabel>
         </HudSlot>
-        <HudSlot name="season" slot={layout.season.slot} style={{ gap: 4, justifyContent: "center" }}>
-          <HudSlotIcon
-            src={HUD_ASSETS.iconHarmony}
-            image={layout.season.flower}
-            name="season-flower"
-          />
-          <HudSlotLabel text={layout.season.text} ariaLabel={`Season: ${status.season}`}>
-            {status.season}
-          </HudSlotLabel>
+        <HudSlot name="season" slot={layout.season.slot} style={{ justifyContent: "center" }}>
+          <div
+            data-season-group="true"
+            className="flex min-h-0 min-w-0 items-center justify-center gap-1"
+          >
+            <HudSlotIcon
+              src={HUD_ASSETS.iconHarmony}
+              image={layout.season.flower}
+              name="season-flower"
+            />
+            <HudSlotLabel text={layout.season.text} fill={false} ariaLabel={`Season: ${status.season}`}>
+              {status.season}
+            </HudSlotLabel>
+          </div>
         </HudSlot>
       </div>
     </HudCard>

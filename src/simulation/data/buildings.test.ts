@@ -6,6 +6,11 @@ import {
   BUILDINGS,
   BUILDING_NATIVE_TEXTURE_SIZE,
   BUILDING_TYPE_IDS,
+  SMALL_BLUE_HOUSE_BLUEPRINT_FEET_Y,
+  SMALL_BLUE_HOUSE_CANVAS,
+  SMALL_BLUE_HOUSE_FEET_Y,
+  BROWN_HOUSE_CANVAS,
+  BROWN_HOUSE_FEET_Y,
   SMALL_HOUSE_VISUAL_CLASS,
   buildingById,
   buildingImageLoads,
@@ -76,26 +81,43 @@ describe("building catalog", () => {
     expect(loads).toHaveLength(6);
   });
 
-  it("applies the 93×84 small_house frame only to that visual class", () => {
+  it("keeps the 2×2 small_house footprint while Pingo and Tito use their authored frames", () => {
     expect(SMALL_HOUSE_VISUAL_CLASS.completedCanvas).toEqual({ width: 93, height: 84 });
     expect(SMALL_HOUSE_VISUAL_CLASS.blueprintCanvas).toEqual({ width: 93, height: 84 });
     expect(SMALL_HOUSE_VISUAL_CLASS.footprint).toEqual({ width: 2, height: 2 });
     expect(SMALL_HOUSE_VISUAL_CLASS.originX).toBe(0.5);
     expect(SMALL_HOUSE_VISUAL_CLASS.originY).toBe(1);
 
-    for (const def of Object.values(BUILDINGS)) {
-      if (def.visual.visualClass !== "small_house") {
-        continue;
-      }
-      expect(def.visual.completedCanvas).toEqual(SMALL_HOUSE_VISUAL_CLASS.completedCanvas);
-      expect(def.visual.blueprintCanvas).toEqual(SMALL_HOUSE_VISUAL_CLASS.blueprintCanvas);
+    const blue = buildingById("small_blue_house");
+    expect(blue.visual.completedCanvas).toEqual(SMALL_BLUE_HOUSE_CANVAS);
+    expect(blue.visual.blueprintCanvas).toEqual(SMALL_BLUE_HOUSE_CANVAS);
+    expect(blue.visual.originY).toBe(SMALL_BLUE_HOUSE_FEET_Y / SMALL_BLUE_HOUSE_CANVAS.height);
+    expect(blue.visual.blueprintOriginY).toBe(
+      SMALL_BLUE_HOUSE_BLUEPRINT_FEET_Y / SMALL_BLUE_HOUSE_CANVAS.height,
+    );
+    expect(pngSize(blue.assetPath)).toEqual(blue.visual.completedCanvas);
+    expect(pngSize(blue.blueprintPath)).toEqual(blue.visual.blueprintCanvas);
+
+    const brown = buildingById("brown_house");
+    expect(brown.visual.completedCanvas).toEqual(BROWN_HOUSE_CANVAS);
+    expect(brown.visual.blueprintCanvas).toEqual(BROWN_HOUSE_CANVAS);
+    expect(brown.visual.originY).toBe(BROWN_HOUSE_FEET_Y / BROWN_HOUSE_CANVAS.height);
+    expect(brown.visual.blueprintOriginY).toBe(BROWN_HOUSE_FEET_Y / BROWN_HOUSE_CANVAS.height);
+    expect(pngSize(brown.assetPath)).toEqual(brown.visual.completedCanvas);
+    expect(pngSize(brown.blueprintPath)).toEqual(brown.visual.blueprintCanvas);
+
+    const green = buildingById("green_house");
+    expect(green.visual.visualClass).toBe("small_house");
+    expect(green.visual.completedCanvas).toEqual(SMALL_HOUSE_VISUAL_CLASS.completedCanvas);
+    expect(green.visual.blueprintCanvas).toEqual(SMALL_HOUSE_VISUAL_CLASS.blueprintCanvas);
+    expect(green.footprint).toEqual({ ...SMALL_HOUSE_VISUAL_CLASS.footprint });
+    expect(green.visual.originX).toBe(0.5);
+    expect(green.visual.originY).toBe(1);
+    expect(pngSize(green.assetPath)).toEqual(green.visual.completedCanvas);
+    expect(pngSize(green.blueprintPath)).toEqual(green.visual.blueprintCanvas);
+
+    for (const def of [blue, brown, green]) {
       expect(def.footprint).toEqual({ ...SMALL_HOUSE_VISUAL_CLASS.footprint });
-      expect(def.visual.originX).toBe(0.5);
-      expect(def.visual.originY).toBe(1);
-      expect(def.visual.offsetX).toBe(0);
-      expect(def.visual.offsetY).toBe(0);
-      expect(pngSize(def.assetPath)).toEqual(def.visual.completedCanvas);
-      expect(pngSize(def.blueprintPath)).toEqual(def.visual.blueprintCanvas);
       const completed = readFileSync(resolve("public", def.assetPath.replace(/^\//, "")));
       const blueprint = readFileSync(resolve("public", def.blueprintPath.replace(/^\//, "")));
       expect(completed[24]).toBe(8);
@@ -145,9 +167,9 @@ describe("building catalog", () => {
     expect(brown.textureKey).toBe(BUILDINGS.brown_house.assetKey);
     expect(green.textureKey).toBe(BUILDINGS.green_house.assetKey);
     expect(blue.originX).toBe(0.5);
-    expect(blue.originY).toBe(1);
+    expect(blue.originY).toBe(SMALL_BLUE_HOUSE_FEET_Y / SMALL_BLUE_HOUSE_CANVAS.height);
     expect(brown.originX).toBe(0.5);
-    expect(brown.originY).toBe(1);
+    expect(brown.originY).toBe(BROWN_HOUSE_FEET_Y / BROWN_HOUSE_CANVAS.height);
     expect(green.originX).toBe(0.5);
     expect(green.originY).toBe(1);
     expect(blue).not.toEqual(expect.objectContaining({ textureKey: brown.textureKey }));

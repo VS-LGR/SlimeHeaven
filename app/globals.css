@@ -5,8 +5,12 @@
   --foreground: #edf0e8;
   --hud-left-scale: 1.25;
   --hud-right-scale: 1.25;
+  --hud-toolbar-scale: 1;
+  --hud-slime-scale: 1;
+  --hud-slime-bottom: 0px;
+  --hud-toolbar-height: 164px;
   --hud-left-panel-height: calc(155px * var(--hud-left-scale));
-  --hud-right-panel-height: calc(145px * var(--hud-right-scale));
+  --hud-right-panel-height: calc(159px * var(--hud-right-scale));
   --hud-safe-x: max(env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px), 16px);
   --hud-safe-y: max(env(safe-area-inset-top, 0px), 16px);
   --hud-gap: 8px;
@@ -35,7 +39,12 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-[data-hud-card] img {
+[data-hud-card] img,
+[data-hud-action-icon],
+[data-hud-toolbar-art],
+[data-hud-selected-overlay],
+[data-hud-attribute-icon],
+[data-hud-slime-portrait] {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

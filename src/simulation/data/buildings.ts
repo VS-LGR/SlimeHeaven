@@ -40,6 +40,15 @@ export const SMALL_HOUSE_VISUAL_CLASS = {
   offsetY: 0,
 } as const;
 
+/** Pingo's house PNG is a larger authored frame; last opaque row sits above the canvas lip. */
+export const SMALL_BLUE_HOUSE_CANVAS = { width: 111, height: 104 } satisfies BuildingCanvasSize;
+export const SMALL_BLUE_HOUSE_FEET_Y = 96;
+export const SMALL_BLUE_HOUSE_BLUEPRINT_FEET_Y = 93;
+
+/** Tito's house PNG is a larger authored frame; last opaque row sits two pixels above the lip. */
+export const BROWN_HOUSE_CANVAS = { width: 121, height: 114 } satisfies BuildingCanvasSize;
+export const BROWN_HOUSE_FEET_Y = 112;
+
 export interface BuildingDefinition {
   id: BuildingTypeId;
   name: string;
@@ -62,6 +71,8 @@ export interface BuildingDefinition {
     visualClass: BuildingVisualClassId;
     originX: number;
     originY: number;
+    /** Construction-site origin. Defaults to originY when omitted. */
+    blueprintOriginY?: number;
     offsetX: number;
     offsetY: number;
     completedCanvas: BuildingCanvasSize;
@@ -106,7 +117,13 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingDefinition> = {
     blueprintPath: "/assets/world/houses/Blue_House_BP.png",
     footprint: { ...SMALL_HOUSE_VISUAL_CLASS.footprint },
     entrance: { ...SHARED_ENTRANCE },
-    visual: { ...SMALL_HOUSE_VISUAL },
+    visual: {
+      ...SMALL_HOUSE_VISUAL,
+      completedCanvas: { ...SMALL_BLUE_HOUSE_CANVAS },
+      blueprintCanvas: { ...SMALL_BLUE_HOUSE_CANVAS },
+      originY: SMALL_BLUE_HOUSE_FEET_Y / SMALL_BLUE_HOUSE_CANVAS.height,
+      blueprintOriginY: SMALL_BLUE_HOUSE_BLUEPRINT_FEET_Y / SMALL_BLUE_HOUSE_CANVAS.height,
+    },
     cost: { wood: 8, stone: 2 },
     residentHome: uniqueStartingHome("pingo"),
   },
@@ -121,7 +138,13 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingDefinition> = {
     blueprintPath: "/assets/world/houses/Brown_House_BP.png",
     footprint: { ...SMALL_HOUSE_VISUAL_CLASS.footprint },
     entrance: { ...SHARED_ENTRANCE },
-    visual: { ...SMALL_HOUSE_VISUAL },
+    visual: {
+      ...SMALL_HOUSE_VISUAL,
+      completedCanvas: { ...BROWN_HOUSE_CANVAS },
+      blueprintCanvas: { ...BROWN_HOUSE_CANVAS },
+      originY: BROWN_HOUSE_FEET_Y / BROWN_HOUSE_CANVAS.height,
+      blueprintOriginY: BROWN_HOUSE_FEET_Y / BROWN_HOUSE_CANVAS.height,
+    },
     cost: { wood: 6, stone: 4 },
     residentHome: uniqueStartingHome("tito"),
   },
@@ -207,17 +230,23 @@ export function buildingVisualLayout(
   originY: number;
   offsetX: number;
   offsetY: number;
+  displayWidth: number;
+  displayHeight: number;
   textureKey: string;
 } {
   const def = buildingById(typeId);
   const pos = buildingWorldPosition(origin, def);
+  const canvas = phase === "construction" ? def.visual.blueprintCanvas : def.visual.completedCanvas;
   return {
     x: pos.x,
     y: pos.y,
     originX: def.visual.originX,
-    originY: def.visual.originY,
+    originY:
+      phase === "construction" ? (def.visual.blueprintOriginY ?? def.visual.originY) : def.visual.originY,
     offsetX: def.visual.offsetX,
     offsetY: def.visual.offsetY,
+    displayWidth: canvas.width,
+    displayHeight: canvas.height,
     textureKey: buildingTextureKey(typeId, phase),
   };
 }

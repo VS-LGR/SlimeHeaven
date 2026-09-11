@@ -172,7 +172,7 @@ describe("unique resident homes 05.3A", () => {
     expect(renderer).not.toMatch(/green_house/);
     expect(renderer).not.toMatch(/slime_momo/);
     expect(renderer).toMatch(/building\.typeId/);
-    const hud = readFileSync(resolve("src/ui/GameHud.tsx"), "utf8");
+    const hud = readFileSync(resolve("src/ui/hud/ActionToolbar.tsx"), "utf8");
     expect(hud).toMatch(/No building plans available/);
     expect(hud).toMatch(/availableBuildingTypeIds/);
     const state = new GameState();

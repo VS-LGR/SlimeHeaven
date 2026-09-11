@@ -18,7 +18,11 @@ import {
   requestedHudScale,
   resolveHudScale,
   resourceValueFitsSlot,
+  requestedSlimeScale,
   slotStyle,
+  slimeCardFitsViewport,
+  slimeCardScreenRect,
+  slimeCardUsesNativeArtworkSize,
   topPanelRects,
 } from "./hudLayout";
 import { HUD_ASSET_SIZES } from "./hudAssets";
@@ -85,6 +89,10 @@ describe("HUD layout 05.4A.4 scale and cards", () => {
       expect(slot.height).toBeGreaterThan(0);
     }
     expect(HUD_LAYOUT.topLeft.weather.icon.width).not.toBe(HUD_LAYOUT.topRight.wood.icon.width);
+    expect(HUD_LAYOUT.topLeft.time.text.lineHeight).toBe(HUD_LAYOUT.topLeft.time.slot.height);
+    expect(readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8")).toMatch(/data-season-group/);
+    expect(readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8")).not.toMatch(/alignItems:\s*["']flex-start["']/);
+    expect(readFileSync("src/ui/hud/TopRightResources.tsx", "utf8")).toMatch(/data-harmony-bar/);
     expect(HUD_LAYOUT.topLeft.time.text.fontSize).not.toBe(HUD_LAYOUT.topLeft.day.text.fontSize);
     expect(HUD_LAYOUT.topLeft.time.text.lineHeight).not.toBe(HUD_LAYOUT.topLeft.season.text.lineHeight);
     expect(HUD_LAYOUT.topRight.wood.icon.width).not.toBe(HUD_LAYOUT.topRight.harmony.icon.width);
@@ -160,8 +168,8 @@ describe("HUD scale configuration 05.4A.4.1", () => {
     const { left, right } = topPanelRects(1920, 1080);
     expect(left.width).toBeCloseTo(303.75);
     expect(left.height).toBeCloseTo(193.75);
-    expect(right.width).toBeCloseTo(900);
-    expect(right.height).toBeCloseTo(181.25);
+    expect(right.width).toBeCloseTo(912.5);
+    expect(right.height).toBeCloseTo(198.75);
     expect(right.width / 1920).toBeGreaterThanOrEqual(0.44);
     expect(right.width / 1920).toBeLessThanOrEqual(0.48);
     for (const viewport of VIEWPORTS) {
@@ -209,5 +217,62 @@ describe("HUD scale configuration 05.4A.4.1", () => {
     expect(useHudScale).not.toMatch(/camera\.zoom/);
     expect(useHudScale).not.toMatch(/wheel/);
     expect(useHudScale).toMatch(/ResizeObserver/);
+  });
+
+  it("scales the action toolbar independently from Top Left and Top Right", () => {
+    expect(HUD_SCALE_CONFIG.toolbarScale).toBe(1);
+    expect(HUD_SCALE_CONFIG.defaultScale).toBe(1.25);
+    const resolved = resolveHudScale(1920, 1080);
+    expect(resolved.leftApplied).toBe(1.25);
+    expect(resolved.rightApplied).toBe(1.25);
+    expect(resolved.toolbarRequested).toBe(1);
+    expect(resolved.toolbarApplied).toBe(1);
+    const boosted = resolveHudScale(1920, 1080, { ...HUD_SCALE_CONFIG, toolbarScale: 1.4 });
+    expect(boosted.toolbarApplied).toBe(1.4);
+    expect(boosted.leftApplied).toBe(1.25);
+    expect(HUD_LAYOUT.actionToolbar.card.width).toBe(626);
+    expect(HUD_LAYOUT.actionToolbar.card.height).toBe(126);
+    expect(HUD_LAYOUT.actionToolbar.selected.width).toBe(71);
+    expect(HUD_LAYOUT.actionToolbar.selected.height).toBe(71);
+    expect(HUD_LAYOUT.actionToolbar.cursorSize).toBe(32);
+    expect(HUD_LAYOUT.actionToolbar.cursorHotspotY).toBe(30);
+  });
+});
+
+describe("Slime Card layout 05.4D", () => {
+  it("uses native 368×586 artwork and independent scale", () => {
+    expect(slimeCardUsesNativeArtworkSize()).toBe(true);
+    expect(HUD_LAYOUT.slimeCard.card.width).toBe(HUD_ASSET_SIZES.slimeCard.width);
+    expect(HUD_LAYOUT.slimeCard.card.height).toBe(HUD_ASSET_SIZES.slimeCard.height);
+    expect(HUD_SCALE_CONFIG.slimeScale).toBe(1);
+    expect(HUD_SCALE_CONFIG.defaultScale).toBe(1.25);
+    expect(requestedSlimeScale()).toBe(1);
+    const desktop = resolveHudScale(1920, 1080);
+    expect(desktop.slimeRequested).toBe(1);
+    expect(desktop.slimeApplied).toBe(1);
+    expect(desktop.slimeStacksAboveToolbar).toBe(false);
+    expect(desktop.leftApplied).toBe(1.25);
+    expect(desktop.toolbarApplied).toBe(1);
+    expect(HUD_LAYOUT.slimeCard.cream.x).toBe(44);
+    expect(HUD_LAYOUT.slimeCard.cream.y).toBe(68);
+    expect(HUD_LAYOUT.slimeCard.portrait.x).toBeLessThan(HUD_LAYOUT.slimeCard.identity.x);
+    expect(HUD_LAYOUT.slimeCard.portraitBody).toBeLessThan(80);
+    expect(HUD_LAYOUT.slimeCard.portraitBody).toBeGreaterThan(40);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.starCanvas).toBeGreaterThanOrEqual(28);
+    expect(HUD_LAYOUT.slimeCard.attributeRow.iconCanvas).toBeGreaterThanOrEqual(40);
+  });
+
+  it("keeps the card inside supported desktop viewports without covering the toolbar", () => {
+    for (const viewport of VIEWPORTS) {
+      expect(slimeCardFitsViewport(viewport.width, viewport.height)).toBe(true);
+      const card = slimeCardScreenRect(viewport.width, viewport.height);
+      expect(card.width).toBeGreaterThan(0);
+      expect(card.height).toBeGreaterThan(0);
+      expect(card.x).toBeGreaterThanOrEqual(0);
+      expect(card.y).toBeGreaterThanOrEqual(0);
+    }
+    const compact = resolveHudScale(1280, 720);
+    expect(compact.slimeApplied).toBeLessThan(1);
+    expect(compact.slimeApplied).toBeGreaterThan(0.6);
   });
 });

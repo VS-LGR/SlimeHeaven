@@ -2,6 +2,7 @@ import type { SlimeFsmState, SlimeState } from "@/src/simulation/entities/SlimeS
 import type { Task } from "@/src/simulation/entities/Task";
 import { TILE_SIZE, tileToAnchor } from "@/src/world/constants";
 import type { GridPosition } from "@/src/world/GridPosition";
+import { gatherStanceGround } from "../gathering/gatherPresentation";
 import {
   MOMO_TILL_HOE_FRAME_MAP,
   MOMO_TILL_HOE_HEAD_LOCAL,
@@ -154,6 +155,7 @@ export function slimeGroundWorld(
   return (
     tillStanceGround(task, tileX, tileY) ??
     plotWorkGround(task, tileX, tileY) ??
+    gatherStanceGround(task, tileX, tileY) ??
     tileToAnchor(tileX, tileY)
   );
 }

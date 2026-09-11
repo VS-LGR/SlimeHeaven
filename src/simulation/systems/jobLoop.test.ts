@@ -96,6 +96,48 @@ describe("job loop", () => {
     warn.mockRestore();
   });
 
+  it("faces the tree and stands on the gather work tile when chopping starts", () => {
+    const sim = new Simulation();
+    const wood = createGatherTask(sim.state, "gather_wood");
+    expect(wood).toBeDefined();
+
+    for (let i = 0; i < 240; i += 1) {
+      sim.tick();
+      const tito = sim.state.slimes[SLIME_IDS.TITO];
+      const task = tito.currentTaskId ? sim.state.tasks[tito.currentTaskId] : undefined;
+      if (tito.state === "working" && task?.type === "gather_wood") {
+        expect(tito.tileX).toBe(wood!.workTile.x);
+        expect(tito.tileY).toBe(wood!.workTile.y);
+        expect(tito.faceTile).toEqual(wood!.target);
+        expect(wood!.workTile.y).toBe(wood!.target.y + 1);
+        return;
+      }
+    }
+    throw new Error("Tito never started chopping");
+  });
+
+  it("faces the rock when mining starts", () => {
+    const sim = new Simulation();
+    const stone = createGatherTask(sim.state, "gather_stone");
+    expect(stone).toBeDefined();
+
+    for (let i = 0; i < 240; i += 1) {
+      sim.tick();
+      const tito = sim.state.slimes[SLIME_IDS.TITO];
+      const task = tito.currentTaskId ? sim.state.tasks[tito.currentTaskId] : undefined;
+      if (tito.state === "working" && task?.type === "gather_stone") {
+        expect(tito.tileX).toBe(stone!.workTile.x);
+        expect(tito.tileY).toBe(stone!.workTile.y);
+        expect(tito.faceTile).toEqual(stone!.target);
+        const dx = Math.abs(stone!.workTile.x - stone!.target.x);
+        const dy = Math.abs(stone!.workTile.y - stone!.target.y);
+        expect(dx + dy).toBe(1);
+        return;
+      }
+    }
+    throw new Error("Tito never started mining");
+  });
+
   it("completes a gather-wood loop on the village map", () => {
     const sim = new Simulation();
     const created = createGatherTask(sim.state, "gather_wood");

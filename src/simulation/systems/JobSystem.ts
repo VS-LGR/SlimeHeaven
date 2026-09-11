@@ -5,7 +5,7 @@ import type { ResourceNode } from "../entities/ResourceNode";
 import type { FarmPlot } from "../entities/FarmPlot";
 import { farmNodeId } from "../entities/FarmPlot";
 import type { FarmTaskType, GatherTaskType, Task } from "../entities/Task";
-import { isConstructionTask, jobCategory, resourceTypeForTask } from "../entities/Task";
+import { isConstructionTask, isGatherTask, jobCategory, resourceTypeForTask } from "../entities/Task";
 import { SLIME_IDS, type SlimeState } from "../entities/SlimeState";
 import { RESOURCE_IDS } from "../resources";
 import { isIdleAvailable } from "./slimeAvailability";
@@ -92,6 +92,50 @@ function pickWorker(state: GameState, task: Task): SlimeState | undefined {
   return best;
 }
 
+function createGatherTaskForNode(
+  state: GameState,
+  type: GatherTaskType,
+  node: ResourceNode,
+): Task {
+  const resourceType = resourceTypeForTask(type);
+  const task: Task = {
+    id: state.nextTaskId(type),
+    type,
+    target: node.tile,
+    nodeId: node.id,
+    workTile: node.workTile,
+    resourceType,
+    state: "available",
+  };
+  state.tasks[task.id] = task;
+  return task;
+}
+
+export function inspectGatherTarget(
+  state: GameState,
+  type: GatherTaskType,
+  tile: GridPosition,
+): { node: ResourceNode; valid: boolean } | null {
+  const atTile = state.nodeAtTile(tile.x, tile.y);
+  if (!atTile || !nodeMatches(type, atTile)) {
+    return null;
+  }
+  return { node: atTile, valid: !nodeHasActiveTask(state, atTile.id) };
+}
+
+/** Player designation: never falls back to another node. Debug spawn still uses createGatherTask. */
+export function designateGatherAt(
+  state: GameState,
+  type: GatherTaskType,
+  tile: GridPosition,
+): Task | undefined {
+  const inspected = inspectGatherTarget(state, type, tile);
+  if (!inspected?.valid) {
+    return undefined;
+  }
+  return createGatherTaskForNode(state, type, inspected.node);
+}
+
 export function createGatherTask(
   state: GameState,
   type: GatherTaskType,
@@ -112,19 +156,7 @@ export function createGatherTask(
   if (!node) {
     return undefined;
   }
-
-  const resourceType = resourceTypeForTask(type);
-  const task: Task = {
-    id: state.nextTaskId(type),
-    type,
-    target: node.tile,
-    nodeId: node.id,
-    workTile: node.workTile,
-    resourceType,
-    state: "available",
-  };
-  state.tasks[task.id] = task;
-  return task;
+  return createGatherTaskForNode(state, type, node);
 }
 
 export function createFarmTask(state: GameState, type: FarmTaskType, plot: FarmPlot): Task | undefined {
@@ -220,8 +252,15 @@ export function beginAssignedTask(state: GameState, slime: SlimeState): void {
     if (task.type === "fish_activity") {
       return;
     }
-    startWorking(slime, task.type === "till_soil" || isConstructionTask(task.type) ? task.target : undefined);
+    startWorking(slime, workFaceTile(task));
   }
+}
+
+export function workFaceTile(task: Task): GridPosition | undefined {
+  if (task.type === "till_soil" || isConstructionTask(task.type) || isGatherTask(task.type)) {
+    return task.target;
+  }
+  return undefined;
 }
 
 export function startWorking(slime: SlimeState, faceTile?: GridPosition): void {

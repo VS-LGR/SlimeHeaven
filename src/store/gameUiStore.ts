@@ -7,7 +7,14 @@ import type { BuildingTypeId } from "@/src/simulation/data/buildings";
 import { DEFAULT_BUILDING_TYPE_ID } from "@/src/simulation/data/buildings";
 import type { BuildingPlacementReason } from "@/src/simulation/systems/BuildingSystem";
 
-export type WorldToolMode = "off" | "designate" | "remove" | "fish" | "build";
+export type WorldToolMode =
+  | "off"
+  | "designate"
+  | "remove"
+  | "fish"
+  | "build"
+  | "gather_wood"
+  | "gather_stone";
 
 export interface TileInspect {
   terrain: string;
@@ -239,6 +246,7 @@ interface GameUiStore extends GameUiSnapshot {
   setWorldTool: (tool: WorldToolMode) => void;
   setSelectedBuildingTypeId: (typeId: BuildingTypeId) => void;
   toggleCollection: () => void;
+  clearSelectedSlime: () => void;
   setRuntime: (patch: Partial<Omit<GameUiSnapshot, "debugVisible">>) => void;
   setDebugActions: (actions: DebugActions) => void;
   setHudActions: (actions: HudActions) => void;
@@ -318,6 +326,7 @@ export const useGameUiStore = create<GameUiStore>((set) => ({
   setWorldTool: (worldTool) => set({ worldTool }),
   setSelectedBuildingTypeId: (selectedBuildingTypeId) => set({ selectedBuildingTypeId }),
   toggleCollection: () => set((state) => ({ collectionOpen: !state.collectionOpen })),
+  clearSelectedSlime: () => set({ selectedSlimeId: null, selectedSlime: null }),
   setRuntime: (patch) => set(patch),
   setDebugActions: (actions) => set({ debugActions: actions }),
   setHudActions: (actions) => set({ hudActions: actions }),

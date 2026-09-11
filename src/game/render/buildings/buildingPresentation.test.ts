@@ -24,12 +24,21 @@ describe("building sprite layout", () => {
         expect(layout.x).toBe(world.x);
         expect(layout.y).toBe(world.y);
         expect(layout.originX).toBe(0.5);
-        expect(layout.originY).toBe(1);
         expect(layout.offsetX).toBe(0);
         expect(layout.offsetY).toBe(0);
         expect(layout.x).toBe((ORIGIN.x + def.footprint.width / 2) * TILE_SIZE);
         expect(layout.y).toBe((ORIGIN.y + def.footprint.height) * TILE_SIZE);
       }
+
+      expect(preview.originY).toBe(def.visual.originY);
+      expect(completed.originY).toBe(def.visual.originY);
+      expect(site.originY).toBe(def.visual.blueprintOriginY ?? def.visual.originY);
+      expect(preview.displayWidth).toBe(def.visual.completedCanvas.width);
+      expect(preview.displayHeight).toBe(def.visual.completedCanvas.height);
+      expect(completed.displayWidth).toBe(def.visual.completedCanvas.width);
+      expect(completed.displayHeight).toBe(def.visual.completedCanvas.height);
+      expect(site.displayWidth).toBe(def.visual.blueprintCanvas.width);
+      expect(site.displayHeight).toBe(def.visual.blueprintCanvas.height);
 
       expect(preview.textureKey).toBe(completed.textureKey);
       expect(site.textureKey).toBe(def.blueprintKey);
@@ -60,6 +69,7 @@ describe("building sprite layout", () => {
     const presentation = readFileSync(resolve("src/game/render/buildings/buildingPresentation.ts"), "utf8");
     const site = readFileSync(resolve("src/game/render/buildings/ConstructionSiteRenderer.ts"), "utf8");
     expect(presentation).toMatch(/export function applyBuildingSpriteLayout/);
+    expect(presentation).toMatch(/setDisplaySize/);
     expect(presentation).toMatch(/tint:\s*0x7ec8ff/);
     expect(presentation).toMatch(/alpha:\s*0\.78/);
     expect(site).toMatch(/applyBuildingBlueprintFilter/);

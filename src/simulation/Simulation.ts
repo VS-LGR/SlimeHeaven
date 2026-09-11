@@ -1,6 +1,6 @@
 import { SIMULATION_TICK_MS, SIMULATION_TICKS_PER_SECOND } from "./constants";
 import { GameState } from "./GameState";
-import { assignAvailableTasks, clearActiveTasks, createGatherTask } from "./systems/JobSystem";
+import { assignAvailableTasks, clearActiveTasks, createGatherTask, designateGatherAt } from "./systems/JobSystem";
 import { tickSlimes } from "./systems/SlimeSystem";
 import { tickNeeds } from "./systems/NeedsSystem";
 import {
@@ -172,6 +172,10 @@ export class Simulation {
 
   spawnGatherTask(type: GatherTaskType, preferredTile?: GridPosition): void {
     createGatherTask(this.state, type, preferredTile);
+  }
+
+  designateGatherAt(type: GatherTaskType, tile: GridPosition) {
+    return designateGatherAt(this.state, type, tile);
   }
 
   designateFarm(ax: number, ay: number, bx: number, by: number): void {

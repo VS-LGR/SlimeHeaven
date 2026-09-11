@@ -15,6 +15,7 @@ import {
   releaseSlime,
   slimeAtDestination,
   startWorking,
+  workFaceTile,
 } from "./JobSystem";
 import { isConstructionTask } from "../entities/Task";
 import type { Task } from "../entities/Task";
@@ -200,10 +201,7 @@ function tickSlime(state: GameState, slime: SlimeState): void {
       if (slime.state === "moving_to_fishing" || task.type === "fish_activity") {
         beginFishingOnArrival(state, slime);
       } else {
-        startWorking(
-          slime,
-          task.type === "till_soil" || isConstructionTask(task.type) ? task.target : undefined,
-        );
+        startWorking(slime, workFaceTile(task));
       }
       return;
     }

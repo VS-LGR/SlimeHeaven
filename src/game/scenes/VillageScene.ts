@@ -3,6 +3,7 @@ import { DEPTH, REGISTRY_KEYS, SCENE_KEYS, TILE_SIZE, TILESET_KEY } from "../con
 import { CameraController } from "../input/CameraController";
 import { SelectionController } from "../input/SelectionController";
 import { FarmDesignationController } from "../input/FarmDesignationController";
+import { GatherDesignationController } from "../input/GatherDesignationController";
 import { FishingController } from "../input/FishingController";
 import { BuildPlacementController } from "../input/BuildPlacementController";
 import { inspectWorldTile } from "../inspectWorld";
@@ -31,6 +32,11 @@ import { gatheringF3SpecialistFrameLabel, gatheringF3ToolFrameLabel } from "../r
 import { FISHING_PRESENTATION } from "../render/fishing/fishingVisualConfig";
 import { nudgePingoRod } from "../render/fishing/pingoFishingVisualConfig";
 import { useGameUiStore, type SlimeInfo } from "@/src/store/gameUiStore";
+import {
+  resolveSelectedSlimeProjection,
+  slimeCardProjectionEquals,
+} from "@/src/ui/hud/slimeCardModel";
+import { worldToolBlocksSlimeSelection } from "../render/slimeHitTest";
 import type { BuildingPlacementDebug } from "@/src/store/gameUiStore";
 import type { BuildingPlacementEvaluation } from "@/src/simulation/systems/BuildingSystem";
 import { buildingById, entranceTile } from "@/src/simulation/data/buildings";
@@ -55,6 +61,7 @@ export class VillageScene extends Phaser.Scene {
   private buildings: BuildingRenderer | undefined;
   private constructionSites: ConstructionSiteRenderer | undefined;
   private farmTool: FarmDesignationController | undefined;
+  private gatherTool: GatherDesignationController | undefined;
   private fishingTool: FishingController | undefined;
   private buildTool: BuildPlacementController | undefined;
   private fishingRenderer: FishingRenderer | undefined;
@@ -157,6 +164,7 @@ export class VillageScene extends Phaser.Scene {
       this.waterRenderer?.spawnRipple(x, y, type);
     });
     this.farmTool = new FarmDesignationController(this, simulation);
+    this.gatherTool = new GatherDesignationController(this, simulation);
     this.fishingTool = new FishingController(this, simulation);
     this.buildTool = new BuildPlacementController(this, simulation);
     this.selection = new SelectionController(
@@ -294,6 +302,7 @@ export class VillageScene extends Phaser.Scene {
     this.constructionSites?.sync(simulation);
     this.buildings?.sync(simulation);
     this.farmTool?.sync();
+    this.gatherTool?.sync();
     this.fishingTool?.sync();
     this.buildTool?.sync();
     this.slimeRenderer?.sync(alpha, this.time.now);
@@ -345,6 +354,9 @@ export class VillageScene extends Phaser.Scene {
     const tasks = Object.values(state.tasks);
     const farms = Object.values(state.farms);
     const selectedId = useGameUiStore.getState().selectedSlimeId;
+    const currentUi = useGameUiStore.getState();
+    const nextInfo = selectedId ? this.selectedSlimeInfo(selectedId) : null;
+    const resolvedSelection = resolveSelectedSlimeProjection(selectedId, nextInfo);
     const water = this.waterRenderer?.debugSnapshot();
     const hungers = Object.values(state.slimes)
       .filter((slime) => isVillageResident(slime))
@@ -370,7 +382,12 @@ export class VillageScene extends Phaser.Scene {
       readyCrops: farms.filter((plot) => plot.state === "ready").length,
       hungrySlimes: hungers.filter((value) => value === "hungry").length,
       starvingSlimes: hungers.filter((value) => value === "starving").length,
-      selectedSlime: selectedId ? this.selectedSlimeInfo(selectedId) : null,
+      ...(resolvedSelection.selectedSlimeId !== currentUi.selectedSlimeId
+        ? { selectedSlimeId: resolvedSelection.selectedSlimeId }
+        : {}),
+      ...(!slimeCardProjectionEquals(currentUi.selectedSlime, resolvedSelection.selectedSlime)
+        ? { selectedSlime: resolvedSelection.selectedSlime }
+        : {}),
       activeRipples: water?.activeRipples ?? 0,
       activeFishShadows: water?.activeFishShadows ?? 0,
       waterSurfaceOn: water?.waterSurfaceOn ?? true,
@@ -447,7 +464,7 @@ export class VillageScene extends Phaser.Scene {
   }
 
   private handleSlimeClick(pointer: Phaser.Input.Pointer): boolean {
-    if (this.farmTool?.isToolActive() || this.fishingTool?.ownsPointer() || this.buildTool?.isToolActive()) {
+    if (worldToolBlocksSlimeSelection(useGameUiStore.getState().worldTool)) {
       return true;
     }
     if (this.simulation && sessionOwnsInput(this.simulation.state.fishing)) {

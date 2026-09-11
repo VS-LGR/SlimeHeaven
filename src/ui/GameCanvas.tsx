@@ -16,6 +16,17 @@ export function GameCanvas() {
     let cancelled = false;
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        const { worldTool, setWorldTool, selectedSlimeId, clearSelectedSlime } = useGameUiStore.getState();
+        if (worldTool !== "off") {
+          setWorldTool("off");
+          return;
+        }
+        if (selectedSlimeId) {
+          clearSelectedSlime();
+        }
+        return;
+      }
       if (event.key !== "F3") {
         return;
       }

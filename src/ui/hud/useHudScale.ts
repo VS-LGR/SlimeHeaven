@@ -1,15 +1,29 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { resolveHudScale, type HudScaleResolution } from "./hudLayout";
+import { actionToolbarBaseSize, HUD_SCALE_CONFIG, resolveHudScale, type HudScaleResolution } from "./hudLayout";
 
 export function applyHudScaleToDocument(resolution: HudScaleResolution): void {
   const root = document.documentElement;
   root.style.setProperty("--hud-left-scale", String(resolution.leftApplied));
   root.style.setProperty("--hud-right-scale", String(resolution.rightApplied));
+  root.style.setProperty("--hud-toolbar-scale", String(resolution.toolbarApplied));
+  root.style.setProperty("--hud-slime-scale", String(resolution.slimeApplied));
+  root.style.setProperty(
+    "--hud-slime-bottom",
+    resolution.slimeStacksAboveToolbar
+      ? `${actionToolbarBaseSize().height * resolution.toolbarApplied + HUD_SCALE_CONFIG.cardGap}px`
+      : "0px",
+  );
+  root.style.setProperty(
+    "--hud-toolbar-height",
+    `${actionToolbarBaseSize().height * resolution.toolbarApplied}px`,
+  );
   root.dataset.hudRequestedScale = String(resolution.requestedGlobal);
   root.dataset.hudLeftApplied = String(resolution.leftApplied);
   root.dataset.hudRightApplied = String(resolution.rightApplied);
+  root.dataset.hudToolbarApplied = String(resolution.toolbarApplied);
+  root.dataset.hudSlimeApplied = String(resolution.slimeApplied);
   root.dataset.hudScaleReason = resolution.reason;
 }
 

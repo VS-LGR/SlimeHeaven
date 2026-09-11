@@ -18,55 +18,96 @@ export function HudCard({
   card,
   scaleVar,
   artwork,
+  artworkNode,
+  artworkStyle,
+  innerWidth,
+  innerHeight,
+  contentWidth,
+  contentHeight,
+  overflow = "visible",
+  visualState,
   panel,
   label,
   children,
 }: {
   card: HudCardConfig;
   scaleVar: "--hud-left-scale" | "--hud-right-scale";
-  artwork: string;
+  artwork?: string;
+  artworkNode?: ReactNode;
+  artworkStyle?: CSSProperties;
+  innerWidth?: number;
+  innerHeight?: number;
+  contentWidth?: number;
+  contentHeight?: number;
+  overflow?: "hidden" | "visible";
+  visualState?: string;
   panel: "top-left" | "top-right";
   label: string;
   children: ReactNode;
 }) {
   const origin = card.anchor === "top-left" ? "top left" : "top right";
   const edge = card.anchor === "top-left" ? "left" : "right";
+  const width = innerWidth ?? card.width;
+  const height = innerHeight ?? card.height;
+  const contentW = contentWidth ?? width;
+  const contentH = contentHeight ?? height;
 
   return (
     <section
       className="pointer-events-none absolute"
       data-hud-card={panel}
       data-hud-panel={panel}
+      data-hud-visual-state={visualState}
       aria-label={label}
       style={{
         top: "max(env(safe-area-inset-top, 0px), var(--hud-safe-y))",
         [edge]: `max(env(safe-area-inset-${edge}, 0px), var(--hud-safe-x))`,
-        width: `calc(${card.width}px * var(${scaleVar}))`,
-        height: `calc(${card.height}px * var(${scaleVar}))`,
+        width: `calc(${width}px * var(${scaleVar}))`,
+        height: `calc(${height}px * var(${scaleVar}))`,
       }}
     >
       <div
         data-hud-card-inner="true"
+        data-hud-inner-width={width}
+        data-hud-inner-height={height}
         className="pointer-events-none absolute"
         style={{
           top: 0,
           [edge]: 0,
-          width: card.width,
-          height: card.height,
+          width,
+          height,
+          overflow,
           transform: `scale(var(${scaleVar}))`,
           transformOrigin: origin,
         }}
       >
-        <img
-          src={artwork}
-          alt=""
-          draggable={false}
-          aria-hidden="true"
-          data-hud-panel-art={panel}
-          className="pointer-events-none absolute inset-0 block h-full w-full max-w-none"
-          style={PIXEL}
-        />
-        <div data-hud-card-content="true" className="pointer-events-none absolute inset-0">
+        {artworkNode ? (
+          artworkNode
+        ) : artwork ? (
+          <img
+            src={artwork}
+            alt=""
+            draggable={false}
+            aria-hidden="true"
+            data-hud-panel-art={panel}
+            className={
+              artworkStyle
+                ? "pointer-events-none absolute block max-w-none"
+                : "pointer-events-none absolute inset-0 block h-full w-full max-w-none"
+            }
+            style={{ ...PIXEL, ...artworkStyle }}
+          />
+        ) : null}
+        <div
+          data-hud-card-content="true"
+          className="pointer-events-none absolute"
+          style={{
+            top: 0,
+            [edge]: 0,
+            width: contentW,
+            height: contentH,
+          }}
+        >
           {children}
         </div>
         {HUD_LAYOUT_DEBUG ? <HudLayoutDebugOverlay card={card} scaleVar={scaleVar} /> : null}
@@ -142,6 +183,7 @@ export function HudSlotLabel({
   ariaLabel,
   valueKey,
   opacity,
+  fill = true,
 }: {
   name?: string;
   text: HudTextConfig;
@@ -149,6 +191,7 @@ export function HudSlotLabel({
   ariaLabel?: string;
   valueKey?: string;
   opacity?: number;
+  fill?: boolean;
 }) {
   const justify =
     text.align === "center" ? "center" : text.align === "right" ? "flex-end" : "flex-start";
@@ -159,7 +202,7 @@ export function HudSlotLabel({
       data-hud-value={valueKey}
       aria-label={ariaLabel}
       style={{
-        flex: "1 1 0%",
+        flex: fill ? "1 1 0%" : "0 0 auto",
         minWidth: 0,
         maxWidth: "100%",
         height: `${text.lineHeight * text.scale}px`,

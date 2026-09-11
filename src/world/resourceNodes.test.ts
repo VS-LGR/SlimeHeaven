@@ -33,6 +33,32 @@ describe("createResourceNodes", () => {
       const dx = Math.abs(node!.workTile.x - rock.x);
       const dy = Math.abs(node!.workTile.y - rock.y);
       expect(dx + dy).toBe(1);
+      const east = { x: rock.x + 1, y: rock.y };
+      const west = { x: rock.x - 1, y: rock.y };
+      if (grid.isWalkable(east.x, east.y)) {
+        expect(node!.workTile).toEqual(east);
+      } else if (grid.isWalkable(west.x, west.y)) {
+        expect(node!.workTile).toEqual(west);
+      }
+    }
+  });
+
+  it("stands beside the south trunk row of each village tree", () => {
+    const grid = createVillageMap();
+    const nodes = createResourceNodes(grid);
+    const trees = grid.objects.filter((object) => object.type === ObjectType.TREE);
+    for (const tree of trees) {
+      const node = nodes.find((entry) => entry.tile.x === tree.x && entry.tile.y === tree.y);
+      expect(node).toBeDefined();
+      const eastOfTrunk = { x: tree.x + 2, y: tree.y + 1 };
+      const westOfTrunk = { x: tree.x - 1, y: tree.y + 1 };
+      if (grid.isWalkable(eastOfTrunk.x, eastOfTrunk.y)) {
+        expect(node!.workTile).toEqual(eastOfTrunk);
+      } else if (grid.isWalkable(westOfTrunk.x, westOfTrunk.y)) {
+        expect(node!.workTile).toEqual(westOfTrunk);
+      } else {
+        expect(node!.workTile.y).toBeGreaterThanOrEqual(tree.y + 1);
+      }
     }
   });
 

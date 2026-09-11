@@ -100,6 +100,10 @@ export interface FinalSlimeVisual {
   originY: number;
   shadowFeetPadPx: number;
   shadowScale: number;
+  /** Visible-body half-width for world picking. Not the full authored canvas. */
+  hitHalfWidth: number;
+  /** Visible-body height from feet upward for world picking. */
+  hitHeight: number;
   anims: {
     idle: SlimeAnimClip;
     hop: SlimeAnimClip;
@@ -161,6 +165,8 @@ export const SLIME_VISUALS: Record<SlimeId, SlimeVisual> = {
     originY: SLIME_ORIGIN_Y,
     shadowFeetPadPx: 3,
     shadowScale: 0.8,
+    hitHalfWidth: 15,
+    hitHeight: 46,
     anims: {
       idle: pingoClip(SLIME_ANIM.IDLE, 5, 6, -1),
       hop: pingoClip(SLIME_ANIM.HOP, 7, 9, 0, { syncToHopT: true, buildupFrames: 1 }),
@@ -175,6 +181,8 @@ export const SLIME_VISUALS: Record<SlimeId, SlimeVisual> = {
     originY: SLIME_ORIGIN_Y,
     shadowFeetPadPx: 1,
     shadowScale: 0.8,
+    hitHalfWidth: 14,
+    hitHeight: 40,
     anims: {
       idle: folderClip("momo", "Idle", SLIME_ANIM.IDLE, 4, 6, -1),
       hop: folderClip("momo", "Hop", SLIME_ANIM.HOP, 7, 9, 0, { syncToHopT: true, buildupFrames: 1 }),
@@ -189,6 +197,8 @@ export const SLIME_VISUALS: Record<SlimeId, SlimeVisual> = {
     originY: SLIME_ORIGIN_Y,
     shadowFeetPadPx: 1,
     shadowScale: 0.8,
+    hitHalfWidth: 14,
+    hitHeight: 28,
     anims: {
       idle: folderClip("tito", "Idle", SLIME_ANIM.IDLE, 4, 6, -1),
       hop: folderClip("tito", "Hop", SLIME_ANIM.HOP, 6, 9, 0, { syncToHopT: true, buildupFrames: 1 }),
@@ -203,6 +213,8 @@ export const SLIME_VISUALS: Record<SlimeId, SlimeVisual> = {
     originY: SLIME_ORIGIN_Y,
     shadowFeetPadPx: 1,
     shadowScale: 0.8,
+    hitHalfWidth: 18,
+    hitHeight: 44,
     anims: {
       idle: sequentialClip({
         textureKeyPrefix: "lily-idle",

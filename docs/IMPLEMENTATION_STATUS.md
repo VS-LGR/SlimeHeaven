@@ -562,7 +562,194 @@ At 1920×1080 both cards apply **1.25** (requested, not safe-fit): Top Left **30
 - Geist Mono remains temporary
 - Harmony is `—%` / `Harmonia`, not a simulated `72%` / `Vila Aconchegante`
 - Season remains the authored hanging plaque (PNG)
-- Bottom toolbar and Slime Card remain prototype chrome
+- Bottom toolbar now uses official `UI_Icon_ToolBar.png` (see 05.4C); Slime Card remains prototype chrome
 - Widescreen cover crops vertical world (expected 4:3 vs 16:9 tradeoff)
+
+## Milestone 05.4B — Top Right collapse and HUD refinement
+
+**Closed after implementation.** Presentation-only; fora de escopo BPx. HUD `defaultScale` stays **1.25**. Cover zoom, canvas fill, wheel, simulation, and PNG bytes under `public/assets/UI/` were not changed. The settings gear stays disabled and does not collapse/expand the bar.
+
+Opaque-bound measurement of authored frames (canvas 795×237, opaque-right 744 on every frame):
+
+| Frame | Opaque width | Sequence |
+|---|---|---|
+| Ida 1 / 7 / 13 | 732 → 508 → 316 | collapse (`Foward/`) |
+| Return 1 / 7 / 13 | 316 → 604 → 700 | expand (`Backward/`) |
+
+Static `UI_Top_Right.png` is **730×159** (opaque 700×128, opaque-right 711), matching the animation opaque height. Sequences register with CSS `right: -32; top: -50` so the gear stays put. Collapsed still = last collapse frame. Playback is a one-shot PNG swap (`HudPngSequence`), no GIF, no idle loop.
+
+A later art drop replaced the 13-frame Ida/Return cuts with **Minimize 1–47** and **Return 1–47** at **24ms/frame (~1.13s)**, still registered to the same 795×237 / opaque-right 744 canvas.
+
+### Completed
+
+- Time is flex-centered in its parchment slot (`line-height` = slot height)
+- Season is one centered `[flower][Primavera]` group
+- Harmony is an inactive cream/wood bar (`—%` above, `Harmonia` below); no fake percentage
+- Dedicated minimize `‹` (`Recolher barra de recursos`) and compact expand `›` (`Expandir barra de recursos`)
+- Settings remains `Configurações indisponíveis`; clicks/keyboard do not toggle chrome
+- Four states: expanded / collapsing / collapsed / expanding; collapsed hitbox 335×159 vs expanded 730×159
+- Reduced motion jumps; `localStorage` key `slime-haven:top-right-hud-collapsed`
+
+### Browser checks (device metrics)
+
+| Viewport | Gear stationary | Sequence one-shot | Compact expand in cream | Fullscreen edges | Notes |
+|---|---|---|---|---|---|
+| 1920×1080 | yes | yes (~1.3s) | yes | left 16,16; right edge 1904 | Expanded 912.5×199; collapsed 419×199 |
+| 1600×900 | yes | yes | yes | right edge 1584 | Scale 1.25, no overflow |
+| 1366×768 | yes | yes | yes | right edge 1350 | Scale 1.25, no overflow |
+| 1280×720 | yes | yes | expand at cream | right edge 1264 | Expanded 900w; collapsed 410w |
+
+Time slot `alignItems`/`justifyContent` center; season group centered. Settings click/Enter did not change state. Persistence key written, then cleared after checks so the next load stays at the default expanded chrome.
+
+### Known remaining differences from the mockup
+
+- Geist Mono remains temporary
+- Harmony bar is CSS, not dedicated bar art; label is `Harmonia`
+- Collapse/expand affordances are temporary `‹` / `›` until dedicated icons exist
+- Slime Card remains prototype chrome
+
+## Milestone 05.4C — Action Toolbar and World-Tool Cursors
+
+**Closed after the official-artwork addendum and browser validation.** Presentation + designation input only; fora de escopo BPx. Job assignment, gather duration, farming, fishing, construction costs, Top Left/Right art, and fullscreen cover were not rewritten.
+
+### Architecture
+
+React toolbar (`ActionToolbar`) writes `worldTool` on the existing Zustand bus. Phaser controllers poll that store. Wood/stone use `GatherDesignationController` → `designateGatherAt` (no fallback). Debug `spawnGatherTask` still uses `createGatherTask` fallback.
+
+The official `UI_Icon_ToolBar.png` (626×126) is the complete toolbar card. Interactive layers sit on the five painted slots in toolbar-local pixels. The card scales once (`--hud-toolbar-scale`); children are not scaled again.
+
+### Official asset paths
+
+| Asset | Public URL | File | Native size | SHA256 prefix |
+|---|---|---|---|---|
+| Toolbar card | `/assets/UI/UI_Icon_ToolBar.png` | `public/assets/UI/UI_Icon_ToolBar.png` | 626×126 | `05e28932…` |
+| Selected slot | `/assets/UI/UI_Icon_ToolBar_Selected.png` | `public/assets/UI/UI_Icon_ToolBar_Selected.png` | 71×71 | `dd16bc4a…` |
+| Plant | `/assets/UI/UI_Icon_Planting.png` | `public/assets/UI/UI_Icon_Planting.png` | 75×75 | `173c1d4b…` |
+| Chop Wood | `/assets/UI/UI_Icon_Wood_Cutting.png` | `public/assets/UI/UI_Icon_Wood_Cutting.png` | 75×75 | `5ae6b007…` |
+| Mine Stone | `/assets/UI/UI_Icon_Mining.png` | `public/assets/UI/UI_Icon_Mining.png` | 75×75 | `51e03cf7…` |
+| Fish | `/assets/UI/UI_Icon_Fishing.png` | `public/assets/UI/UI_Icon_Fishing.png` | 75×75 | `61284015…` |
+| Build | `/assets/UI/UI_Icon_Build.png` | `public/assets/UI/UI_Icon_Build.png` | 75×75 | `301606f4…` |
+
+Source PNG bytes were not modified. Technique, Strength, Instintic, Luck, and Speak stay on the Slime Card catalog.
+
+### Toolbar scale and rendered size
+
+Independent of Top Left/Right (`toolbarScale: 1`, HUD cards `1.25`). Default chosen against the existing wooden HUD: 626×126 at 1.0 is immediately readable without inheriting 1.25 (782×158 would dominate the world).
+
+| Viewport | Card (rendered) | Scale L / R / toolbar | Bottom inset | Overflow |
+|---|---|---|---|---|
+| 1920×1080 | 626×126 at x 647, y 938 | 1.25 / 1.25 / 1 | 16 | no |
+| 1600×900 | 626×126 at x 487, y 758 | 1.25 / 1.25 / 1 | 16 | no |
+| 1366×768 | 626×126 at x 370, y 626 | 1.25 / 1.25 / 1 | 16 | no |
+| 1280×720 | 626×126 at x 327, y 578 | 1.25 / 1.25 / 1 | 16 | no |
+
+Reserved HUD stack height is 164px (32 secondary + 6 gap + 126 card) so Collection stays above the card.
+
+### Final five-slot order
+
+1 Planting → 2 Wood Cutting → 3 Mining → 4 Fishing → 5 Build. Kept as specified; inspection did not justify a different order.
+
+### Slot-local coordinates
+
+Painted recesses center at x 122.5 / 218.5 / 314.5 / 410.5 / 506.5, y 70.5. Each 71×71 selected/hitbox is registered on those centers:
+
+| Slot | Action | Toolbar-local rect |
+| ---: | --- | --- |
+| 1 | Plant | 87, 35, 71×71 |
+| 2 | Chop Wood | 183, 35, 71×71 |
+| 3 | Mine Stone | 279, 35, 71×71 |
+| 4 | Fish | 375, 35, 71×71 |
+| 5 | Build | 471, 35, 71×71 |
+
+### Icon sizing
+
+Opaque bounds of the 75×75 canvases were measured; the full transparent canvas is not forced inside 71×71. Target max opaque ~46px so the selected frame stays visible. Configurable in `HUD_LAYOUT.actionToolbar.icons`:
+
+| Icon | Opaque (approx) | Canvas size | Nudge |
+| --- | --- | ---: | --- |
+| Plant | 55×46 | 63 | 0, +1 |
+| Chop | 54×57 | 61 | −1, 0 |
+| Mine | 50×51 | 68 | 0, +1 |
+| Fish | 58×48 | 59 | +1, −2 |
+| Build | 56×52 | 62 | 0, −1 |
+
+### Selected-state layer and alignment
+
+`UI_Icon_ToolBar_Selected.png` is an opaque terracotta fill with a gold frame, so it is drawn **behind** the action icon, `inset 0` of the same 71×71 slot. One overlay at a time; none when `worldTool === "off"`. Browser check at 1920: overlay delta vs slot (0,0). After forced scale-fit (~0.75): overlay still (0,0) vs slot.
+
+Hover/focus: icon `brightness-110` plus a low-contrast wood `focus-visible` outline. No CSS selected border.
+
+### Secondary actions
+
+The official PNG is not stretched. **Remove Farm** is a cream chip above the card, shown only while Planting/`remove` is active. **Collection** is a cream chip above the right edge of the card at all times; the existing collection panel still lists fish. Build’s empty catalog copy remains next to those chips.
+
+### Tool semantics (unchanged)
+
+Plant → `"designate"` farmland. Chop/Mine → `designateGatherAt`. Fish/Build → existing controllers. One world tool; second click or Escape → `"off"`. Cursor remains the 32px React overlay, hotspot (16, 30). Tito is not hardcoded.
+
+### Validation
+
+`npm test` 385 passed; `npx tsc --noEmit`; `npx eslint src --max-warnings 0`. Focused addendum coverage lives in `actionToolbarArt.test.ts` (asset dims/hashes, five-slot mapping, selected registration after scale, toolbar-local icons, hitboxes, secondary access, source preservation).
+
+Browser: official 626×126 card with five icons in the painted slots; selected gold/terracotta frame on the active slot only; no leftover cream/lime primary bar; Collection and contextual Remove Farm outside the five slots; Top Right collapse/expand still runs; fullscreen cover unchanged. Temporary CSS toolbar presentation removed.
+
+## Milestone 05.4D — Official Slime Card
+
+**Closed after browser validation.** Presentation + selection only; fora de escopo BPx. Simulation attributes, jobs, needs, homes, visitor lifecycle, and Lily’s house plan were not changed.
+
+### Architecture
+
+One authoritative `selectedSlimeId` in Zustand. Phaser still projects `selectedSlime: SlimeInfo | null`; React does not import `Simulation`. `selectSlimeCardModel` + `slimeCardPresentation.ts` turn that DTO into Portuguese copy, icon keys, and stars. The prototype `SelectedSlimePanel` is gone. F3 `DebugOverlay` stays the technical inspector.
+
+World click → world-tool precedence → visible-body hit-test (`pickSlimeAtWorldPoint`) → store ID → DTO → card.
+
+### Official asset paths
+
+| Asset | Public URL | Native size | SHA256 prefix |
+|---|---|---|---|
+| Slime Card | `/assets/UI/UI_Slime_Card.png` | 368×586 | `77f3dfd2…` |
+| Technique | `/assets/UI/UI_Icon_Technique.png` | 75×75 | `c88a855d…` |
+| Strength | `/assets/UI/UI_Icon_Strength.png` | 75×75 | `5440b3dd…` |
+| Instinct | `/assets/UI/UI_Icon_Instintic.png` | 75×75 | `95c2b06f…` |
+| Luck | `/assets/UI/UI_Icon_Luck.png` | 75×75 | `0191b0d2…` |
+| Star | `/assets/UI/UI_Icon_Star.png` | 76×75 | `cc0fe9b4…` |
+| Empty star | `/assets/UI/UI_Icon_Star_Empty.png` | 76×75 | `1d21b3ba…` |
+
+Source PNG is the floral-corner wooden frame (368×586). Speak stays catalogued and unwired. Instinct keeps the authored filename `UI_Icon_Instintic.png`.
+
+Cream parchment measured from the PNG: **44, 68, 264×472**. Header layout is portrait-left in a dark well, identity-right (name / residency / specialty). Wooden frame, gold trim, and corner flowers stay artwork.
+
+### Screen position and scale
+
+Bottom-left, independent `--hud-slime-scale` (requested **1.0**, not Top Left 1.25 or toolbar 1.0). Fitted into the left gutter beside the toolbar; stacks above the toolbar only when that gutter is too narrow (compact / embedded viewports). Toasts shift right of the open card.
+
+| Viewport | Applied slime scale | Rendered card | Stacks above toolbar | Fits |
+|---|---|---|---|---|
+| 1920×1080 | 1.0 | 368×586 at 16, 478 | no | yes |
+| 1600×900 | 1.0 | 368×586 at 16, 298 | no | yes |
+| 1366×768 | 0.912 | 336×534 at 16, 218 | no | yes |
+| 1280×720 | 0.823 | 303×483 at 16, 222 | no | yes |
+
+### Selection, tools, portrait
+
+Visible-body AABB from feet (Lily `hitHalfWidth` 18 / `hitHeight` 44, not the 90×69 canvas). Overlap: highest `groundY`, then nearest feet. Miss-click with tools off still clears. HUD/card use `pointer-events-auto` + `stopPropagation`.
+
+`worldTool !== "off"` or a fishing fight owns the pointer → tool wins; the card does not open or close. Escape turns the tool off first, then closes the card.
+
+Portrait: idle clips from `SLIME_VISUALS`, React loop at the clip `frameRate`, `object-fit: contain`, pixelated, centered in the dark portrait well. Unmount stops the loop.
+
+### Player-facing copy (Portuguese)
+
+Attributes come only from `SlimeInfo` (Pingo 4/2/5/3, Momo 4/2/4/3, Tito 3/5/2/2, Lily 3/2/3/3 live in catalog/spawn — not hardcoded in the card). Homes use `BUILDINGS[type].name` then PT (`Casa do Pingo` / `Casa da Momo` / `Casa do Tito`). Hunger only when `needsActive`. Lily visitor: Visitante / Interessada em flores / Sem residência / **Convidar**. After invite: Visitante convidada / Aguardando o projeto da casa — never a fabricated house. Unknown FSM → `"Em atividade"`.
+
+### Validation
+
+`npm test` 417 passed; `npx tsc --noEmit`; `npx eslint src --max-warnings 0`. Focused coverage: `hudAssets.test.ts`, `slimeCardPresentation.test.ts`, `slimeCardModel.test.ts`, `slimeSelection.test.ts`, `hudLayout.test.ts`.
+
+Browser: official wooden card on Pingo, Momo, Tito; Lily visitor + Convidar; invited copy without a house name; Plant tool does not steal/switch selection; close + Escape; live activity updates; Top Left/Right/toolbar/Collection/F3 intact. No cyan left strip. Build tooltip string remains `Place a building` and is offset to the left of slot 5 so it does not sit on Collection.
+
+### Not started (intentionally out of scope)
+
+Lily’s house, extra needs, Speak/dialogue, Harmony gameplay, toolbar Portuguese, general HUD redesign.
 
 

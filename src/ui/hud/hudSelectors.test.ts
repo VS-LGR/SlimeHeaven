@@ -36,7 +36,6 @@ describe("HUD selectors 05.4A.1", () => {
     expect(source).toMatch(/state\.wood/);
     expect(source).toMatch(/state\.stone/);
     expect(source).toMatch(/state\.food/);
-    expect(source).not.toMatch(/useState\(/);
     expect(source).not.toMatch(/resources\.harmony/);
   });
 

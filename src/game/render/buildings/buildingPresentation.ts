@@ -15,6 +15,8 @@ export interface BuildingSpriteLayout {
   originY: number;
   offsetX: number;
   offsetY: number;
+  displayWidth: number;
+  displayHeight: number;
   depth: number;
   textureKey: string;
 }
@@ -44,6 +46,7 @@ export interface BuildingSpriteTarget {
   setTexture(key: string): unknown;
   setOrigin(x: number, y: number): unknown;
   setPosition(x: number, y: number): unknown;
+  setDisplaySize(width: number, height: number): unknown;
   setDepth(depth: number): unknown;
 }
 
@@ -54,6 +57,7 @@ export function applyBuildingSpriteLayout(
   sprite.setTexture(layout.textureKey);
   sprite.setOrigin(layout.originX, layout.originY);
   sprite.setPosition(layout.x, layout.y);
+  sprite.setDisplaySize(layout.displayWidth, layout.displayHeight);
   sprite.setDepth(layout.depth);
 }
 

@@ -41,7 +41,8 @@ describe("HUD shell contracts 05.4A", () => {
     expect(hud).toMatch(/TopLeftStatus/);
     expect(hud).toMatch(/TopRightResources/);
     expect(hud).toMatch(/useHudScale/);
-    expect(hud).toMatch(/data-hud-requested-scale/);
+    expect(hud).toMatch(/data-hud-toolbar-applied/);
+    expect(hud).toMatch(/data-hud-slime-applied/);
     expect(hud).not.toMatch(/from ["']@\/src\/simulation\/Simulation/);
   });
 
@@ -79,12 +80,18 @@ describe("HUD shell contracts 05.4A", () => {
     expect(hud).not.toMatch(/Wood \{wood\}/);
     expect(hud).not.toMatch(/Stone \{stone\}/);
     expect(hud).not.toMatch(/Food \{food\}/);
-    expect(hud).toMatch(/label="Farm"/);
-    expect(hud).toMatch(/label="Remove Farm"/);
-    expect(hud).toMatch(/label="Fish"/);
-    expect(hud).toMatch(/label="Build"/);
-    expect(hud).toMatch(/data-hud-panel="slime"/);
-    expect(hud).toMatch(/data-hud-panel="world-tools"/);
+    expect(hud).toMatch(/ActionToolbar/);
+    expect(hud).toMatch(/WorldToolCursor/);
+    expect(hud).toMatch(/SlimeCard/);
+    expect(readFileSync("src/ui/hud/SlimeCard.tsx", "utf8")).toMatch(/data-hud-panel="slime"/);
+    expect(readFileSync("src/ui/hud/SlimeCard.tsx", "utf8")).toMatch(/SLIME_CARD_ASSET/);
+    const toolbar = readFileSync("src/ui/hud/ActionToolbar.tsx", "utf8");
+    expect(toolbar).toMatch(/data-hud-panel="world-tools"/);
+    expect(toolbar).toMatch(/data-hud-interactive/);
+    expect(toolbar).toMatch(/Remove Farm/);
+    expect(toolbar).toMatch(/Collection/);
+    expect(toolbar).toMatch(/No building plans available/);
+    expect(readFileSync("src/ui/hud/actionTools.ts", "utf8")).toMatch(/Designate farmland/);
   });
 
   it("does not add Harmony to simulation resources", () => {
@@ -98,13 +105,15 @@ describe("HUD shell contracts 05.4A", () => {
     expect(topRight).not.toMatch(/this\.game|registry\.get|cameras\.main/);
     expect(topRight).toMatch(/Harmony: unavailable/);
     expect(topRight).toMatch(/Harmonia/);
-    expect(topRight).toMatch(/Settings \(unavailable\)/);
+    expect(topRight).toMatch(/Configurações indisponíveis/);
     expect(topRight).toMatch(/disabled/);
   });
 
   it("does not let wheel input change HUD scale", () => {
     expect(globals).toMatch(/--hud-left-scale/);
     expect(globals).toMatch(/--hud-right-scale/);
+    expect(globals).toMatch(/--hud-toolbar-scale/);
+    expect(globals).toMatch(/--hud-slime-scale/);
     expect(globals).not.toMatch(/clamp\(/);
     expect(globals).not.toMatch(/wheel/);
     expect(readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8")).not.toMatch(/wheel/);
@@ -117,17 +126,26 @@ describe("HUD shell contracts 05.4A", () => {
   it("keeps decorative HUD regions click-through and settings presentation-only", () => {
     const card = readFileSync("src/ui/hud/HudCard.tsx", "utf8");
     const topRight = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
+    const gear = topRight.split("function SettingsGear")[1]?.split("function CollapseControl")[0] ?? "";
     expect(card).toMatch(/pointer-events-none absolute/);
-    expect(topRight).toMatch(/pointer-events-none flex h-full w-full cursor-default/);
-    expect(topRight).not.toMatch(/onClick/);
-    expect(hud).toMatch(/pointer-events-auto absolute left-1\/2/);
+    expect(gear).toMatch(/pointer-events-none flex h-full w-full cursor-default/);
+    expect(gear).not.toMatch(/onClick/);
+    expect(topRight).toMatch(/pointer-events-auto absolute/);
+    expect(readFileSync("src/ui/hud/ActionToolbar.tsx", "utf8")).toMatch(
+      /data-hud-toolbar-card="true"/,
+    );
+    expect(readFileSync("src/ui/hud/ActionToolbar.tsx", "utf8")).toMatch(/HUD_ASSETS\.toolbar/);
+    expect(readFileSync("src/ui/hud/ActionToolbar.tsx", "utf8")).toMatch(/HUD_ASSETS\.toolbarSelected/);
+    expect(readFileSync("src/ui/hud/ActionToolbar.tsx", "utf8")).toMatch(/onPointerDown=\{stopHudPointer\}/);
   });
 
   it("does not import gameplay systems into the HUD overlay", () => {
     expect(hud).not.toMatch(/VisitorSystem|FarmSystem|FishingOpportunitySystem|NeedsSystem/);
-    expect(hud).toMatch(/label="Farm"/);
+    expect(hud).toMatch(/ActionToolbar/);
+    expect(readFileSync("src/ui/hud/actionTools.ts", "utf8")).toMatch(/worldTool: "designate"/);
     expect(readFileSync("src/ui/DebugOverlay.tsx", "utf8")).toMatch(/debugVisible/);
     expect(readFileSync("src/ui/GameCanvas.tsx", "utf8")).toMatch(/F3/);
+    expect(readFileSync("src/ui/GameCanvas.tsx", "utf8")).toMatch(/Escape/);
     expect(readFileSync("src/game/Game.ts", "utf8")).toMatch(/ResizeObserver/);
     expect(readFileSync("src/game/config.ts", "utf8")).not.toMatch(/input\.on\(\s*["']wheel["']/);
   });

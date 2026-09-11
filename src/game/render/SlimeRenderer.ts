@@ -43,6 +43,7 @@ import { fishingPresentationPhase } from "@/src/simulation/entities/FishingPrese
 import type { ResourceType } from "@/src/simulation/resources";
 import { workSpeedMultiplier } from "@/src/simulation/needsConfig";
 import { useGameUiStore } from "@/src/store/gameUiStore";
+import { pickSlimeAtWorldPoint, slimeHitBoxForId } from "./slimeHitTest";
 
 interface SlimeSprites {
   shadow: Phaser.GameObjects.Image;
@@ -198,23 +199,18 @@ export class SlimeRenderer {
   }
 
   hitTest(worldX: number, worldY: number): SlimeId | undefined {
-    let best: { id: SlimeId; dist: number } | undefined;
-    for (const slime of Object.values(this.simulation.state.slimes)) {
+    const candidates = Object.values(this.simulation.state.slimes).map((slime) => {
       const view = this.viewFor(slime);
-      const visual = SLIME_VISUALS[slime.id];
-      const halfW = visual.kind === "final" ? Math.max(16, visual.frameWidth / 2) : 16;
-      const hitH = visual.kind === "final" ? Math.max(20, visual.frameHeight) : 20;
-      const dx = worldX - view.groundX;
-      const dy = worldY - (view.groundY - hitH / 2);
-      if (Math.abs(dx) > halfW || Math.abs(dy) > hitH / 2) {
-        continue;
-      }
-      const dist = dx * dx + dy * dy;
-      if (!best || dist < best.dist) {
-        best = { id: slime.id, dist };
-      }
-    }
-    return best?.id;
+      const box = slimeHitBoxForId(slime.id);
+      return {
+        id: slime.id,
+        groundX: view.groundX,
+        groundY: view.groundY,
+        halfW: box.halfW,
+        hitH: box.hitH,
+      };
+    });
+    return pickSlimeAtWorldPoint(worldX, worldY, candidates);
   }
 
   private facingFor(slime: SlimeState, view: SlimeView): 1 | -1 {

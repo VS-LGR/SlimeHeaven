@@ -53,6 +53,13 @@ export class FarmDesignationController {
       this.dragStart = null;
       this.redraw();
     });
+
+    scene.input.keyboard?.on("keydown-ESC", () => {
+      if (!this.farmMode()) {
+        return;
+      }
+      useGameUiStore.getState().setWorldTool("off");
+    });
   }
 
   sync(): void {
