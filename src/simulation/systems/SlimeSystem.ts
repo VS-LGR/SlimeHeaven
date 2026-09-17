@@ -185,6 +185,20 @@ function tickSlime(state: GameState, slime: SlimeState): void {
     return;
   }
 
+  if (slime.state === "sleeping") {
+    return;
+  }
+
+  if (slime.state === "moving_to_home") {
+    const dest = slime.destination;
+    const arrived = advanceHop(slime);
+    if (arrived && dest && slimeAtDestination(slime, dest)) {
+      slime.tileX = dest.x;
+      slime.tileY = dest.y;
+    }
+    return;
+  }
+
   if (slime.state === "moving_to_task" || slime.state === "moving_to_fishing") {
     const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;
     if (!task || task.state === "cancelled") {

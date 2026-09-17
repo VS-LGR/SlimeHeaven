@@ -32,19 +32,32 @@ import {
 } from "./systems/FishingOpportunitySystem";
 import { tickAmbientBehaviors, forceAmbientBehavior, forceSocialGreet, clearAllAmbientBehaviors } from "./systems/AmbientBehaviorSystem";
 import { tickVisitors, spawnLilyVisitor, inviteVisitor } from "./systems/VisitorSystem";
+import { reconcileSleepRoutines, tickSleepRoutines } from "./systems/SleepRoutineSystem";
 import type { AmbientBehaviorId } from "./ambientConfig";
 import type { ClueType, FishId } from "./data/fish";
 import { placeBuilding, cancelConstructionSitesInRect } from "./systems/BuildingSystem";
 import type { BuildingTypeId } from "./data/buildings";
 import type { ConstructionSite } from "./entities/ConstructionSite";
+import { DEBUG_CLOCK_PRESETS, type TimeOfDay } from "./timeConfig";
+import {
+  advanceGameMinutes,
+  advanceToNextDay,
+  readClock,
+  setWorldClock,
+  tickWorldTime,
+  type WorldClockView,
+  type WorldTimeAdvanceResult,
+} from "./worldTime";
 
 export class Simulation {
   readonly state: GameState;
   private accumulatorMs = 0;
   private ticksRun = 0;
+  private paused = false;
 
   constructor(state: GameState = new GameState()) {
     this.state = state;
+    reconcileSleepRoutines(this.state);
   }
 
   get ticksPerSecond(): number {
@@ -55,8 +68,23 @@ export class Simulation {
     return this.ticksRun;
   }
 
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
+  getClock(): WorldClockView {
+    return readClock(this.state.worldTime);
+  }
+
   /** Advance with render delta; returns interpolation alpha in [0, 1). */
   update(deltaMs: number): number {
+    if (this.paused) {
+      return this.accumulatorMs / SIMULATION_TICK_MS;
+    }
     this.accumulatorMs += Math.max(0, deltaMs);
     const maxCatchUp = SIMULATION_TICK_MS * 8;
     if (this.accumulatorMs > maxCatchUp) {
@@ -72,6 +100,8 @@ export class Simulation {
   tick(): void {
     this.ticksRun += 1;
     this.state.tickIndex = this.ticksRun;
+    tickWorldTime(this.state.worldTime, SIMULATION_TICK_MS);
+    tickSleepRoutines(this.state);
     tickNeeds(this.state);
     tickFarms(this.state);
     tickAquatic(this.state);
@@ -217,6 +247,7 @@ export class Simulation {
 
   resetSlimes(): void {
     this.state.resetSlimes();
+    reconcileSleepRoutines(this.state);
   }
 
   addTestResource(): void {
@@ -226,5 +257,33 @@ export class Simulation {
 
   clearStock(): void {
     this.state.resources = emptyStock();
+  }
+
+  setClock(parts: { day?: number } & TimeOfDay): void {
+    setWorldClock(this.state.worldTime, parts);
+    reconcileSleepRoutines(this.state);
+  }
+
+  setClockPreset(preset: keyof typeof DEBUG_CLOCK_PRESETS): void {
+    setWorldClock(this.state.worldTime, DEBUG_CLOCK_PRESETS[preset]);
+    reconcileSleepRoutines(this.state);
+  }
+
+  advanceClockMinutes(minutes: number): WorldTimeAdvanceResult {
+    const result = advanceGameMinutes(this.state.worldTime, minutes);
+    reconcileSleepRoutines(this.state);
+    return result;
+  }
+
+  advanceClockHours(hours: number): WorldTimeAdvanceResult {
+    const result = advanceGameMinutes(this.state.worldTime, Math.trunc(hours) * 60);
+    reconcileSleepRoutines(this.state);
+    return result;
+  }
+
+  advanceClockToNextDay(): WorldTimeAdvanceResult {
+    const result = advanceToNextDay(this.state.worldTime);
+    reconcileSleepRoutines(this.state);
+    return result;
   }
 }

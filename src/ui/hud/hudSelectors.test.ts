@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { createBareGameState } from "@/src/simulation/GameState";
 import { RESOURCE_IDS } from "@/src/simulation/resources";
+import { TIME } from "@/src/simulation/timeConfig";
+import { createDefaultWorldTime, readClock } from "@/src/simulation/worldTime";
 import {
-  PROTOTYPE_WORLD_STATUS,
+  STATIC_SEASON,
   selectResourceHudModel,
   selectWorldStatusHudModel,
 } from "./hudSelectors";
@@ -13,7 +15,7 @@ function snapshot(overrides: Partial<GameUiSnapshot> = {}): GameUiSnapshot {
   return { fps: 60, wood: 4, stone: 2, food: 8, ...overrides } as GameUiSnapshot;
 }
 
-describe("HUD selectors 05.4A.1", () => {
+describe("HUD selectors 05.5A", () => {
   it("maps wood, stone, and food from the HUD snapshot only", () => {
     const state = createBareGameState();
     state.resources.wood = 12;
@@ -39,27 +41,55 @@ describe("HUD selectors 05.4A.1", () => {
     expect(source).not.toMatch(/resources\.harmony/);
   });
 
-  it("keeps simulation world-status empty and uses prototype placeholders in the HUD", () => {
-    const model = selectWorldStatusHudModel(snapshot({ fps: 99, wood: 99 }));
-    expect(model.day).toBeUndefined();
-    expect(model.timeLabel).toBeUndefined();
-    expect(model.season).toBeUndefined();
-    expect(PROTOTYPE_WORLD_STATUS.source).toBe("prototype_placeholder");
-    expect(PROTOTYPE_WORLD_STATUS.dayLabel).toBe("Dia 1");
-    expect(PROTOTYPE_WORLD_STATUS.timeLabel).toBe("09:30");
-    expect(PROTOTYPE_WORLD_STATUS.season).toBe("Primavera");
+  it("maps day and time from the simulation clock fields only", () => {
+    const model = selectWorldStatusHudModel(
+      snapshot({ fps: 99, wood: 99, dayNumber: 2, clockHour: 0, clockMinute: 0 }),
+    );
+    expect(model.source).toBe("simulation");
+    expect(model.dayLabel).toBe("Dia 2");
+    expect(model.timeLabel).toBe("00:00");
+    expect(model.season).toBe("Primavera");
+    expect(model.seasonSource).toBe("static_placeholder");
+    expect(model.period).toBe("night");
+    expect(model).not.toHaveProperty("sunOpacity");
+    expect(model).not.toHaveProperty("moonOpacity");
+    const sameMinute = selectWorldStatusHudModel({
+      dayNumber: 2,
+      clockHour: 0,
+      clockMinute: 0,
+    });
+    expect(sameMinute.timeLabel).toBe(model.timeLabel);
+    expect(sameMinute.dayLabel).toBe(model.dayLabel);
+    const newGame = selectWorldStatusHudModel({
+      dayNumber: TIME.newGame.day,
+      clockHour: TIME.newGame.hour,
+      clockMinute: TIME.newGame.minute,
+    });
+    expect(newGame.dayLabel).toBe("Dia 1");
+    expect(newGame.timeLabel).toBe("09:30");
+    expect(newGame.period).toBe("day");
+    expect(STATIC_SEASON.progression).toBe("inactive");
     const sim = createBareGameState();
-    expect(sim as unknown as { day?: number }).not.toHaveProperty("day");
-    expect(sim as unknown as { season?: string }).not.toHaveProperty("season");
+    expect(readClock(sim.worldTime)).toMatchObject({
+      dayNumber: 1,
+      hour: 9,
+      minute: 30,
+    });
+    expect(sim).not.toHaveProperty("season");
+    expect(createDefaultWorldTime().totalGameMinutes).toBe(9 * 60 + 30);
   });
 
-  it("does not advance world time from React", () => {
+  it("does not advance world time from React and keeps the Top Left composition", () => {
     const source = readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8");
     expect(source).not.toMatch(/Date\.now|setInterval|setTimeout/);
-    expect(source).not.toMatch(/UI_Icon_Moon/);
     expect(source).toMatch(/HUD_ASSETS\.topLeft/);
-    expect(source).toMatch(/HUD_ASSETS\.iconSun/);
-    expect(source).toMatch(/Dia 1|dayLabel/);
-    expect(source).toMatch(/PROTOTYPE_WORLD_STATUS/);
+    expect(source).toMatch(/CelestialClock/);
+    expect(source).not.toMatch(/sunOpacity|moonOpacity/);
+    expect(source).toMatch(/dayNumber/);
+    expect(source).toMatch(/clockHour/);
+    expect(source).toMatch(/clockMinute/);
+    expect(source).toMatch(/selectWorldStatusHudModel/);
+    expect(source).not.toMatch(/totalGameMinutes/);
+    expect(source).not.toMatch(/PROTOTYPE_WORLD_STATUS/);
   });
 });

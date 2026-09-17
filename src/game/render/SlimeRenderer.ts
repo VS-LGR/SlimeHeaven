@@ -43,7 +43,9 @@ import { fishingPresentationPhase } from "@/src/simulation/entities/FishingPrese
 import type { ResourceType } from "@/src/simulation/resources";
 import { workSpeedMultiplier } from "@/src/simulation/needsConfig";
 import { useGameUiStore } from "@/src/store/gameUiStore";
+import { isWorldHiddenBySleep } from "@/src/simulation/systems/SleepRoutineSystem";
 import { pickSlimeAtWorldPoint, slimeHitBoxForId } from "./slimeHitTest";
+import { bodyClipRepeatsForever, nextBodyPlaybackAction } from "./slimeAnimPlayback";
 
 interface SlimeSprites {
   shadow: Phaser.GameObjects.Image;
@@ -66,6 +68,8 @@ export class SlimeRenderer {
   private tickAlpha = 0;
   private timeMs = 0;
   private readonly specialistAnchors: SpecialistAnchor[] = [];
+  private readonly displayedAnim = new Map<string, SlimeAnimName>();
+  private readonly displayedPlaybackKey = new Map<string, string>();
 
   private readonly missingVisualWarned = new Set<string>();
 
@@ -108,6 +112,8 @@ export class SlimeRenderer {
         leftover?.emote.destroy();
         this.sprites.delete(id);
         this.facingById.delete(id);
+        this.displayedAnim.delete(id);
+        this.displayedPlaybackKey.delete(id);
       }
     }
 
@@ -123,7 +129,9 @@ export class SlimeRenderer {
       const task = slime.currentTaskId ? this.simulation.state.tasks[slime.currentTaskId] : undefined;
       const view = slimeView(slime, tickAlpha, timeMs, session, this.simulation.state.tickIndex, task);
       const depth = DEPTH.OBJECTS + view.groundY / TILE_SIZE;
-      const facing = this.facingFor(slime, view);
+      this.applyBodyAnim(slime, sprites.body, view);
+      const shown = this.shownView(slime, view);
+      const facing = this.facingFor(slime, shown);
 
       const shadowStyle = this.shadowStyle(slime.id);
       sprites.shadow.setPosition(view.groundX, view.groundY - shadowStyle.pad);
@@ -133,21 +141,20 @@ export class SlimeRenderer {
       );
       sprites.shadow.setDepth(depth - 0.2);
 
-      const farmOffset = usesMomoPlantClip(slime.id, view.anim)
+      const farmOffset = usesMomoPlantClip(slime.id, shown.anim)
         ? MOMO_FARM_PLANT_OFFSET
-        : usesMomoHarvestClip(slime.id, view.anim)
+        : usesMomoHarvestClip(slime.id, shown.anim)
           ? MOMO_FARM_HARVEST_OFFSET
           : { x: 0, y: 0 };
       sprites.body.setPosition(view.groundX + farmOffset.x * facing, view.spriteY + farmOffset.y);
       sprites.body.setDepth(depth);
-      this.applyBodyAnim(slime, sprites.body, view);
-      if (usesMomoTillClip(slime.id, view.anim)) {
+      if (usesMomoTillClip(slime.id, shown.anim)) {
         sprites.body.setOrigin(MOMO_TILL_ORIGIN.x, MOMO_TILL_ORIGIN.y);
-      } else if (usesMomoPlantClip(slime.id, view.anim)) {
+      } else if (usesMomoPlantClip(slime.id, shown.anim)) {
         sprites.body.setOrigin(MOMO_PLANT_ORIGIN.x, MOMO_PLANT_ORIGIN.y);
-      } else if (usesMomoHarvestClip(slime.id, view.anim)) {
+      } else if (usesMomoHarvestClip(slime.id, shown.anim)) {
         sprites.body.setOrigin(MOMO_HARVEST_ORIGIN.x, MOMO_HARVEST_ORIGIN.y);
-      } else if (usesTitoGatherSwingClip(slime.id, view.anim)) {
+      } else if (usesTitoGatherSwingClip(slime.id, shown.anim)) {
         sprites.body.setOrigin(TITO_CHOP_ORIGIN.x, TITO_CHOP_ORIGIN.y);
       } else {
         sprites.body.setOrigin(SLIME_ORIGIN_X, SLIME_ORIGIN_Y);
@@ -155,14 +162,23 @@ export class SlimeRenderer {
       sprites.body.setScale(view.scaleX, view.scaleY);
       sprites.body.setFlipX(facing < 0);
 
+      const hidden = isWorldHiddenBySleep(slime);
+      sprites.shadow.setVisible(!hidden);
+      sprites.body.setVisible(!hidden);
+      if (hidden) {
+        sprites.carry.setVisible(false);
+        sprites.emote.setVisible(false);
+        continue;
+      }
+
       this.specialistAnchors.push({
         slimeId: slime.id,
         groundX: view.groundX,
         groundY: view.groundY,
         depth,
         facing,
-        anim: view.anim,
-        frame: this.currentFrameIndex(slime, sprites.body, view),
+        anim: shown.anim,
+        frame: this.currentFrameIndex(slime, sprites.body, shown),
       });
 
       const carryType = slime.carriedResource?.type;
@@ -191,25 +207,28 @@ export class SlimeRenderer {
   visualDebug(slime: SlimeState): SlimeVisualDebug {
     const view = this.viewFor(slime);
     const sprites = this.sprites.get(slime.id);
+    const shown = this.shownView(slime, view);
     return {
       visual: usesFinalArt(slime.id) ? "FINAL" : "PLACEHOLDER",
-      anim: view.anim,
-      frame: this.currentFrameIndex(slime, sprites?.body, view),
+      anim: shown.anim,
+      frame: this.currentFrameIndex(slime, sprites?.body, shown),
     };
   }
 
   hitTest(worldX: number, worldY: number): SlimeId | undefined {
-    const candidates = Object.values(this.simulation.state.slimes).map((slime) => {
-      const view = this.viewFor(slime);
-      const box = slimeHitBoxForId(slime.id);
-      return {
-        id: slime.id,
-        groundX: view.groundX,
-        groundY: view.groundY,
-        halfW: box.halfW,
-        hitH: box.hitH,
-      };
-    });
+    const candidates = Object.values(this.simulation.state.slimes)
+      .filter((slime) => !isWorldHiddenBySleep(slime))
+      .map((slime) => {
+        const view = this.viewFor(slime);
+        const box = slimeHitBoxForId(slime.id);
+        return {
+          id: slime.id,
+          groundX: view.groundX,
+          groundY: view.groundY,
+          halfW: box.halfW,
+          hitH: box.hitH,
+        };
+      });
     return pickSlimeAtWorldPoint(worldX, worldY, candidates);
   }
 
@@ -280,6 +299,38 @@ export class SlimeRenderer {
     return { pad: visual.shadowFeetPadPx, scale: visual.shadowScale };
   }
 
+  private shownView(slime: SlimeState, view: SlimeView): SlimeView {
+    const anim = this.displayedAnim.get(slime.id) ?? view.anim;
+    return anim === view.anim ? view : { ...view, anim };
+  }
+
+  private requestedBodyPlaybackKey(slime: SlimeState, view: SlimeView): string | undefined {
+    const visual = SLIME_VISUALS[slime.id];
+    if (visual.kind !== "final") {
+      return undefined;
+    }
+    if (usesPingoFishingClip(slime.id, view.anim)) {
+      return pingoFishingAnimKey(view.anim) ?? undefined;
+    }
+    if (usesMomoTillClip(slime.id, view.anim)) {
+      return MOMO_TILL_BODY.animKey;
+    }
+    if (usesMomoPlantClip(slime.id, view.anim)) {
+      return MOMO_PLANT_BODY.animKey;
+    }
+    if (usesMomoHarvestClip(slime.id, view.anim)) {
+      return MOMO_HARVEST_BODY.animKey;
+    }
+    if (usesTitoGatherSwingClip(slime.id, view.anim)) {
+      return TITO_CHOP_BODY.animKey;
+    }
+    const clip = resolveCoreClip(visual, playableSlimeAnim(view.anim));
+    if (clip.syncToHopT) {
+      return `hop-sync:${view.anim}`;
+    }
+    return slimeAnimKey(slime.id, playableSlimeAnim(view.anim));
+  }
+
   private playLoopingOrHold(body: Phaser.GameObjects.Sprite, key: string): void {
     if (body.anims.currentAnim?.key !== key) {
       body.play(key);
@@ -297,6 +348,31 @@ export class SlimeRenderer {
     if (visual.kind !== "final") {
       return;
     }
+    const requestedKey = this.requestedBodyPlaybackKey(slime, view);
+    if (!requestedKey) {
+      return;
+    }
+    const playing = body.anims.isPlaying;
+    const currentKey = playing
+      ? (body.anims.currentAnim?.key ?? "")
+      : (this.displayedPlaybackKey.get(slime.id) ?? body.anims.currentAnim?.key ?? "");
+    const action = nextBodyPlaybackAction(
+      playing,
+      currentKey === requestedKey,
+      bodyClipRepeatsForever(body.anims.repeat) ||
+        bodyClipRepeatsForever(body.anims.currentAnim?.repeat),
+    );
+    if (action === "finish-loop") {
+      body.anims.repeatCounter = 0;
+      return;
+    }
+    if (action === "hold") {
+      return;
+    }
+
+    this.displayedAnim.set(slime.id, view.anim);
+    this.displayedPlaybackKey.set(slime.id, requestedKey);
+
     if (usesPingoFishingClip(slime.id, view.anim)) {
       const key = pingoFishingAnimKey(view.anim);
       if (!key) {
@@ -428,7 +504,7 @@ export class SlimeRenderer {
       return;
     }
     const slime = this.simulation.state.slimes[selectedId];
-    if (!slime) {
+    if (!slime || isWorldHiddenBySleep(slime)) {
       return;
     }
     const view = this.viewFor(slime);

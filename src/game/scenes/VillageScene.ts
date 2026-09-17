@@ -11,7 +11,7 @@ import { DETAIL_DEFS, OBJECT_DEFS } from "@/src/world/tileTypes";
 import { tileToWorld } from "@/src/world/constants";
 import { farmKey } from "@/src/simulation/entities/FarmPlot";
 import type { Simulation } from "@/src/simulation/Simulation";
-import { SIMULATION_TICKS_PER_SECOND } from "@/src/simulation/constants";
+import { SIMULATION_TICK_MS, SIMULATION_TICKS_PER_SECOND } from "@/src/simulation/constants";
 import { hungerState } from "@/src/simulation/needsConfig";
 import { FISH, type FishId } from "@/src/simulation/data/fish";
 import { FISHING } from "@/src/simulation/fishingConfig";
@@ -19,6 +19,7 @@ import { fightMarkerT } from "@/src/simulation/systems/FishingSystem";
 import { fightingSession, isLiveFishingPhase, sessionOwnsInput } from "@/src/simulation/entities/FishingSession";
 import { fishingPresentationPhase } from "@/src/simulation/entities/FishingPresentation";
 import { slimeMode, isJobAssignable } from "@/src/simulation/systems/slimeAvailability";
+import { routineDebug } from "@/src/simulation/systems/SleepRoutineSystem";
 import { SLIME_IDS } from "@/src/simulation/entities/SlimeState";
 import { SlimeRenderer, type SlimeVisualDebug } from "../render/SlimeRenderer";
 import { WaterRenderer } from "../render/water/WaterRenderer";
@@ -31,6 +32,10 @@ import { SpecialistToolRenderer, type FarmPresentationDebug } from "../render/sp
 import { gatheringF3SpecialistFrameLabel, gatheringF3ToolFrameLabel } from "../render/gathering/chopPresentation";
 import { FISHING_PRESENTATION } from "../render/fishing/fishingVisualConfig";
 import { nudgePingoRod } from "../render/fishing/pingoFishingVisualConfig";
+import { DayNightOverlay } from "../render/dayNight/DayNightOverlay";
+import { collectNightLightSources } from "../render/dayNight/nightLightsPresentation";
+import { visualMinuteOfDay } from "@/src/simulation/worldTime";
+import { writeWorldTimeSave } from "@/src/simulation/worldTimePersist";
 import { useGameUiStore, type SlimeInfo } from "@/src/store/gameUiStore";
 import {
   resolveSelectedSlimeProjection,
@@ -68,8 +73,10 @@ export class VillageScene extends Phaser.Scene {
   private specialistTools: SpecialistToolRenderer | undefined;
   private waterClues: WaterClueSystem | undefined;
   private selection: SelectionController | undefined;
+  private dayNight: DayNightOverlay | undefined;
   private readonly detailSprites = new Map<string, Phaser.GameObjects.Image>();
   private lastUiPush = 0;
+  private lastPersistedTotalMinutes = Number.NaN;
   private readonly toastedBiteIds = new Set<string>();
   private readonly toastedCatchIds = new Set<string>();
 
@@ -163,6 +170,8 @@ export class VillageScene extends Phaser.Scene {
     this.fishingRenderer = new FishingRenderer(this, (x, y, type) => {
       this.waterRenderer?.spawnRipple(x, y, type);
     });
+    this.dayNight = new DayNightOverlay(this);
+    this.syncDayNight(0);
     this.farmTool = new FarmDesignationController(this, simulation);
     this.gatherTool = new GatherDesignationController(this, simulation);
     this.fishingTool = new FishingController(this, simulation);
@@ -233,6 +242,13 @@ export class VillageScene extends Phaser.Scene {
           jobToast: { message: result.message, hideAt: Date.now() + 2800 },
         });
       },
+      setDawn: () => this.applyClockDebug(() => simulation.setClockPreset("dawn")),
+      setMidday: () => this.applyClockDebug(() => simulation.setClockPreset("midday")),
+      setDusk: () => this.applyClockDebug(() => simulation.setClockPreset("dusk")),
+      setMidnight: () => this.applyClockDebug(() => simulation.setClockPreset("midnight")),
+      setLateNight: () => this.applyClockDebug(() => simulation.setClock({ hour: 23, minute: 59 })),
+      advanceOneGameHour: () => this.applyClockDebug(() => simulation.advanceClockHours(1)),
+      advanceToNextDay: () => this.applyClockDebug(() => simulation.advanceClockToNextDay()),
     });
     useGameUiStore.getState().setHudActions({
       inviteSelectedVisitor: () => {
@@ -251,6 +267,7 @@ export class VillageScene extends Phaser.Scene {
     useGameUiStore.getState().setRuntime({
       mapWidth: grid.width,
       mapHeight: grid.height,
+      ...clockRuntimePatch(simulation),
       selectedX: null,
       selectedY: null,
       hoveredX: null,
@@ -296,6 +313,9 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const alpha = simulation.update(delta);
+    const extraMs = simulation.isPaused ? 0 : alpha * SIMULATION_TICK_MS;
+    this.syncDayNight(extraMs);
+    this.persistClockIfNeeded(simulation);
     simulation.advanceFishingClock(this.time.now);
     this.syncFarmVisuals();
     this.farmPlots?.sync(simulation);
@@ -368,6 +388,7 @@ export class VillageScene extends Phaser.Scene {
       cameraY: Math.round(camera.midPoint.y),
       zoom: camera.zoom,
       simTps: SIMULATION_TICKS_PER_SECOND,
+      ...clockRuntimePatch(simulation),
       slimeCount: Object.keys(state.slimes).length,
       availableTasks: tasks.filter((task) => task.state === "available").length,
       assignedTasks: tasks.filter(
@@ -592,6 +613,53 @@ export class VillageScene extends Phaser.Scene {
     const debug = this.slimeRenderer?.visualDebug(slime);
     return slimeInfo(slime, simulation.state, debug);
   }
+
+  private applyClockDebug(mutate: () => void): void {
+    const simulation = this.simulation;
+    if (!simulation) {
+      return;
+    }
+    mutate();
+    writeWorldTimeSave(simulation.state.worldTime);
+    this.lastPersistedTotalMinutes = simulation.state.worldTime.totalGameMinutes;
+    this.lastUiPush = 0;
+    const selectedId = useGameUiStore.getState().selectedSlimeId;
+    useGameUiStore.getState().setRuntime({
+      ...clockRuntimePatch(simulation),
+      selectedSlime: selectedId ? this.selectedSlimeInfo(selectedId) : null,
+    });
+    this.syncDayNight(0);
+  }
+
+  private syncDayNight(extraMs: number): void {
+    const simulation = this.simulation;
+    if (!simulation) {
+      return;
+    }
+    this.dayNight?.sync(
+      visualMinuteOfDay(simulation.state.worldTime, extraMs),
+      collectNightLightSources(simulation.state.buildings),
+    );
+  }
+
+  private persistClockIfNeeded(simulation: Simulation): void {
+    const total = simulation.state.worldTime.totalGameMinutes;
+    if (total === this.lastPersistedTotalMinutes) {
+      return;
+    }
+    this.lastPersistedTotalMinutes = total;
+    writeWorldTimeSave(simulation.state.worldTime);
+  }
+}
+
+function clockRuntimePatch(simulation: Simulation) {
+  const clock = simulation.getClock();
+  return {
+    dayNumber: clock.dayNumber,
+    clockHour: clock.hour,
+    clockMinute: clock.minute,
+    dayPeriod: clock.period,
+  };
 }
 
 function slimeInfo(
@@ -614,6 +682,7 @@ function slimeInfo(
   const home = residentTypeId ? placedHomeForResident(state, residentTypeId) : undefined;
   const homeDef = home ? buildingById(home.typeId) : undefined;
   const homeEntrance = home && homeDef ? entranceTile({ x: home.tileX, y: home.tileY }, homeDef) : null;
+  const debugRoutine = routineDebug(state, slime);
   return {
     id: slime.id,
     name: slime.name,
@@ -654,6 +723,12 @@ function slimeInfo(
     consumesFood: isVillageResident(slime),
     currentAnimation: lilyAnimationLabel(slime.id, debug?.anim ?? "idle"),
     activeSpecialistAnimation: isVisitorLifecycle(slime) ? "none" : null,
+    routinePhase: debugRoutine.phase,
+    routineWakeTime: debugRoutine.wake,
+    routineBedtime: debugRoutine.bedtime,
+    routineJobAvailable: debugRoutine.jobs,
+    routineHomeDestination: debugRoutine.destination,
+    routineBlockReason: debugRoutine.block,
   };
 }
 

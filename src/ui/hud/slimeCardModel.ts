@@ -168,6 +168,8 @@ export function selectSlimeCardModel(info: SlimeInfo): SlimeCardViewModel {
       taskLabel: info.taskLabel,
       constructionActivity: info.constructionActivity,
       variant,
+      routinePhase: info.routinePhase,
+      routineBlockReason: info.routineBlockReason,
     }),
     hunger: needsHunger ? hungerStatusLabel(info.hungerState) : null,
     hungerPips: needsHunger ? hungerPipCount(info.hungerState) : 0,

@@ -10,6 +10,7 @@ import {
 } from "../needsConfig";
 import { cancelTask, releaseSlime } from "./JobSystem";
 import { cancelAmbientBehavior } from "./AmbientBehaviorSystem";
+import { isWorldHiddenBySleep, scheduledSleepNow } from "./SleepRoutineSystem";
 
 export function tryConsumeFood(state: GameState, amount: number): boolean {
   if (state.resources.food < amount) {
@@ -28,6 +29,9 @@ export function tickNeeds(state: GameState): void {
     if (!isVillageResident(slime)) {
       continue;
     }
+    if (isWorldHiddenBySleep(slime)) {
+      continue;
+    }
     slime.satiety = clampSatiety(slime.satiety - SATIETY_DECAY_PER_TICK);
     maybeSeekFood(state, slime);
   }
@@ -35,6 +39,9 @@ export function tickNeeds(state: GameState): void {
 
 function maybeSeekFood(state: GameState, slime: SlimeState): void {
   if (isSeekingFood(slime)) {
+    return;
+  }
+  if (scheduledSleepNow(state, slime) || slime.routinePhase === "returning_home" || slime.routinePhase === "home_blocked") {
     return;
   }
 

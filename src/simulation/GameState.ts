@@ -33,6 +33,7 @@ import { buildingById } from "./data/buildings";
 import type { PlacedBuilding } from "./entities/PlacedBuilding";
 import type { ConstructionSite } from "./entities/ConstructionSite";
 import { initializeStartingHomes } from "./systems/BuildingSystem";
+import { createDefaultWorldTime, type WorldTimeState } from "./worldTime";
 
 export interface GameStateOptions {
   seedStartingHomes?: boolean;
@@ -71,6 +72,7 @@ export class GameState {
   interestPoints: InterestPoint[];
   interestPointsByTag: Partial<Record<InterestTag, string[]>>;
   tickIndex = 0;
+  worldTime: WorldTimeState;
   nextAquaticSpawnTick = 0;
   private nextTaskSeq = 1;
   private nextActivitySeq = 1;
@@ -110,6 +112,7 @@ export class GameState {
     this.lastJobFeedback = null;
     this.interestPoints = [];
     this.interestPointsByTag = {};
+    this.worldTime = createDefaultWorldTime();
     this.spawnSlimes();
     if (options.seedStartingHomes !== false) {
       initializeStartingHomes(this);

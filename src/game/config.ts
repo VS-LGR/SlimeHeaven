@@ -33,6 +33,8 @@ export const DEPTH = {
   FARMING: 0.5,
   GROUND_DETAIL: 1,
   OBJECTS: 10,
+  /** Below selection / tool overlays so night remains readable and clickable. */
+  DAY_NIGHT: 850,
   SELECTION: 1000,
 } as const;
 

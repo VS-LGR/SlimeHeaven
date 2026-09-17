@@ -54,6 +54,12 @@ function slimeInfo(overrides: Partial<SlimeInfo> & Pick<SlimeInfo, "id" | "name"
     consumesFood: true,
     currentAnimation: "idle",
     activeSpecialistAnimation: null,
+    routinePhase: "awake",
+    routineWakeTime: null,
+    routineBedtime: null,
+    routineJobAvailable: true,
+    routineHomeDestination: null,
+    routineBlockReason: null,
     ...overrides,
   };
 }

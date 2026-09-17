@@ -13,6 +13,7 @@ import {
 import type { AmbientBehaviorId } from "../ambientConfig";
 import { uniqueCapabilities, type SlimeCapability } from "../slimeCapabilities";
 import type { ResidencyStatus } from "../data/residents";
+import type { RoutineBlockReason, RoutinePhase } from "../data/sleepRoutines";
 
 export const SLIME_IDS = {
   PINGO: "slime_pingo",
@@ -36,7 +37,9 @@ export type SlimeFsmState =
   | "fishing_bite"
   | "moving_to_ambient"
   | "wandering"
-  | "ambient";
+  | "ambient"
+  | "moving_to_home"
+  | "sleeping";
 
 export interface SlimeState {
   id: SlimeId;
@@ -72,6 +75,9 @@ export interface SlimeState {
   tillRecoverPlot?: GridPosition;
   /** Presentation leftover after a catch so fish_success can finish. Does not block jobs. */
   fishingCelebrateUntilTick: number;
+  routinePhase: RoutinePhase;
+  routineBlockReason?: RoutineBlockReason;
+  routineRetryAtTick: number;
   /** Optional later: `{ farming: 1.25 }`. Unset means 1 for every category. */
   jobAffinity?: Partial<Record<JobCategory, number>>;
 }
@@ -147,5 +153,7 @@ export function createSlimeState(
     ambientEmote: null,
     ambientEmoteUntilTick: 0,
     fishingCelebrateUntilTick: 0,
+    routinePhase: "awake",
+    routineRetryAtTick: 0,
   };
 }

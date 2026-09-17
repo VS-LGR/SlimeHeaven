@@ -17,6 +17,7 @@ export function freezeSpawns(state: GameState): void {
 
 export function villageSim(seed = 1): Simulation {
   const sim = new Simulation(new GameState(createVillageMap(), createRng(seed)));
+  sim.setClock({ hour: 12, minute: 0 });
   freezeSpawns(sim.state);
   for (const slime of Object.values(sim.state.slimes)) {
     slime.hopFrom = undefined;

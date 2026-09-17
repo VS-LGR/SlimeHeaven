@@ -6,9 +6,14 @@ import { hungerState, EAT_FOOD_COST, EAT_SATIETY_RESTORE, SATIETY_INITIAL } from
 import { tryConsumeFood } from "./NeedsSystem";
 import { createGatherTask, assignAvailableTasks } from "./JobSystem";
 
+function midday(sim: Simulation): void {
+  sim.setClock({ hour: 12, minute: 0 });
+}
+
 describe("needs system", () => {
   it("decreases satiety on each simulation tick", () => {
     const sim = new Simulation();
+    midday(sim);
     const before = sim.state.slimes[SLIME_IDS.PINGO].satiety;
     expect(before).toBe(SATIETY_INITIAL);
     sim.tick();
@@ -28,6 +33,7 @@ describe("needs system", () => {
 
   it("consumes food and restores satiety when a hungry slime eats", () => {
     const sim = new Simulation();
+    midday(sim);
     const slime = sim.state.slimes[SLIME_IDS.PINGO];
     slime.tileX = sim.state.storage.x;
     slime.tileY = sim.state.storage.y;
@@ -50,6 +56,7 @@ describe("needs system", () => {
 
   it("does not let two slimes consume the same food unit", () => {
     const sim = new Simulation();
+    midday(sim);
     const pingo = sim.state.slimes[SLIME_IDS.PINGO];
     const momo = sim.state.slimes[SLIME_IDS.MOMO];
     for (const slime of [pingo, momo]) {
@@ -78,6 +85,7 @@ describe("needs system", () => {
 
   it("does not lock the simulation when food is zero", () => {
     const sim = new Simulation();
+    midday(sim);
     for (const slime of Object.values(sim.state.slimes)) {
       slime.satiety = 5;
     }
@@ -94,6 +102,7 @@ describe("needs system", () => {
 
   it("starving slimes skip new work when food exists and go eat instead", () => {
     const sim = new Simulation();
+    midday(sim);
     const pingo = sim.state.slimes[SLIME_IDS.PINGO];
     pingo.satiety = 5;
     sim.state.resources.food = 4;
@@ -108,6 +117,7 @@ describe("needs system", () => {
 
   it("starving slimes still take jobs when food is zero so the farm can bootstrap", () => {
     const sim = new Simulation();
+    midday(sim);
     for (const slime of Object.values(sim.state.slimes)) {
       slime.satiety = 5;
     }
@@ -120,6 +130,7 @@ describe("needs system", () => {
 
   it("hungry slimes keep working when food is zero", () => {
     const sim = new Simulation();
+    midday(sim);
     for (const slime of Object.values(sim.state.slimes)) {
       slime.satiety = 25;
     }

@@ -120,14 +120,50 @@ describe("slime card presentation 05.4D", () => {
     ).toBe("Visitando a vila");
     expect(
       activityLabel({
-        state: "future_dance",
+        state: "moving_to_home",
+        taskLabel: "none",
+        constructionActivity: null,
+        variant: "resident",
+      }),
+    ).toBe("Voltando para casa");
+    expect(
+      activityLabel({
+        state: "sleeping",
+        taskLabel: "none",
+        constructionActivity: null,
+        variant: "resident",
+      }),
+    ).toBe("Dormindo");
+    expect(
+      activityLabel({
+        state: "idle",
+        taskLabel: "none",
+        constructionActivity: null,
+        variant: "resident",
+        routinePhase: "home_blocked",
+        routineBlockReason: "missing_home",
+      }),
+    ).toBe("Aguardando casa");
+    expect(
+      activityLabel({
+        state: "idle",
+        taskLabel: "none",
+        constructionActivity: null,
+        variant: "resident",
+        routinePhase: "home_blocked",
+        routineBlockReason: "unreachable",
+      }),
+    ).toBe("Casa inacessível");
+    expect(looksLikeInternalStateKey("moving_to_task")).toBe(true);
+    expect(looksLikeInternalStateKey("Descansando")).toBe(false);
+    expect(
+      activityLabel({
+        state: "unknown_custom_state",
         taskLabel: "none",
         constructionActivity: null,
         variant: "resident",
       }),
     ).toBe(SLIME_CARD_ACTIVITY_FALLBACK);
-    expect(looksLikeInternalStateKey("moving_to_task")).toBe(true);
-    expect(looksLikeInternalStateKey("Descansando")).toBe(false);
   });
 
   it("translates hunger, homes, and visitor interest in Portuguese", () => {

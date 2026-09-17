@@ -59,7 +59,7 @@ describe("HUD layout 05.4A.4 scale and cards", () => {
     expect(childrenAreCardLocal()).toBe(true);
     const sunSlot = slotStyle(HUD_LAYOUT.topLeft.weather.slot);
     expect(sunSlot.left).toBe(HUD_LAYOUT.topLeft.weather.slot.x);
-    expect(sunSlot.overflow).toBe("hidden");
+    expect(sunSlot.overflow).toBe("visible");
     expect(typeof sunSlot.left).toBe("number");
     const source = [
       readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8"),
@@ -85,7 +85,8 @@ describe("HUD layout 05.4A.4 scale and cards", () => {
       HUD_LAYOUT.topRight.harmony.slot,
       HUD_LAYOUT.topRight.settings.slot,
     ];
-    for (const slot of [...leftSlots, ...rightSlots]) {
+    expect(HUD_LAYOUT.topLeft.weather.slot.overflow).toBe("visible");
+    for (const slot of [...leftSlots.slice(1), ...rightSlots]) {
       expect(slot.overflow).toBe("hidden");
       expect(slot.width).toBeGreaterThan(0);
       expect(slot.height).toBeGreaterThan(0);

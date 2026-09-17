@@ -64,6 +64,8 @@ const FSM_ACTIVITY_LABELS: Record<string, string> = {
   moving_to_fishing: "Indo pescar",
   fishing_wait: "Pescando",
   fishing_bite: "Pescando",
+  moving_to_home: "Voltando para casa",
+  sleeping: "Dormindo",
   moving_to_ambient: "Passeando",
   wandering: "Visitando a vila",
   ambient: "Passeando",
@@ -203,6 +205,8 @@ export function activityLabel(input: {
   taskLabel: string;
   constructionActivity: string | null;
   variant: SlimeCardVariant;
+  routinePhase?: string | null;
+  routineBlockReason?: string | null;
 }): string {
   if (input.variant !== "resident") {
     if (input.state === "idle" || input.state === "wandering" || input.state === "ambient") {
@@ -211,6 +215,21 @@ export function activityLabel(input: {
     if (input.state === "moving_to_ambient") {
       return "Visitando a vila";
     }
+  }
+  if (input.routinePhase === "home_blocked") {
+    if (input.routineBlockReason === "unreachable" || input.routineBlockReason === "entrance_blocked") {
+      return "Casa inacessível";
+    }
+    return "Aguardando casa";
+  }
+  if (input.state === "moving_to_home" || input.routinePhase === "returning_home") {
+    if (input.state === "carrying_to_storage" || input.state === "delivering") {
+      return FSM_ACTIVITY_LABELS[input.state] ?? "Voltando para casa";
+    }
+    if (input.state === "eating") {
+      return "Comendo";
+    }
+    return "Voltando para casa";
   }
   if (input.state === "working") {
     return workingActivityLabel(input.taskLabel, input.constructionActivity);
@@ -223,7 +242,7 @@ export function activityLabel(input: {
 }
 
 export function looksLikeInternalStateKey(label: string): boolean {
-  return /_|^(idle|working|moving_to_|fishing_|carrying_to_|delivering|ambient|wandering|eating)/.test(
+  return /_|^(idle|working|moving_to_|fishing_|carrying_to_|delivering|ambient|wandering|eating|sleeping)/.test(
     label,
   );
 }

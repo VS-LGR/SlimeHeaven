@@ -157,8 +157,12 @@ export const HUD_LAYOUT = {
       scaleMax: 1,
     } satisfies HudCardConfig,
     weather: {
-      slot: { x: 10, y: 18, width: 108, height: 96, overflow: "hidden" } satisfies HudSlotConfig,
-      icon: { x: 14, y: 22, width: 82, height: 78, scale: 1 } satisfies HudImageConfig,
+      /**
+       * Authored UI_Clock.png (122×119) fitted into the left wood well.
+       * Overflow stays visible so the ring/stars are not boxed.
+       */
+      slot: { x: 21, y: 25, width: 90, height: 88, overflow: "visible" } satisfies HudSlotConfig,
+      icon: { x: 20, y: 20, width: 82, height: 78, scale: 1 } satisfies HudImageConfig,
     },
     day: {
       slot: { x: 125, y: 43, width: 87, height: 19, overflow: "hidden" } satisfies HudSlotConfig,

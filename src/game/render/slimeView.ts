@@ -117,7 +117,8 @@ function animForState(
     slime.state === "moving_to_ambient" ||
     slime.state === "wandering" ||
     slime.state === "carrying_to_storage" ||
-    slime.state === "moving_to_food"
+    slime.state === "moving_to_food" ||
+    slime.state === "moving_to_home"
   ) {
     return SLIME_ANIM.HOP;
   }

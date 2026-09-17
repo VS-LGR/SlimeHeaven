@@ -27,11 +27,13 @@ describe("HUD assets 05.4A", () => {
   it("points Top Left and Top Right at the approved public files", () => {
     expect(HUD_ASSETS.topLeft).toBe("/assets/UI/UI_Top_Left.png");
     expect(HUD_ASSETS.topRight).toBe("/assets/UI/UI_Top_Right.png");
+    expect(HUD_ASSETS.clock).toBe("/assets/UI/UI_Clock.png");
     expect(HUD_ASSETS.iconWood).toBe("/assets/UI/UI_Icon_Wood.png");
     expect(HUD_ASSETS.iconStone).toBe("/assets/UI/UI_Icon_Rock.png");
     expect(HUD_ASSETS.iconFood).toBe("/assets/UI/UI_Icon_Food.png");
     expect(HUD_ASSETS.iconHarmony).toBe("/assets/UI/UI_Icon_Harmony.png");
     expect(HUD_ASSETS.iconSun).toBe("/assets/UI/UI_Icon_Sun.png");
+    expect(HUD_ASSETS.iconMoon).toBe("/assets/UI/UI_Icon_Moon.png");
     expect(HUD_ASSETS.iconConfig).toBe("/assets/UI/UI_Icon_Config.png");
     expect(HUD_ASSETS.iconPlanting).toBe("/assets/UI/UI_Icon_Planting.png");
     expect(HUD_ASSETS.iconWoodCutting).toBe("/assets/UI/UI_Icon_Wood_Cutting.png");
@@ -45,11 +47,14 @@ describe("HUD assets 05.4A", () => {
   it("records native PNG dimensions without resizing the files", () => {
     expect(pngSize(HUD_ASSET_FILES.topLeft)).toEqual(HUD_ASSET_SIZES.topLeft);
     expect(pngSize(HUD_ASSET_FILES.topRight)).toEqual(HUD_ASSET_SIZES.topRight);
+    expect(pngSize(HUD_ASSET_FILES.clock)).toEqual(HUD_ASSET_SIZES.clock);
+    expect(HUD_ASSET_SIZES.clock).toEqual({ width: 122, height: 119 });
     expect(pngSize(HUD_ASSET_FILES.iconWood)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconStone)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconFood)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconHarmony)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconSun)).toEqual(HUD_ASSET_SIZES.sun);
+    expect(pngSize(HUD_ASSET_FILES.iconMoon)).toEqual(HUD_ASSET_SIZES.moon);
     expect(pngSize(HUD_ASSET_FILES.iconConfig)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconPlanting)).toEqual(HUD_ASSET_SIZES.actionIcon);
     expect(pngSize(HUD_ASSET_FILES.iconWoodCutting)).toEqual(HUD_ASSET_SIZES.actionIcon);
@@ -67,6 +72,9 @@ describe("HUD assets 05.4A", () => {
     expect(sha256(HUD_ASSET_FILES.topRight)).toBe(
       "d21426fc32882826fb9c2796eea005a509f4278c5f64e4d39d10b15e87880865",
     );
+    expect(sha256(HUD_ASSET_FILES.clock)).toBe(
+      "4c236851a04a1e5def4b2e6b6b631af0af04b83952f6b92360e9259a618acd6b",
+    );
     expect(sha256(HUD_ASSET_FILES.iconWood)).toBe(
       "7803dfa863f5e1dd89c1c9d5811d44cd6256c1ec692d5f982177e6cd3234c789",
     );
@@ -81,6 +89,9 @@ describe("HUD assets 05.4A", () => {
     );
     expect(sha256(HUD_ASSET_FILES.iconSun)).toBe(
       "7981750aec29b8406b80a7a3397ba598bcddbdcc406cb023d9a04e64a4942756",
+    );
+    expect(sha256(HUD_ASSET_FILES.iconMoon)).toBe(
+      "07cf9c214103a42ff357e8769c005da6b7f0d6ff62da5ca0ebb38533e9074125",
     );
     expect(sha256(HUD_ASSET_FILES.iconConfig)).toBe(
       "83d69cbb323f794e0b0a3b659ddbcc9d0f52eebe62b1e894ef8aaf7e002cf753",

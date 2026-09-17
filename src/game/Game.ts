@@ -5,9 +5,12 @@ import { BootScene } from "./scenes/BootScene";
 import { VillageScene } from "./scenes/VillageScene";
 import { GameState } from "@/src/simulation/GameState";
 import { Simulation } from "@/src/simulation/Simulation";
+import { hydrateWorldTime, writeWorldTimeSave } from "@/src/simulation/worldTimePersist";
 
 export function createGame(parent: HTMLElement): Phaser.Game {
-  const simulation = new Simulation(new GameState());
+  const state = new GameState();
+  hydrateWorldTime(state.worldTime);
+  const simulation = new Simulation(state);
   const game = new Phaser.Game({
     ...createPhaserConfig(parent),
     scene: [BootScene, VillageScene],
@@ -22,13 +25,25 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   const resize = () => {
     applyGameViewport(game, parent);
   };
+  const persistTime = () => writeWorldTimeSave(simulation.state.worldTime);
+  const onPageHide = () => persistTime();
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") {
+      persistTime();
+    }
+  };
   window.addEventListener("resize", resize);
+  window.addEventListener("pagehide", onPageHide);
+  document.addEventListener("visibilitychange", onVisibility);
   const observer = new ResizeObserver(resize);
   observer.observe(parent);
   game.events.once(Phaser.Core.Events.READY, resize);
   game.events.once(Phaser.Core.Events.DESTROY, () => {
     window.removeEventListener("resize", resize);
+    window.removeEventListener("pagehide", onPageHide);
+    document.removeEventListener("visibilitychange", onVisibility);
     observer.disconnect();
+    persistTime();
   });
 
   return game;

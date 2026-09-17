@@ -164,7 +164,7 @@ describe("satiety cozy pacing", () => {
     for (let i = 0; i < ticks; i += 1) {
       sim.tick();
     }
-    const satiety = sim.state.slimes[SLIME_IDS.PINGO].satiety;
+    const satiety = sim.state.slimes[SLIME_IDS.MOMO].satiety;
     expect(satiety).toBeGreaterThan(HUNGER_THRESHOLDS.hungry);
     expect(SATIETY_MAX - satiety).toBeCloseTo(70 * SATIETY_DECAY_PER_SECOND, 0);
   });

@@ -6,6 +6,7 @@ import type { FishingPresentationPhase } from "@/src/simulation/entities/Fishing
 import type { BuildingTypeId } from "@/src/simulation/data/buildings";
 import { DEFAULT_BUILDING_TYPE_ID } from "@/src/simulation/data/buildings";
 import type { BuildingPlacementReason } from "@/src/simulation/systems/BuildingSystem";
+import { TIME, type DayPeriod } from "@/src/simulation/timeConfig";
 
 export type WorldToolMode =
   | "off"
@@ -95,6 +96,12 @@ export interface SlimeInfo {
   consumesFood: boolean | null;
   currentAnimation: string | null;
   activeSpecialistAnimation: string | null;
+  routinePhase: string | null;
+  routineWakeTime: string | null;
+  routineBedtime: string | null;
+  routineJobAvailable: boolean | null;
+  routineHomeDestination: string | null;
+  routineBlockReason: string | null;
 }
 
 export interface BuildingPlacementDebug {
@@ -167,6 +174,13 @@ export interface DebugActions {
   forceSocialGreet: () => void;
   clearAmbientBehaviors: () => void;
   spawnLilyVisitor: () => void;
+  setDawn: () => void;
+  setMidday: () => void;
+  setDusk: () => void;
+  setMidnight: () => void;
+  setLateNight: () => void;
+  advanceOneGameHour: () => void;
+  advanceToNextDay: () => void;
 }
 
 export interface HudActions {
@@ -192,6 +206,10 @@ export interface GameUiSnapshot {
   mapWidth: number;
   mapHeight: number;
   simTps: number;
+  dayNumber: number;
+  clockHour: number;
+  clockMinute: number;
+  dayPeriod: DayPeriod;
   slimeCount: number;
   availableTasks: number;
   assignedTasks: number;
@@ -271,6 +289,10 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   mapWidth: 0,
   mapHeight: 0,
   simTps: 0,
+  dayNumber: TIME.newGame.day,
+  clockHour: TIME.newGame.hour,
+  clockMinute: TIME.newGame.minute,
+  dayPeriod: "day",
   slimeCount: 0,
   availableTasks: 0,
   assignedTasks: 0,

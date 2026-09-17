@@ -7,6 +7,10 @@ function coord(value: number | null): string {
   return value === null ? "—" : String(value);
 }
 
+function padClock(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
 export function DebugOverlay() {
   const debugVisible = useGameUiStore((state) => state.debugVisible);
   const fps = useGameUiStore((state) => state.fps);
@@ -22,6 +26,10 @@ export function DebugOverlay() {
   const mapWidth = useGameUiStore((state) => state.mapWidth);
   const mapHeight = useGameUiStore((state) => state.mapHeight);
   const simTps = useGameUiStore((state) => state.simTps);
+  const dayNumber = useGameUiStore((state) => state.dayNumber);
+  const clockHour = useGameUiStore((state) => state.clockHour);
+  const clockMinute = useGameUiStore((state) => state.clockMinute);
+  const dayPeriod = useGameUiStore((state) => state.dayPeriod);
   const slimeCount = useGameUiStore((state) => state.slimeCount);
   const availableTasks = useGameUiStore((state) => state.availableTasks);
   const assignedTasks = useGameUiStore((state) => state.assignedTasks);
@@ -124,6 +132,13 @@ export function DebugOverlay() {
           <DebugButton label="Force social greet" onClick={debugActions.forceSocialGreet} />
           <DebugButton label="Clear ambient" onClick={debugActions.clearAmbientBehaviors} />
           <DebugButton label="Spawn Lily visitor (debug)" onClick={debugActions.spawnLilyVisitor} />
+          <DebugButton label="Set dawn" onClick={debugActions.setDawn} />
+          <DebugButton label="Set midday" onClick={debugActions.setMidday} />
+          <DebugButton label="Set dusk" onClick={debugActions.setDusk} />
+          <DebugButton label="Set midnight" onClick={debugActions.setMidnight} />
+          <DebugButton label="Set 23:59" onClick={debugActions.setLateNight} />
+          <DebugButton label="Advance 1 game hour" onClick={debugActions.advanceOneGameHour} />
+          <DebugButton label="Advance to next day" onClick={debugActions.advanceToNextDay} />
         </div>
       ) : null}
       <div>
@@ -133,6 +148,11 @@ export function DebugOverlay() {
         </p>
         <p>Zoom: {zoom}x</p>
         <p>Sim TPS: {simTps}</p>
+        <p className="mt-1 text-lime-300">World time</p>
+        <p>
+          {`Dia ${dayNumber}`} · {padClock(clockHour, clockMinute)}
+        </p>
+        <p>Period: {dayPeriod}</p>
         <p className="mt-1 text-lime-300">Hovered:</p>
         <p>X: {coord(hoveredX)}</p>
         <p>Y: {coord(hoveredY)}</p>
@@ -206,6 +226,18 @@ export function DebugOverlay() {
                 <p>homeBuildingId: {selectedSlime.homeBuildingId ?? "—"}</p>
                 <p>homeStatus: {selectedSlime.homeStatus ?? "—"}</p>
                 <p>homeEntranceTile: {selectedSlime.homeEntranceTile ?? "—"}</p>
+                {selectedSlime.routineWakeTime ? (
+                  <>
+                    <p>routine: {selectedSlime.routinePhase}</p>
+                    <p>
+                      wake: {selectedSlime.routineWakeTime ?? "—"} bedtime:{" "}
+                      {selectedSlime.routineBedtime ?? "—"}
+                    </p>
+                    <p>jobs: {selectedSlime.routineJobAvailable == null ? "—" : String(selectedSlime.routineJobAvailable)}</p>
+                    <p>homeDest: {selectedSlime.routineHomeDestination ?? "—"}</p>
+                    <p>block: {selectedSlime.routineBlockReason ?? "—"}</p>
+                  </>
+                ) : null}
                 {selectedSlime.visitorIntent ? (
                   <>
                     <p>visitorIntent: {selectedSlime.visitorIntent}</p>

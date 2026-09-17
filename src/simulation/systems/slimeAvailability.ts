@@ -1,7 +1,9 @@
 import type { GameState } from "../GameState";
 import type { SlimeState } from "../entities/SlimeState";
-import { isVillageResident } from "../data/residents";
+import { isVillageResident, residentTypeIdForSlime } from "../data/residents";
+import { isRoutineUnavailable, isSleepMinute, sleepScheduleFor } from "../data/sleepRoutines";
 import { EAT_FOOD_COST, hungerState } from "../needsConfig";
+import { readClock } from "../worldTime";
 
 export function isFishingBusy(slime: SlimeState): boolean {
   return (
@@ -36,6 +38,9 @@ export function isJobAssignable(state: GameState, slime: SlimeState): boolean {
   if (!isVillageResident(slime)) {
     return false;
   }
+  if (isSleepWindow(state, slime) || isRoutineUnavailable(slime)) {
+    return false;
+  }
   if (hungerState(slime.satiety) === "starving" && state.resources.food >= EAT_FOOD_COST) {
     return false;
   }
@@ -59,6 +64,9 @@ export function isJobAssignable(state: GameState, slime: SlimeState): boolean {
 
 export function isAmbientEligible(state: GameState, slime: SlimeState): boolean {
   if (!isVillageResident(slime)) {
+    return false;
+  }
+  if (isSleepWindow(state, slime) || isRoutineUnavailable(slime)) {
     return false;
   }
   if (isProductiveBusy(slime) || isAmbientState(slime)) {
@@ -109,3 +117,12 @@ export function maxIdleInstinct(state: GameState): number {
 }
 
 const ATTR_FALLBACK = 3;
+
+function isSleepWindow(state: GameState, slime: SlimeState): boolean {
+  const typeId = residentTypeIdForSlime(slime.id);
+  const schedule = typeId ? sleepScheduleFor(typeId) : undefined;
+  if (!schedule || !isVillageResident(slime)) {
+    return false;
+  }
+  return isSleepMinute(readClock(state.worldTime).minuteOfDay, schedule);
+}

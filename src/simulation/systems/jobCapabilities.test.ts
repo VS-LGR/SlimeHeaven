@@ -9,6 +9,7 @@ import { assignAvailableTasks, createGatherTask } from "./JobSystem";
 import { uniqueCapabilities } from "../slimeCapabilities";
 import { forceAmbientBehavior } from "./AmbientBehaviorSystem";
 import { EAT_FOOD_COST } from "../needsConfig";
+import { setWorldClock } from "../worldTime";
 
 const FARM_X = 2;
 const FARM_Y = 12;
@@ -96,6 +97,7 @@ describe("job capability eligibility", () => {
 
   it("still assigns universal jobs with no required capabilities", () => {
     const state = new GameState();
+    setWorldClock(state.worldTime, { hour: 12, minute: 0 });
     const task = universalTask(state, "universal_1");
     assignAvailableTasks(state);
     expect(task.assignedSlimeId).toBe(SLIME_IDS.PINGO);

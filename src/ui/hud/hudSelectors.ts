@@ -1,12 +1,15 @@
 import type { GameUiSnapshot } from "@/src/store/gameUiStore";
+import { TIME, dayPeriodAtMinute, minutesFromTimeOfDay } from "@/src/simulation/timeConfig";
+import { formatClock, formatDayLabel } from "@/src/simulation/worldTime";
 import { UNAVAILABLE_HUD_VALUE } from "./hudAssets";
 
 export interface WorldStatusHudModel {
-  day?: number;
-  timeLabel?: string;
-  season?: string;
-  weather?: string;
-  dayPhase?: string;
+  source: "simulation";
+  dayLabel: string;
+  timeLabel: string;
+  season: string;
+  seasonSource: "static_placeholder";
+  period: string;
 }
 
 export interface ResourceHudModel {
@@ -15,18 +18,29 @@ export interface ResourceHudModel {
   food: number;
 }
 
-export const PROTOTYPE_WORLD_STATUS = {
-  source: "prototype_placeholder" as const,
-  dayLabel: "Dia 1",
-  timeLabel: "09:30",
-  season: "Primavera",
+/** Season progression is not part of 05.5A. Keep the plaque static. */
+export const STATIC_SEASON = {
+  id: "spring",
+  label: "Primavera",
+  progression: "inactive" as const,
+  source: "static_placeholder" as const,
 };
 
-const EMPTY_WORLD_STATUS: WorldStatusHudModel = {};
+export type WorldStatusClockFields = Pick<GameUiSnapshot, "dayNumber" | "clockHour" | "clockMinute">;
 
-export function selectWorldStatusHudModel(snapshot: GameUiSnapshot): WorldStatusHudModel {
-  void snapshot;
-  return EMPTY_WORLD_STATUS;
+export function selectWorldStatusHudModel(snapshot: WorldStatusClockFields): WorldStatusHudModel {
+  const dayNumber = snapshot.dayNumber >= 1 ? snapshot.dayNumber : TIME.newGame.day;
+  const hour = Number.isFinite(snapshot.clockHour) ? snapshot.clockHour : TIME.newGame.hour;
+  const minute = Number.isFinite(snapshot.clockMinute) ? snapshot.clockMinute : TIME.newGame.minute;
+  const minuteOfDay = minutesFromTimeOfDay(hour, minute);
+  return {
+    source: "simulation",
+    dayLabel: formatDayLabel(dayNumber),
+    timeLabel: formatClock(hour, minute),
+    season: STATIC_SEASON.label,
+    seasonSource: STATIC_SEASON.source,
+    period: dayPeriodAtMinute(minuteOfDay),
+  };
 }
 
 export function selectResourceHudModel(
