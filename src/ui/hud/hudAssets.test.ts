@@ -48,7 +48,7 @@ describe("HUD assets 05.4A", () => {
     expect(pngSize(HUD_ASSET_FILES.topLeft)).toEqual(HUD_ASSET_SIZES.topLeft);
     expect(pngSize(HUD_ASSET_FILES.topRight)).toEqual(HUD_ASSET_SIZES.topRight);
     expect(pngSize(HUD_ASSET_FILES.clock)).toEqual(HUD_ASSET_SIZES.clock);
-    expect(HUD_ASSET_SIZES.clock).toEqual({ width: 122, height: 119 });
+    expect(HUD_ASSET_SIZES.clock).toEqual({ width: 122, height: 118 });
     expect(pngSize(HUD_ASSET_FILES.iconWood)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconStone)).toEqual(HUD_ASSET_SIZES.icon);
     expect(pngSize(HUD_ASSET_FILES.iconFood)).toEqual(HUD_ASSET_SIZES.icon);
@@ -73,7 +73,7 @@ describe("HUD assets 05.4A", () => {
       "d21426fc32882826fb9c2796eea005a509f4278c5f64e4d39d10b15e87880865",
     );
     expect(sha256(HUD_ASSET_FILES.clock)).toBe(
-      "4c236851a04a1e5def4b2e6b6b631af0af04b83952f6b92360e9259a618acd6b",
+      "2ffa26e571af6f582816f84fe615051cbed517314ba17ebeee7e6574a01fcc4e",
     );
     expect(sha256(HUD_ASSET_FILES.iconWood)).toBe(
       "7803dfa863f5e1dd89c1c9d5811d44cd6256c1ec692d5f982177e6cd3234c789",
@@ -175,5 +175,80 @@ describe("HUD assets 05.4A", () => {
     expect(tools).not.toMatch(/UI_Icon_Technique|UI_Icon_Speak/);
     expect(Object.values(ACTION_TOOLBAR_ICON_FILES)).toHaveLength(5);
     expect(pngSize(HUD_ASSET_FILES.toolbar)).toEqual({ width: 626, height: 126 });
+  });
+});
+
+describe("inventory HUD assets 05.6A.UI", () => {
+  it("records native inventory PNG dimensions without rewriting files", () => {
+    expect(HUD_ASSETS.inventoryMinimized).toBe("/assets/UI/Collepsed_Inventory.png");
+    expect(HUD_ASSETS.inventoryBackpackPanel).toBe("/assets/UI/Backpack_UI.png");
+    expect(HUD_ASSETS.inventoryCompact).toBe("/assets/UI/New_UI_Top_Right.png");
+    expect(HUD_ASSETS.inventoryExpanded).toBe("/assets/UI/Expanded_Inventory.png");
+    expect(HUD_ASSETS.inventoryFood).toBe("/assets/world/materials/Carrot.png");
+    expect(HUD_ASSETS.inventoryVine).toBe("/assets/world/materials/Vine.png");
+    expect(HUD_ASSETS.inventoryCopperOre).toBe("/assets/world/materials/Copper_Ore.png");
+    expect(HUD_ASSETS.inventoryShell).toBe("/assets/world/materials/Shell.png");
+    expect(HUD_ASSETS.inventoryFoliage).toBe("/assets/world/materials/Foliage.png");
+    expect(pngSize(HUD_ASSET_FILES.inventoryMinimized)).toEqual(HUD_ASSET_SIZES.inventoryMinimized);
+    expect(pngSize(HUD_ASSET_FILES.inventoryBackpackPanel)).toEqual(HUD_ASSET_SIZES.inventoryBackpackPanel);
+    expect(pngSize(HUD_ASSET_FILES.inventoryCompact)).toEqual(HUD_ASSET_SIZES.inventoryCompact);
+    expect(pngSize(HUD_ASSET_FILES.inventoryExpanded)).toEqual(HUD_ASSET_SIZES.inventoryExpanded);
+    expect(pngSize(HUD_ASSET_FILES.inventoryLargeCard)).toEqual(HUD_ASSET_SIZES.inventoryLargeCard);
+    expect(pngSize(HUD_ASSET_FILES.inventoryWideCard)).toEqual(HUD_ASSET_SIZES.inventoryWideCard);
+    expect(pngSize(HUD_ASSET_FILES.inventoryShortConfig)).toEqual(HUD_ASSET_SIZES.inventoryShortConfig);
+    expect(pngSize(HUD_ASSET_FILES.inventoryShortFavorite)).toEqual(HUD_ASSET_SIZES.inventoryShort);
+    expect(pngSize(HUD_ASSET_FILES.inventoryShortList)).toEqual(HUD_ASSET_SIZES.inventoryShort);
+    expect(pngSize(HUD_ASSET_FILES.inventoryShortShowHide)).toEqual(HUD_ASSET_SIZES.inventoryShort);
+    expect(pngSize(HUD_ASSET_FILES.inventoryShortArrow)).toEqual(HUD_ASSET_SIZES.inventoryShort);
+    expect(pngSize(HUD_ASSET_FILES.inventoryArrow)).toEqual(HUD_ASSET_SIZES.inventoryArrow);
+    expect(pngSize(HUD_ASSET_FILES.inventoryArrowBig)).toEqual(HUD_ASSET_SIZES.inventoryArrowBig);
+    expect(pngSize(HUD_ASSET_FILES.inventoryFood)).toEqual(HUD_ASSET_SIZES.inventoryFood);
+    expect(pngSize(HUD_ASSET_FILES.inventoryVine)).toEqual(HUD_ASSET_SIZES.inventoryVine);
+    expect(pngSize(HUD_ASSET_FILES.inventoryCopperOre)).toEqual(HUD_ASSET_SIZES.inventoryCopperOre);
+    expect(pngSize(HUD_ASSET_FILES.inventoryCopperIngot)).toEqual(HUD_ASSET_SIZES.inventoryCopperIngot);
+    expect(pngSize(HUD_ASSET_FILES.inventoryShell)).toEqual(HUD_ASSET_SIZES.inventoryShell);
+    expect(pngSize(HUD_ASSET_FILES.inventoryFoliage)).toEqual(HUD_ASSET_SIZES.inventoryFoliage);
+  });
+
+  it("does not modify the authored inventory PNGs", () => {
+    expect(sha256(HUD_ASSET_FILES.inventoryMinimized)).toBe(
+      "8d1798a593cc1f11ad9e722c11f8d42e6da92a23f4db8ae78f6ea278eaa6ea60",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryBackpackPanel)).toBe(
+      "acc691189667a5d0b54f3690a7bdefe307bc454cf9d13138a9d98015667be1e5",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryCompact)).toBe(
+      "56aea9b6c3d3b879a4eb092d3db96e68fd1afe1e2ba3f5f510ab77d6152cb27f",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryExpanded)).toBe(
+      "3e8514f247b417fa63ab3793ba7b11a8972327e7ae29015c7630e2b564b16fb9",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryLargeCard)).toBe(
+      "ae5d94d872967afae49ac36f2a1b572bedffa568c552e5a8707518c3d3807878",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryWideCard)).toBe(
+      "f42f9276708aed5fba51a63d9e1bd40e26f4d6c50af07df4b297cef9bd2ebeb8",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryShortConfig)).toBe(
+      "506722ec65185dcedc7089bd08da5fc7049c82103cd14a68af5310eef76eb9c0",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryFood)).toBe(
+      "c9ba4c4b51f8c36953dfec0fd01e7198e4d818185922d1521110768631992251",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryVine)).toBe(
+      "0aa8aa9ce60113c0f00f1c10ef2da6c4d642015da908f6c1b010cd8e46d32fa0",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryCopperOre)).toBe(
+      "9c711e2a93edb1ce8485e2d4ef787624a6c3da280d573601d77202108709de0c",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryCopperIngot)).toBe(
+      "89d9806a21c0c03047afe772487448313a0c6eb512a51ad9f4569892349c4104",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryShell)).toBe(
+      "3604b2740c0e24e729f82186ca81dba151b3b3a13e4fa1af780b3a08afc56dd5",
+    );
+    expect(sha256(HUD_ASSET_FILES.inventoryFoliage)).toBe(
+      "0950d52c7c6fd5a805c7d79c6ba981bddb509ce20ced134b95fdeb46e531a0a3",
+    );
   });
 });

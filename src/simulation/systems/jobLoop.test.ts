@@ -37,7 +37,7 @@ describe("job loop", () => {
   it("does not add stock until the slime delivers at storage", () => {
     const state = new GameState();
     const slime = state.slimes[SLIME_IDS.PINGO];
-    slime.carriedResource = { type: "wood", amount: GATHER_AMOUNT };
+    slime.carriedResource = { wood: GATHER_AMOUNT };
     slime.state = "working";
     expect(state.resources.wood).toBe(0);
 
@@ -53,7 +53,7 @@ describe("job loop", () => {
     slime.state = "carrying_to_storage";
     slime.path = [];
     slime.hopTo = undefined;
-    slime.carriedResource = { type: "wood", amount: GATHER_AMOUNT };
+    slime.carriedResource = { wood: GATHER_AMOUNT };
     tickSlimes(state);
     expect(state.resources.wood).toBe(GATHER_AMOUNT);
     expect(slime.carriedResource).toBeUndefined();
@@ -63,7 +63,7 @@ describe("job loop", () => {
   it("only deposits through deliver()", () => {
     const state = new GameState();
     const slime = state.slimes[SLIME_IDS.TITO];
-    slime.carriedResource = { type: "stone", amount: 2 };
+    slime.carriedResource = { stone: 2 };
     deliver(state, slime);
     expect(state.resources.stone).toBe(2);
     expect(slime.state).toBe("idle");
@@ -197,8 +197,9 @@ describe("job loop", () => {
     tickSlimes(state);
     expect(tito.workElapsedMs).toBe(WORK_DURATION_MS);
     expect(tito.state).toBe("carrying_to_storage");
-    expect(tito.carriedResource).toEqual({ type: "wood", amount: GATHER_AMOUNT });
+    expect(tito.carriedResource?.wood).toBe(GATHER_AMOUNT);
     expect(state.resources.wood).toBe(0);
+    expect(state.resources.vine).toBe(0);
   });
 
   it("finishes hungry gather_wood from the existing work-speed multiplier, not clip length", () => {
@@ -249,7 +250,7 @@ describe("job loop", () => {
     }
     expect(tito.workElapsedMs).toBeGreaterThanOrEqual(WORK_DURATION_MS);
     expect(tito.state).toBe("carrying_to_storage");
-    expect(tito.carriedResource).toEqual({ type: "stone", amount: GATHER_AMOUNT });
+    expect(tito.carriedResource).toEqual({ stone: GATHER_AMOUNT });
     expect(state.resources.stone).toBe(0);
   });
 

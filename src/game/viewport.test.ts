@@ -104,6 +104,44 @@ describe("viewport cover zoom 05.4A.4", () => {
     expect(worldToTile(right.x, right.y)).toEqual({ x: 19, y: 7 });
   });
 
+  it("round-trips an off-center village tree through canvasPointerToWorld without extra offsets", () => {
+    const TREE = { x: 12, y: 7 };
+    const worldX = TREE.x * 32 + 16;
+    const worldY = TREE.y * 32 + 16;
+    const viewports = [
+      { width: 1920, height: 1080 },
+      { width: 1280, height: 720 },
+    ] as const;
+
+    for (const viewport of viewports) {
+      const zoom = computeCoverZoom(viewport.width, viewport.height);
+      const scroll = coverCameraScroll(640, 480, viewport.width / zoom, viewport.height / zoom);
+      const canvasX = (worldX - scroll.x) * zoom;
+      const canvasY = (worldY - scroll.y) * zoom;
+      expect(canvasX).toBeGreaterThan(viewport.width / 2);
+      const center = canvasPointerToWorld(
+        viewport.width / 2,
+        viewport.height / 2,
+        scroll.x,
+        scroll.y,
+        zoom,
+      );
+      expect(worldToTile(center.x, center.y)).not.toEqual(TREE);
+      const back = canvasPointerToWorld(canvasX, canvasY, scroll.x, scroll.y, zoom);
+      expect(worldToTile(back.x, back.y)).toEqual(TREE);
+
+      const panned = { x: scroll.x + 40, y: scroll.y + 24 };
+      const pannedCanvasX = (worldX - panned.x) * zoom;
+      const pannedCanvasY = (worldY - panned.y) * zoom;
+      const pannedBack = canvasPointerToWorld(pannedCanvasX, pannedCanvasY, panned.x, panned.y, zoom);
+      expect(worldToTile(pannedBack.x, pannedBack.y)).toEqual(TREE);
+    }
+
+    const wide = visibleWorldBounds(1920, 1080);
+    expect(wide.top).toBeGreaterThan(32);
+    expect(worldToTile(16, wide.top).y).toBeGreaterThan(0);
+  });
+
   it("keeps pointer-to-world mapping 1:1 with integer camera zoom", () => {
     const zoom = 2;
     const world = canvasPointerToWorld(100, 40, 10, 20, zoom);

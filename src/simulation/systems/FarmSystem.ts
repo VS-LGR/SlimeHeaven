@@ -12,6 +12,7 @@ import {
 import type { FarmTaskType, Task } from "../entities/Task";
 import { createFarmTask, cancelTask } from "./JobSystem";
 import { rebuildInterestPoints } from "./InterestPointSystem";
+import { hasCargo } from "../resources";
 
 export function isValidFarmTerrain(state: GameState, x: number, y: number): boolean {
   if (!state.grid.inBounds(x, y)) {
@@ -158,7 +159,7 @@ function cancelFarmTasksForTile(state: GameState, x: number, y: number): void {
       continue;
     }
     const slime = task.assignedSlimeId ? state.slimes[task.assignedSlimeId] : undefined;
-    if (slime?.state === "carrying_to_storage" || slime?.carriedResource) {
+    if (slime?.state === "carrying_to_storage" || hasCargo(slime?.carriedResource)) {
       continue;
     }
     cancelTask(state, task, slime, `Farm removed at ${x},${y}; task ${task.id} cancelled.`);

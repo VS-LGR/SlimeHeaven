@@ -1,9 +1,4 @@
-import {
-  SIMULATION_TICK_MS,
-  SLIME_HOP_DURATION_MS,
-  WORK_DURATION_MS,
-  GATHER_AMOUNT,
-} from "../constants";
+import { SIMULATION_TICK_MS, SLIME_HOP_DURATION_MS, WORK_DURATION_MS } from "../constants";
 import { EAT_DURATION_MS, EAT_SATIETY_RESTORE, SATIETY_MAX, workSpeedMultiplier } from "../needsConfig";
 import type { GameState } from "../GameState";
 import type { SlimeState } from "../entities/SlimeState";
@@ -19,6 +14,7 @@ import {
 } from "./JobSystem";
 import { isConstructionTask } from "../entities/Task";
 import type { Task } from "../entities/Task";
+import { resolveGatherBundle } from "../data/materials";
 import { completeHarvest, completePlant, completeTill } from "./FarmSystem";
 import { completeConstruction } from "./BuildingSystem";
 import { startPlotWorkRecoverHop, startTillRecoverHop } from "./tillStance";
@@ -153,20 +149,27 @@ function finishWork(state: GameState, slime: SlimeState): void {
 
   if (task.type === "harvest_crop") {
     const amount = completeHarvest(state, task);
-    slime.carriedResource = { type: "food", amount };
+    slime.carriedResource = { food: amount };
     task.state = "completed";
     beginCarryToStorage(state, slime);
     return;
   }
 
-  if (!task.resourceType) {
-    task.state = "completed";
-    releaseSlime(slime);
+  if (task.type === "gather_wood" || task.type === "gather_stone") {
+    const force =
+      task.type === "gather_wood" && state.forceNextWoodVineBonus !== undefined
+        ? { forceVineBonus: state.forceNextWoodVineBonus }
+        : undefined;
+    if (task.type === "gather_wood") {
+      state.forceNextWoodVineBonus = undefined;
+    }
+    slime.carriedResource = resolveGatherBundle(task.type, state.rng, force);
+    beginCarryToStorage(state, slime);
     return;
   }
 
-  slime.carriedResource = { type: task.resourceType, amount: GATHER_AMOUNT };
-  beginCarryToStorage(state, slime);
+  task.state = "completed";
+  releaseSlime(slime);
 }
 
 export function tickSlimes(state: GameState): void {

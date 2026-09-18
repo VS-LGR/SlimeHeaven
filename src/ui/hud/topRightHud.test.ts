@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { INVENTORY_LAYOUT } from "./inventoryLayout";
 import {
-  HUD_LAYOUT,
   TOP_RIGHT_ANIMATION,
   TOP_RIGHT_HUD_STORAGE_KEY,
   TOP_RIGHT_TRANSITION,
-  topRightHudInnerSize,
   topRightTransitionDurationMs,
 } from "./hudLayout";
 import {
@@ -21,8 +20,6 @@ import {
   parseTopRightHudCollapsed,
   prefersHudReducedMotion,
   readTopRightHudCollapsed,
-  topRightHudIsTransitioning,
-  topRightHudShowsResources,
   writeTopRightHudCollapsed,
 } from "./useTopRightHud";
 
@@ -85,59 +82,43 @@ describe("Top Right 05.4B sequences and state", () => {
     expect(hudPngSequenceCompleted(2000, durationMs)).toBe(true);
   });
 
-  it("ignores input while transitioning and does not let the gear toggle", () => {
+  it("lets inventory retarget during CSS transitions instead of ignoring clicks", () => {
+    const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
+    expect(inventory).not.toMatch(/advanceTopRightHud/);
+    expect(inventory).not.toMatch(/HudPngSequence/);
+    expect(inventory).toMatch(/setInventoryPanelOpen/);
+    expect(inventory).toMatch(/data-inventory-dialog/);
+    expect(inventory).not.toMatch(/Configurações indisponíveis/);
     expect(advanceTopRightHud("collapsing", { type: "minimize" })).toBe("collapsing");
-    expect(advanceTopRightHud("collapsing", { type: "expand" })).toBe("collapsing");
-    expect(advanceTopRightHud("expanding", { type: "minimize" })).toBe("expanding");
-    expect(advanceTopRightHud("expanding", { type: "expand" })).toBe("expanding");
     expect(advanceTopRightHud("collapsing", { type: "transitionComplete" })).toBe("collapsed");
-    expect(advanceTopRightHud("expanding", { type: "transitionComplete" })).toBe("expanded");
-    expect(advanceTopRightHud("expanded", { type: "expand" })).toBe("expanded");
-    expect(advanceTopRightHud("collapsed", { type: "minimize" })).toBe("collapsed");
-
-    const topRight = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
-    const gear = topRight.split("function SettingsGear")[1]?.split("function CollapseControl")[0] ?? "";
-    expect(gear).toMatch(/disabled/);
-    expect(gear).toMatch(/Configurações indisponíveis/);
-    expect(gear).not.toMatch(/onClick/);
-    expect(gear).not.toMatch(/minimize|expand/);
-    expect(topRight).not.toMatch(/aria-label="Settings \(unavailable\)"/);
   });
 
-  it("starts collapse from minimize and expand from the compact control", () => {
-    expect(advanceTopRightHud("expanded", { type: "minimize" })).toBe("collapsing");
-    expect(advanceTopRightHud("collapsed", { type: "expand" })).toBe("expanding");
-    expect(topRightHudShowsResources("expanded")).toBe(true);
-    expect(topRightHudShowsResources("collapsing")).toBe(false);
-    expect(topRightHudShowsResources("collapsed")).toBe(false);
-    expect(topRightHudShowsResources("expanding")).toBe(false);
-    expect(topRightHudIsTransitioning("collapsing")).toBe(true);
-    expect(topRightHudIsTransitioning("expanding")).toBe(true);
-
-    const topRight = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
-    expect(topRight).toMatch(/ariaLabel="Recolher barra de recursos"/);
-    expect(topRight).toMatch(/ariaLabel="Expandir barra de recursos"/);
-    expect(topRight).toMatch(/onActivate=\{minimize\}/);
-    expect(topRight).toMatch(/onActivate=\{expand\}/);
-    expect(topRight).toMatch(/showResources \?/);
-    expect(topRight).toMatch(/state === "collapsed"/);
-    expect(topRight).toMatch(/stopPropagation/);
-    expect(topRight).toMatch(/pointer-events-auto/);
+  it("keeps a top-right backpack launcher and centered Backpack_UI dialog", () => {
+    const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
+    expect(inventory).toMatch(/Abrir inventário/);
+    expect(inventory).toMatch(/Fechar inventário/);
+    expect(inventory).toMatch(/data-inventory-backpack/);
+    expect(inventory).toMatch(/data-inventory-dialog/);
+    expect(inventory).toMatch(/data-inventory-backdrop/);
+    expect(inventory).toMatch(/data-inventory-panel-art/);
+    expect(inventory).toMatch(/HUD_ASSETS\.inventoryMinimized/);
+    expect(inventory).toMatch(/HUD_ASSETS\.inventoryBackpackPanel/);
+    expect(inventory).toMatch(/setInventoryPanelOpen/);
+    expect(inventory).not.toMatch(/minimizeStrip|toggleAttachedMenu|data-inventory-strip/);
+    expect(inventory).toMatch(/stopPropagation/);
+    expect(inventory).toMatch(/pointer-events-auto/);
+    expect(inventory).not.toMatch(/HudPngSequence/);
   });
 
-  it("restores live resources only after expand completes", () => {
-    expect(topRightHudShowsResources(advanceTopRightHud("expanding", { type: "transitionComplete" }))).toBe(
-      true,
-    );
-    expect(topRightHudShowsResources("expanding")).toBe(false);
-    const topRight = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
-    expect(topRight).toMatch(/HudPngSequence/);
-    expect(topRight).toMatch(/topRightTransitionDurationMs\(sequenceFrames\.length\)/);
-    expect(topRight).not.toMatch(/\.gif/i);
-    expect(topRight).toMatch(/preloadHudImages/);
+  it("animates the centered dialog with CSS instead of a frame sequence", () => {
+    const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
+    expect(inventory).toMatch(/INVENTORY_MOTION_MS/);
+    expect(inventory).toMatch(/translate\(-50%/);
+    expect(inventory).not.toMatch(/HudPngSequence/);
+    expect(inventory).not.toMatch(/\.gif/i);
+    expect(inventory).not.toMatch(/topRightTransitionDurationMs/);
     const sequence = readFileSync("src/ui/hud/HudPngSequence.tsx", "utf8");
     expect(sequence).toMatch(/requestAnimationFrame/);
-    expect(sequence).not.toMatch(/setInterval/);
   });
 
   it("does not rewrite authored animation or HUD PNG bytes", () => {
@@ -188,23 +169,10 @@ describe("Top Right 05.4B sequences and state", () => {
     })).toBe(false);
   });
 
-  it("shrinks the wrapper hitbox when collapsed", () => {
-    const expanded = topRightHudInnerSize("expanded");
-    const collapsed = topRightHudInnerSize("collapsed");
-    expect(collapsed.width).toBeLessThan(expanded.width);
-    expect(collapsed.width).toBe(HUD_LAYOUT.topRight.collapsedCard.width);
-    expect(expanded.width).toBe(HUD_LAYOUT.topRight.card.width);
-    expect(HUD_LAYOUT.topRight.collapsedCard.width).toBe(
-      TOP_RIGHT_ANIMATION.collapsedOpaque.width +
-        (HUD_LAYOUT.topRight.card.width - TOP_RIGHT_ANIMATION.staticOpaqueRight),
-    );
-    const collapse = HUD_LAYOUT.topRight.collapseButton;
-    expect(collapse.x).toBeGreaterThan(
-      HUD_LAYOUT.topRight.food.slot.x + HUD_LAYOUT.topRight.food.slot.width,
-    );
-    expect(collapse.x + collapse.width).toBeLessThan(HUD_LAYOUT.topRight.settings.slot.x);
-    expect(HUD_LAYOUT.topRight.harmony.slot.x + HUD_LAYOUT.topRight.harmony.slot.width).toBeLessThanOrEqual(
-      collapse.x,
-    );
+  it("sizes the top-right launcher to the backpack button artwork", () => {
+    expect(INVENTORY_LAYOUT.button.width).toBe(121);
+    expect(INVENTORY_LAYOUT.button.height).toBe(102);
+    expect(INVENTORY_LAYOUT.panel.width).toBe(655);
+    expect(INVENTORY_LAYOUT.panel.height).toBe(561);
   });
 });

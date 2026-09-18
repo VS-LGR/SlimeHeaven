@@ -36,6 +36,9 @@ export function DebugOverlay() {
   const wood = useGameUiStore((state) => state.wood);
   const stone = useGameUiStore((state) => state.stone);
   const food = useGameUiStore((state) => state.food);
+  const vine = useGameUiStore((state) => state.vine);
+  const cargoBundles = useGameUiStore((state) => state.cargoBundles);
+  const forceNextWoodVineBonusArmed = useGameUiStore((state) => state.forceNextWoodVineBonusArmed);
   const farmTiles = useGameUiStore((state) => state.farmTiles);
   const growingCrops = useGameUiStore((state) => state.growingCrops);
   const readyCrops = useGameUiStore((state) => state.readyCrops);
@@ -94,6 +97,15 @@ export function DebugOverlay() {
           <DebugButton label="Reset slimes" onClick={debugActions.resetSlimes} />
           <DebugButton label="Add test resource" onClick={debugActions.addTestResource} />
           <DebugButton label="Add food" onClick={debugActions.addFood} />
+          <DebugButton label="Add vine" onClick={debugActions.addVine} />
+          <DebugButton
+            label={
+              forceNextWoodVineBonusArmed
+                ? "Vine bonus armed (next wood gather)"
+                : "Force vine on next wood gather"
+            }
+            onClick={debugActions.forceNextWoodVineBonus}
+          />
           <DebugButton label="Set all slimes hungry" onClick={debugActions.setAllSlimesHungry} />
           <DebugButton label="Instant grow crops" onClick={debugActions.instantGrowCrops} />
           <DebugButton label="Clear farms" onClick={debugActions.clearFarms} />
@@ -170,8 +182,18 @@ export function DebugOverlay() {
           Tasks avail/busy: {availableTasks}/{assignedTasks}
         </p>
         <p>
-          Wood: {wood} · Stone: {stone} · Food: {food}
+          Wood: {wood} · Stone: {stone} · Food: {food} · Vine: {vine}
         </p>
+        {cargoBundles.length > 0 ? (
+          <>
+            <p className="mt-1 text-lime-300">Cargo</p>
+            {cargoBundles.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </>
+        ) : (
+          <p>Cargo: none</p>
+        )}
         <p className="mt-1 text-lime-300">Farming</p>
         <p>Farm tiles: {farmTiles}</p>
         {farmPresentation ? (
@@ -209,6 +231,7 @@ export function DebugOverlay() {
           <>
             <p className="mt-1 text-lime-300">Selected slime</p>
             <p>{selectedSlime.name}</p>
+            <p>cargo: {selectedSlime.carrying}</p>
             <p>{selectedSlime.capabilitiesDebug}</p>
             {selectedSlime.constructionActivity ? (
               <>

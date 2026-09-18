@@ -65,4 +65,14 @@ describe("gather designation 05.4C", () => {
     expect(scene).toMatch(/FishingController/);
     expect(scene).toMatch(/BuildPlacementController/);
   });
+
+  it("converts clicks through Phaser world coordinates with no compensating offsets", () => {
+    const controller = readFileSync("src/game/input/GatherDesignationController.ts", "utf8");
+    expect(controller).toMatch(/worldToTile\(pointer\.worldX, pointer\.worldY\)/);
+    expect(controller).not.toMatch(/devicePixelRatio|getBoundingClientRect|canvasPointerToWorld/);
+    expect(controller).not.toMatch(/offsetX|clientX|pageX/);
+    const cursor = readFileSync("src/ui/hud/WorldToolCursor.tsx", "utf8");
+    expect(cursor).toMatch(/pointer-events-none/);
+    expect(cursor).toMatch(/data-hud-world-cursor/);
+  });
 });

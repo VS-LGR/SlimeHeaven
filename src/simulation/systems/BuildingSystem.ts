@@ -17,6 +17,7 @@ import { cancelTask, createConstructTask, releaseSlime } from "./JobSystem";
 import { isConstructionTask } from "../entities/Task";
 import { constructionSiteForResident, placedHomeForResident } from "../residentHomes";
 import { STARTING_HOMES } from "../data/startingHomes";
+import { creditStoredResources, tryConsumeBundle } from "../resources";
 
 export type BuildingPlacementReason =
   | "out_of_bounds"
@@ -259,17 +260,7 @@ function closeConstructionTask(state: GameState, site: ConstructionSite, recreat
 
 function consumeConstructionCost(state: GameState, typeId: BuildingTypeId): boolean {
   const cost = buildingById(typeId).cost;
-  if (state.resources.wood < cost.wood || state.resources.stone < cost.stone) {
-    return false;
-  }
-  state.resources.wood -= cost.wood;
-  state.resources.stone -= cost.stone;
-  if (state.resources.wood < 0 || state.resources.stone < 0) {
-    state.resources.wood += cost.wood;
-    state.resources.stone += cost.stone;
-    return false;
-  }
-  return true;
+  return tryConsumeBundle(state.resources, { wood: cost.wood, stone: cost.stone });
 }
 
 function refundConstructionCost(state: GameState, site: ConstructionSite): void {
@@ -277,8 +268,7 @@ function refundConstructionCost(state: GameState, site: ConstructionSite): void 
     return;
   }
   const cost = buildingById(site.buildingTypeId).cost;
-  state.resources.wood += cost.wood;
-  state.resources.stone += cost.stone;
+  creditStoredResources(state.resources, state.discoveredResources, { wood: cost.wood, stone: cost.stone });
   site.refunded = true;
 }
 

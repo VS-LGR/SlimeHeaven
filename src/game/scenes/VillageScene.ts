@@ -53,6 +53,7 @@ import { placedHomeForResident, playerBuildableBuildingTypes, residentHomeStatus
 import type { SlimeState } from "@/src/simulation/entities/SlimeState";
 import { formatCapabilitiesDebug, knownSpecialtyLabels, canPerformTaskCapabilities } from "@/src/simulation/slimeCapabilities";
 import { isConstructionTask } from "@/src/simulation/entities/Task";
+import { formatCargo, hasCargo } from "@/src/simulation/resources";
 import { gatheringToolForTask } from "../render/gathering/chopPresentation";
 
 const UI_PUSH_MS = 100;
@@ -190,6 +191,8 @@ export class VillageScene extends Phaser.Scene {
       resetSlimes: () => simulation.resetSlimes(),
       addTestResource: () => simulation.addTestResource(),
       addFood: () => simulation.addFood(),
+      addVine: () => simulation.addVine(),
+      forceNextWoodVineBonus: () => simulation.forceNextWoodVineBonus(true),
       setAllSlimesHungry: () => simulation.setAllSlimesHungry(),
       instantGrowCrops: () => simulation.instantGrowCrops(),
       clearFarms: () => simulation.clearFarms(),
@@ -397,6 +400,12 @@ export class VillageScene extends Phaser.Scene {
       wood: state.resources.wood,
       stone: state.resources.stone,
       food: state.resources.food,
+      vine: state.resources.vine,
+      discoveredResources: { ...state.discoveredResources },
+      cargoBundles: Object.values(state.slimes)
+        .filter((slime) => hasCargo(slime.carriedResource))
+        .map((slime) => `${slime.name}: ${formatCargo(slime.carriedResource)}`),
+      forceNextWoodVineBonusArmed: state.forceNextWoodVineBonus === true,
       availableBuildingTypeIds: playerBuildableBuildingTypes(state),
       farmTiles: farms.length,
       growingCrops: farms.filter((plot) => plot.state === "growing" || plot.state === "planted").length,
@@ -599,6 +608,20 @@ export class VillageScene extends Phaser.Scene {
     if (jobToast && Date.now() >= jobToast.hideAt) {
       useGameUiStore.getState().setRuntime({ jobToast: null });
     }
+
+    const notices = simulation.state.pendingMaterialToasts;
+    if (notices.length > 0) {
+      simulation.state.pendingMaterialToasts = [];
+      const vineNotice = [...notices].reverse().find((notice) => notice.vine > 0);
+      if (vineNotice) {
+        useGameUiStore.getState().setRuntime({
+          jobToast: {
+            message: `${vineNotice.slimeName} delivered Vine ×${vineNotice.vine}`,
+            hideAt: Date.now() + 2800,
+          },
+        });
+      }
+    }
   }
 
   private selectedSlimeInfo(id: string): SlimeInfo | null {
@@ -692,9 +715,7 @@ function slimeInfo(
     tileY: slime.tileY,
     destX: slime.destination?.x ?? null,
     destY: slime.destination?.y ?? null,
-    carrying: slime.carriedResource
-      ? `${slime.carriedResource.type} ×${slime.carriedResource.amount}`
-      : "Nothing",
+    carrying: formatCargo(slime.carriedResource),
     satiety: Math.round(slime.satiety),
     hungerState: hungerState(slime.satiety),
     visual: debug?.visual ?? "PLACEHOLDER",

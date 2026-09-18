@@ -115,7 +115,7 @@ export function ActionToolbar() {
           {buildOpen && availableBuildingTypeIds.length > 0 ? (
             <BuildAffordHint typeId={selectedBuildingTypeId} wood={wood} stone={stone} />
           ) : null}
-          <div className="ml-auto">
+          <div className="ml-auto flex" style={{ gap: 6 }}>
             <SecondaryChip label="Collection" selected={collectionOpen} onActivate={toggleCollection} />
           </div>
         </div>

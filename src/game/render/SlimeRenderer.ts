@@ -40,7 +40,7 @@ import type { SpecialistAnchor } from "./specialist/specialistTypes";
 import { layoutFromFishingWorld, bodyFacingForPresentation } from "./fishing/fishingVisualLayout";
 import { fishingSessionForSlime } from "@/src/simulation/entities/FishingSession";
 import { fishingPresentationPhase } from "@/src/simulation/entities/FishingPresentation";
-import type { ResourceType } from "@/src/simulation/resources";
+import { carryDisplayType } from "@/src/simulation/resources";
 import { workSpeedMultiplier } from "@/src/simulation/needsConfig";
 import { useGameUiStore } from "@/src/store/gameUiStore";
 import { isWorldHiddenBySleep } from "@/src/simulation/systems/SleepRoutineSystem";
@@ -181,9 +181,9 @@ export class SlimeRenderer {
         frame: this.currentFrameIndex(slime, sprites.body, shown),
       });
 
-      const carryType = slime.carriedResource?.type;
+      const carryType = carryDisplayType(slime.carriedResource);
       if (carryType) {
-        sprites.carry.setTexture(CARRY_TEXTURE[carryType as ResourceType]);
+        sprites.carry.setTexture(CARRY_TEXTURE[carryType]);
         sprites.carry.setPosition(view.groundX + 6 * facing, view.groundY - 22 - view.hopLift);
         sprites.carry.setFlipX(facing < 0);
         sprites.carry.setVisible(true);

@@ -6,6 +6,8 @@ import { TIME } from "@/src/simulation/timeConfig";
 import { createDefaultWorldTime, readClock } from "@/src/simulation/worldTime";
 import {
   STATIC_SEASON,
+  selectInventoryStockModel,
+  selectMaterialSummaryModel,
   selectResourceHudModel,
   selectWorldStatusHudModel,
 } from "./hudSelectors";
@@ -30,14 +32,37 @@ describe("HUD selectors 05.5A", () => {
     expect(RESOURCE_IDS.WOOD).toBe("wood");
     expect(RESOURCE_IDS.STONE).toBe("stone");
     expect(RESOURCE_IDS.FOOD).toBe("food");
+    expect(RESOURCE_IDS.VINE).toBe("vine");
     expect("harmony" in state.resources).toBe(false);
   });
 
+  it("maps the inventory stock including vine and food without double-counting cargo", () => {
+    const model = selectMaterialSummaryModel({ wood: 4, stone: 2, vine: 7 });
+    expect(model).toEqual({ wood: 4, stone: 2, vine: 7 });
+    expect(selectInventoryStockModel({ wood: 4, stone: 2, vine: 7, food: 8 })).toEqual({
+      wood: 4,
+      stone: 2,
+      vine: 7,
+      food: 8,
+    });
+    const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
+    expect(inventory).toMatch(/vine/);
+    expect(inventory).toMatch(/selectInventoryStockModel/);
+    const hud = readFileSync("src/ui/GameHud.tsx", "utf8");
+    expect(hud).toMatch(/InventoryHud/);
+    expect(hud).not.toMatch(/MATERIALS/);
+    expect(readFileSync("src/simulation/data/materials.ts", "utf8")).toMatch(
+      /\/assets\/world\/materials\/Vine\.png/,
+    );
+    expect(hud).not.toMatch(/Copper_Ore|Copper_Ingot|Foliage\.png|Shell\.png/);
+  });
+
   it("does not keep a second resource wallet", () => {
-    const source = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
+    const source = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
     expect(source).toMatch(/state\.wood/);
     expect(source).toMatch(/state\.stone/);
     expect(source).toMatch(/state\.food/);
+    expect(source).toMatch(/state\.vine/);
     expect(source).not.toMatch(/resources\.harmony/);
   });
 

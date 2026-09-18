@@ -7,7 +7,7 @@ import { farmNodeId } from "../entities/FarmPlot";
 import type { FarmTaskType, GatherTaskType, Task } from "../entities/Task";
 import { isConstructionTask, isGatherTask, jobCategory, resourceTypeForTask } from "../entities/Task";
 import { SLIME_IDS, type SlimeState } from "../entities/SlimeState";
-import { RESOURCE_IDS } from "../resources";
+import { creditStoredResources, hasCargo, RESOURCE_IDS } from "../resources";
 import { isIdleAvailable } from "./slimeAvailability";
 import { cancelAmbientBehavior } from "./AmbientBehaviorSystem";
 import { isFishingTask } from "../entities/Task";
@@ -299,9 +299,13 @@ export function beginCarryToStorage(state: GameState, slime: SlimeState): void {
 export function deliver(state: GameState, slime: SlimeState): void {
   slime.state = "delivering";
   const carried = slime.carriedResource;
-  if (carried) {
-    state.resources[carried.type] += carried.amount;
+  if (hasCargo(carried) && carried) {
+    const vine = carried.vine ?? 0;
+    creditStoredResources(state.resources, state.discoveredResources, carried);
     slime.carriedResource = undefined;
+    if (vine > 0) {
+      state.pendingMaterialToasts.push({ slimeName: slime.name, vine });
+    }
   }
   const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;
   if (task && task.state !== "completed" && task.state !== "cancelled") {

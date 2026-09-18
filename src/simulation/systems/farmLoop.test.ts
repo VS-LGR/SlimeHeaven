@@ -10,6 +10,7 @@ import { DEFAULT_FARM_SOIL_VISUAL } from "../entities/FarmPlot";
 import { plotCropStageNumber, plotCropTextureKey } from "@/src/game/render/farming/cropPresentation";
 import { createGatherTask } from "./JobSystem";
 import { FarmingVisualState } from "@/src/world/tileTypes";
+import { bundleAmount } from "../resources";
 
 const FARM_X = 2;
 const FARM_Y = 12;
@@ -112,7 +113,7 @@ describe("farm loop", () => {
     let sawCarry = false;
     tickUntil(sim, () => {
       const carrying = Object.values(sim.state.slimes).some(
-        (slime) => slime.carriedResource?.type === "food",
+        (slime) => bundleAmount(slime.carriedResource, "food") > 0,
       );
       if (carrying) {
         sawCarry = true;

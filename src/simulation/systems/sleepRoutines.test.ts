@@ -120,14 +120,14 @@ describe("sleep lifecycle 05.5D", () => {
     const sim = new Simulation();
     sim.setClock({ hour: 12, minute: 0 });
     const tito = sim.state.slimes[SLIME_IDS.TITO];
-    tito.carriedResource = { type: "wood", amount: GATHER_AMOUNT };
+    tito.carriedResource = { wood: GATHER_AMOUNT };
     tito.state = "carrying_to_storage";
     tito.tileX = sim.state.storage.x;
     tito.tileY = sim.state.storage.y;
     tito.path = [];
     const wood = sim.state.resources.wood;
     sim.setClock({ hour: 23, minute: 0 });
-    expect(tito.carriedResource).toEqual({ type: "wood", amount: GATHER_AMOUNT });
+    expect(tito.carriedResource).toEqual({ wood: GATHER_AMOUNT });
     sim.tick();
     expect(sim.state.resources.wood).toBe(wood + GATHER_AMOUNT);
     expect(tito.carriedResource).toBeUndefined();
@@ -310,7 +310,7 @@ describe("sleep lifecycle 05.5D", () => {
     const sim = new Simulation();
     sim.setClock({ hour: 12, minute: 0 });
     const tito = sim.state.slimes[SLIME_IDS.TITO];
-    tito.carriedResource = { type: "stone", amount: GATHER_AMOUNT };
+    tito.carriedResource = { stone: GATHER_AMOUNT };
     tito.state = "carrying_to_storage";
     tito.tileX = sim.state.storage.x;
     tito.tileY = sim.state.storage.y;

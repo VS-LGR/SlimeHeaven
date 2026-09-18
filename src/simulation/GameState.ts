@@ -4,7 +4,8 @@ import { createResourceNodes } from "@/src/world/resourceNodes";
 import type { Grid } from "@/src/world/Grid";
 import type { GridPosition } from "@/src/world/GridPosition";
 import { STORAGE_TILE, IDLE_WANDER_DELAY_TICKS } from "./constants";
-import { emptyStock, type ResourceStock } from "./resources";
+import { emptyDiscovery, emptyStock, type ResourceStock, type ResourceType } from "./resources";
+import type { MaterialDeliveryNotice } from "./data/materials";
 import { createSlimeState, SLIME_SPAWNS, type SlimeState } from "./entities/SlimeState";
 import type { Task } from "./entities/Task";
 import type { ResourceNode } from "./entities/ResourceNode";
@@ -58,6 +59,8 @@ export class GameState {
   slimes: Record<string, SlimeState>;
   tasks: Record<string, Task>;
   resources: ResourceStock;
+  /** Session-only first stored acquisition. Not persisted. */
+  discoveredResources: Record<ResourceType, boolean>;
   farms: Record<string, FarmPlot>;
   buildings: Record<string, PlacedBuilding>;
   constructionSites: Record<string, ConstructionSite>;
@@ -69,6 +72,9 @@ export class GameState {
   lastFishingScores: FishingCandidateScore[];
   lastFishingEligibility: JobEligibilityLine[];
   lastJobFeedback: JobFeedback | null;
+  pendingMaterialToasts: MaterialDeliveryNotice[];
+  /** One-shot debug override for the next wood collection. Ordinary play leaves this unset. */
+  forceNextWoodVineBonus: boolean | undefined;
   interestPoints: InterestPoint[];
   interestPointsByTag: Partial<Record<InterestTag, string[]>>;
   tickIndex = 0;
@@ -99,6 +105,7 @@ export class GameState {
     this.slimes = {};
     this.tasks = {};
     this.resources = emptyStock();
+    this.discoveredResources = emptyDiscovery();
     this.farms = {};
     this.buildings = {};
     this.constructionSites = {};
@@ -110,6 +117,8 @@ export class GameState {
     this.lastFishingScores = [];
     this.lastFishingEligibility = [];
     this.lastJobFeedback = null;
+    this.pendingMaterialToasts = [];
+    this.forceNextWoodVineBonus = undefined;
     this.interestPoints = [];
     this.interestPointsByTag = {};
     this.worldTime = createDefaultWorldTime();

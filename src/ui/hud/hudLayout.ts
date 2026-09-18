@@ -1,4 +1,6 @@
 import { HUD_ASSET_SIZES } from "./hudAssets";
+import { inventoryButtonWidth } from "./inventoryLayout";
+
 
 /** Developer-only slot outlines. Keep false in production UI. */
 export const HUD_LAYOUT_DEBUG = false;
@@ -162,7 +164,7 @@ export const HUD_LAYOUT = {
        * Overflow stays visible so the ring/stars are not boxed.
        */
       slot: { x: 21, y: 25, width: 90, height: 88, overflow: "visible" } satisfies HudSlotConfig,
-      icon: { x: 20, y: 20, width: 82, height: 78, scale: 1 } satisfies HudImageConfig,
+      icon: { x: 20, y: 20, width: 65, height: 62, scale: 1 } satisfies HudImageConfig,
     },
     day: {
       slot: { x: 125, y: 43, width: 87, height: 19, overflow: "hidden" } satisfies HudSlotConfig,
@@ -219,8 +221,8 @@ export const HUD_LAYOUT = {
       anchor: "top-right",
       offsetX: HUD_SAFE_INSET,
       offsetY: HUD_SAFE_INSET,
-      width: HUD_ASSET_SIZES.topRight.width,
-      height: HUD_ASSET_SIZES.topRight.height,
+      width: inventoryButtonWidth(),
+      height: HUD_ASSET_SIZES.inventoryMinimized.height,
       scale: 1,
       scaleMin: 0.72,
       scaleMax: 1,
@@ -1078,8 +1080,8 @@ export function cardsUseNativeArtworkSize(): boolean {
   return (
     HUD_LAYOUT.topLeft.card.width === HUD_ASSET_SIZES.topLeft.width &&
     HUD_LAYOUT.topLeft.card.height === HUD_ASSET_SIZES.topLeft.height &&
-    HUD_LAYOUT.topRight.card.width === HUD_ASSET_SIZES.topRight.width &&
-    HUD_LAYOUT.topRight.card.height === HUD_ASSET_SIZES.topRight.height
+    HUD_LAYOUT.topRight.card.width === inventoryButtonWidth() &&
+    HUD_LAYOUT.topRight.card.height === HUD_ASSET_SIZES.inventoryMinimized.height
   );
 }
 

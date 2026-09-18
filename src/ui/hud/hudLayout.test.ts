@@ -63,12 +63,12 @@ describe("HUD layout 05.4A.4 scale and cards", () => {
     expect(typeof sunSlot.left).toBe("number");
     const source = [
       readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8"),
-      readFileSync("src/ui/hud/TopRightResources.tsx", "utf8"),
+      readFileSync("src/ui/hud/InventoryHud.tsx", "utf8"),
       readFileSync("src/ui/hud/HudCard.tsx", "utf8"),
     ].join("\n");
     expect(source).not.toMatch(/position:\s*["']fixed["']/);
     expect(source).toMatch(/data-hud-card-content/);
-    expect(source).toMatch(/transform:\s*`scale\(var\(\$\{scaleVar\}\)\)`/);
+    expect(source).toMatch(/transform:\s*`scale\(var\(/);
   });
 
   it("declares clipped safe slots for every required HUD region", () => {
@@ -95,7 +95,7 @@ describe("HUD layout 05.4A.4 scale and cards", () => {
     expect(HUD_LAYOUT.topLeft.time.text.lineHeight).toBe(HUD_LAYOUT.topLeft.time.slot.height);
     expect(readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8")).toMatch(/data-season-group/);
     expect(readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8")).not.toMatch(/alignItems:\s*["']flex-start["']/);
-    expect(readFileSync("src/ui/hud/TopRightResources.tsx", "utf8")).toMatch(/data-harmony-bar/);
+    expect(readFileSync("src/ui/hud/InventoryHud.tsx", "utf8")).not.toMatch(/data-harmony-bar/);
     expect(HUD_LAYOUT.topLeft.time.text.fontSize).not.toBe(HUD_LAYOUT.topLeft.day.text.fontSize);
     expect(HUD_LAYOUT.topLeft.time.text.lineHeight).not.toBe(HUD_LAYOUT.topLeft.season.text.lineHeight);
     expect(HUD_LAYOUT.topRight.wood.icon.width).not.toBe(HUD_LAYOUT.topRight.harmony.icon.width);
@@ -136,7 +136,7 @@ describe("HUD layout 05.4A.4 scale and cards", () => {
     expect(HUD_LAYOUT_DEBUG).toBe(false);
     expect(cardsUseNativeArtworkSize()).toBe(true);
     expect(HUD_LAYOUT.topLeft.card.width).toBe(HUD_ASSET_SIZES.topLeft.width);
-    expect(HUD_LAYOUT.topRight.card.width).toBe(HUD_ASSET_SIZES.topRight.width);
+    expect(HUD_LAYOUT.topRight.card.width).toBe(HUD_ASSET_SIZES.inventoryMinimized.width);
     expect(HUD_LAYOUT.topLeft.weather.icon.width).not.toBe(HUD_ASSET_SIZES.sun.width);
     expect(HUD_LAYOUT.topRight.wood.icon.width).not.toBe(HUD_ASSET_SIZES.icon.width);
   });
@@ -171,10 +171,9 @@ describe("HUD scale configuration 05.4A.4.1", () => {
     const { left, right } = topPanelRects(1920, 1080);
     expect(left.width).toBeCloseTo(303.75);
     expect(left.height).toBeCloseTo(193.75);
-    expect(right.width).toBeCloseTo(912.5);
-    expect(right.height).toBeCloseTo(198.75);
-    expect(right.width / 1920).toBeGreaterThanOrEqual(0.44);
-    expect(right.width / 1920).toBeLessThanOrEqual(0.48);
+    expect(right.width).toBeCloseTo(151.25);
+    expect(right.height).toBeCloseTo(127.5);
+    expect(right.width / 1920).toBeLessThan(0.15);
     for (const viewport of VIEWPORTS) {
       const atViewport = resolveHudScale(viewport.width, viewport.height);
       expect(atViewport.requestedGlobal).toBe(1.25);
@@ -192,16 +191,16 @@ describe("HUD scale configuration 05.4A.4.1", () => {
 
   it("applies safe-fit instead of overlap when 2x cannot fit a narrow viewport", () => {
     const config = { ...HUD_SCALE_CONFIG, defaultScale: 2, preset: "double" as const, scale: 2 };
-    const resolved = resolveHudScale(1280, 720, config);
+    const resolved = resolveHudScale(480, 320, config);
     expect(resolved.requestedGlobal).toBe(2);
     expect(resolved.leftApplied).toBeLessThan(2);
     expect(resolved.limited).toBe(true);
     expect(resolved.reason).toBe("viewport safe-fit");
     expect(hudScaleDiagnostics(resolved)).toMatch(/HUD requested scale: 2/);
     expect(hudScaleDiagnostics(resolved)).toMatch(/viewport safe-fit/);
-    const { left, right } = topPanelRects(1280, 720, config);
+    const { left, right } = topPanelRects(480, 320, config);
     expect(rectsOverlap(left, right)).toBe(false);
-    expect(panelsInsideViewport(1280, 720, left, right)).toBe(true);
+    expect(panelsInsideViewport(480, 320, left, right)).toBe(true);
   });
 
   it("does not silently shrink the requested scale when it already fits", () => {

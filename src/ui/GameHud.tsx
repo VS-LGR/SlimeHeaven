@@ -5,7 +5,7 @@ import { FISH, FISH_ID_LIST } from "@/src/simulation/data/fish";
 import { starString } from "@/src/simulation/slimeAttributes";
 import { fishingPhaseLabel } from "@/src/simulation/entities/FishingPresentation";
 import { TopLeftStatus } from "./hud/TopLeftStatus";
-import { TopRightResources } from "./hud/TopRightResources";
+import { InventoryHud } from "./hud/InventoryHud";
 import { ActionToolbar } from "./hud/ActionToolbar";
 import { WorldToolCursor } from "./hud/WorldToolCursor";
 import { SlimeCard } from "./hud/SlimeCard";
@@ -29,7 +29,7 @@ export function GameHud() {
       data-hud-scale-reason={scale.reason}
     >
       <TopLeftStatus />
-      <TopRightResources />
+      <InventoryHud />
       <ActionToolbar />
       <WorldToolCursor />
       <CollectionPanel />

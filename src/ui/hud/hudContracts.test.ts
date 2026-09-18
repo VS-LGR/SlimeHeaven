@@ -39,7 +39,8 @@ describe("HUD shell contracts 05.4A", () => {
     expect(hud).toMatch(/data-hud-screen-layer="true"/);
     expect(hud).toMatch(/pointer-events-none absolute inset-0/);
     expect(hud).toMatch(/TopLeftStatus/);
-    expect(hud).toMatch(/TopRightResources/);
+    expect(hud).toMatch(/InventoryHud/);
+    expect(hud).not.toMatch(/TopRightResources/);
     expect(hud).toMatch(/useHudScale/);
     expect(hud).toMatch(/data-hud-toolbar-applied/);
     expect(hud).toMatch(/data-hud-slime-applied/);
@@ -90,6 +91,7 @@ describe("HUD shell contracts 05.4A", () => {
     expect(toolbar).toMatch(/data-hud-interactive/);
     expect(toolbar).toMatch(/Remove Farm/);
     expect(toolbar).toMatch(/Collection/);
+    expect(toolbar).not.toMatch(/Materials/);
     expect(toolbar).toMatch(/No building plans available/);
     expect(readFileSync("src/ui/hud/actionTools.ts", "utf8")).toMatch(/Designate farmland/);
   });
@@ -99,14 +101,13 @@ describe("HUD shell contracts 05.4A", () => {
     expect(SIMULATION_TICKS_PER_SECOND).toBe(4);
   });
 
-  it("keeps Top Right on the HUD snapshot rather than Phaser private fields", () => {
-    const topRight = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
-    expect(topRight).toMatch(/useGameUiStore/);
-    expect(topRight).not.toMatch(/this\.game|registry\.get|cameras\.main/);
-    expect(topRight).toMatch(/Harmony: unavailable/);
-    expect(topRight).toMatch(/Harmonia/);
-    expect(topRight).toMatch(/Configurações indisponíveis/);
-    expect(topRight).toMatch(/disabled/);
+  it("keeps inventory stock on the HUD snapshot rather than Phaser private fields", () => {
+    const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
+    expect(inventory).toMatch(/useGameUiStore/);
+    expect(inventory).not.toMatch(/this\.game|registry\.get|cameras\.main/);
+    expect(inventory).not.toMatch(/harmony/i);
+    expect(inventory).toMatch(/selectInventoryStockModel/);
+    expect(inventory).toMatch(/data-hud-interactive/);
   });
 
   it("does not let wheel input change HUD scale", () => {
@@ -117,20 +118,26 @@ describe("HUD shell contracts 05.4A", () => {
     expect(globals).not.toMatch(/clamp\(/);
     expect(globals).not.toMatch(/wheel/);
     expect(readFileSync("src/ui/hud/TopLeftStatus.tsx", "utf8")).not.toMatch(/wheel/);
-    expect(readFileSync("src/ui/hud/TopRightResources.tsx", "utf8")).not.toMatch(/wheel/);
+    expect(readFileSync("src/ui/hud/InventoryHud.tsx", "utf8")).toMatch(/onWheel/);
     expect(readFileSync("src/ui/hud/HudCard.tsx", "utf8")).not.toMatch(/wheel/);
     expect(readFileSync("src/ui/hud/useHudScale.ts", "utf8")).not.toMatch(/wheel/);
     expect(readFileSync("src/ui/hud/hudLayout.ts", "utf8")).toMatch(/HUD_SCALE_CONFIG/);
   });
 
-  it("keeps decorative HUD regions click-through and settings presentation-only", () => {
+  it("keeps decorative HUD regions click-through and inventory prefs presentation-only", () => {
     const card = readFileSync("src/ui/hud/HudCard.tsx", "utf8");
-    const topRight = readFileSync("src/ui/hud/TopRightResources.tsx", "utf8");
-    const gear = topRight.split("function SettingsGear")[1]?.split("function CollapseControl")[0] ?? "";
+    const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
     expect(card).toMatch(/pointer-events-none absolute/);
-    expect(gear).toMatch(/pointer-events-none flex h-full w-full cursor-default/);
-    expect(gear).not.toMatch(/onClick/);
-    expect(topRight).toMatch(/pointer-events-auto absolute/);
+    expect(inventory).toMatch(/pointer-events-none absolute/);
+    expect(inventory).toMatch(/Modo \$\{INVENTORY_MODE_LABELS\.(stock|catalog)\}/);
+    expect(inventory).toMatch(/mode-stock/);
+    expect(inventory).toMatch(/mode-catalog/);
+    expect(inventory).not.toMatch(/Configurações indisponíveis/);
+    expect(inventory).not.toMatch(/Exibir no compacto/);
+    expect(inventory).not.toMatch(/Mostrar só favoritos|Somente descobertos nesta sessão/);
+    expect(inventory).toMatch(/pointer-events-auto/);
+    expect(inventory).toMatch(/data-inventory-dialog/);
+    expect(inventory).toMatch(/scrollbar-width:none/);
     expect(readFileSync("src/ui/hud/ActionToolbar.tsx", "utf8")).toMatch(
       /data-hud-toolbar-card="true"/,
     );

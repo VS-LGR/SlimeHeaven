@@ -20,6 +20,7 @@ import { cancelTask, slimeAtDestination } from "./JobSystem";
 import { cancelFishingOpportunity } from "./FishingOpportunitySystem";
 import { fishingSessionForSlime } from "../entities/FishingSession";
 import { isFishingBusy } from "./slimeAvailability";
+import { hasCargo } from "../resources";
 
 export type { RoutineBlockReason, RoutinePhase } from "../data/sleepRoutines";
 
@@ -174,7 +175,7 @@ function tickResidentRoutine(state: GameState, slime: SlimeState): void {
 
 function isFinishingAtomicBeforeSleep(slime: SlimeState): boolean {
   return (
-    Boolean(slime.carriedResource) ||
+    hasCargo(slime.carriedResource) ||
     slime.state === "carrying_to_storage" ||
     slime.state === "delivering" ||
     slime.state === "eating"

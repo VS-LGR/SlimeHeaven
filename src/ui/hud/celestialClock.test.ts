@@ -41,20 +41,25 @@ describe("celestial clock 05.5B", () => {
     });
     expect(CELESTIAL_CLOCK.orbit.centerX).toBeCloseTo(CELESTIAL_CLOCK.face.centerX, 6);
     expect(CELESTIAL_CLOCK.orbit.centerY).toBeCloseTo(
-      CELESTIAL_CLOCK.face.centerY + CELESTIAL_CLOCK.face.radius,
+      CELESTIAL_CLOCK.face.centerY + CELESTIAL_CLOCK.orbit.radius,
       6,
     );
     expect(CELESTIAL_CLOCK.horizonY).toBeCloseTo(CELESTIAL_CLOCK.orbit.centerY, 6);
     expect(CELESTIAL_CLOCK.orbit.radius).toBeGreaterThan(CELESTIAL_CLOCK.face.radius * 0.5);
-    expect(CELESTIAL_CLOCK.orbit.radius).toBeLessThan(CELESTIAL_CLOCK.face.radius);
     expect(CELESTIAL_CLOCK.orbit.sunAngleOffsetDeg).toBe(90);
     expect(celestialUsesNativeAssetSizes()).toBe(true);
     expect(CELESTIAL_CLOCK.sun).toEqual({
       width: HUD_LAYOUT.topLeft.weather.icon.width,
       height: HUD_LAYOUT.topLeft.weather.icon.height,
     });
-    expect(CELESTIAL_CLOCK.sun).toEqual({ width: 82, height: 78 });
-    expect(CELESTIAL_CLOCK.moon).toEqual({ width: 80, height: 82 });
+    expect(CELESTIAL_CLOCK.sun).toEqual({ width: 65, height: 62 });
+    expect(CELESTIAL_CLOCK.moon).toEqual({ width: 63, height: 65 });
+    expect(Math.max(CELESTIAL_CLOCK.sun.width, CELESTIAL_CLOCK.sun.height)).toBeLessThanOrEqual(
+      CELESTIAL_CLOCK.face.radius * 2,
+    );
+    expect(Math.max(CELESTIAL_CLOCK.moon.width, CELESTIAL_CLOCK.moon.height)).toBeLessThanOrEqual(
+      CELESTIAL_CLOCK.face.radius * 2,
+    );
     expect(CELESTIAL_CLOCK.sun.width).not.toBe(HUD_ASSET_SIZES.sun.width);
     expect(CELESTIAL_CLOCK.moon.width).not.toBe(HUD_ASSET_SIZES.moon.width);
     expect(HUD_LAYOUT.topLeft.weather.slot.x + HUD_LAYOUT.topLeft.weather.slot.width).toBeLessThan(
@@ -78,14 +83,16 @@ describe("celestial clock 05.5B", () => {
 
     expect(noon.sun.y).toBeCloseTo(CELESTIAL_CLOCK.orbit.centerY - CELESTIAL_CLOCK.orbit.radius, 6);
     expect(noon.moon.y).toBeCloseTo(CELESTIAL_CLOCK.orbit.centerY + CELESTIAL_CLOCK.orbit.radius, 6);
-    expect(noon.sun.y).toBeCloseTo(
-      CELESTIAL_CLOCK.face.centerY + CELESTIAL_CLOCK.face.radius - CELESTIAL_CLOCK.orbit.radius,
-      6,
-    );
+    expect(midnight.moon.x).toBeCloseTo(CELESTIAL_CLOCK.face.centerX, 6);
+    expect(midnight.moon.y).toBeCloseTo(CELESTIAL_CLOCK.face.centerY, 6);
+    expect(noon.sun.x).toBeCloseTo(CELESTIAL_CLOCK.face.centerX, 6);
+    expect(noon.sun.y).toBeCloseTo(CELESTIAL_CLOCK.face.centerY, 6);
     expect(pointInCelestialFace(noon.sun.x, noon.sun.y)).toBe(true);
     expect(pointInCelestialFace(noon.moon.x, noon.moon.y)).toBe(false);
     expect(pointInCelestialFace(midnight.moon.x, midnight.moon.y)).toBe(true);
     expect(pointInCelestialFace(midnight.sun.x, midnight.sun.y)).toBe(false);
+    expect(noon.moon.top).toBeGreaterThan(CELESTIAL_CLOCK.face.centerY + CELESTIAL_CLOCK.face.radius);
+    expect(midnight.sun.top).toBeGreaterThan(CELESTIAL_CLOCK.face.centerY + CELESTIAL_CLOCK.face.radius);
 
     expect(sunrise.sun.x).toBeCloseTo(CELESTIAL_CLOCK.orbit.centerX - CELESTIAL_CLOCK.orbit.radius, 6);
     expect(sunrise.moon.x).toBeCloseTo(CELESTIAL_CLOCK.orbit.centerX + CELESTIAL_CLOCK.orbit.radius, 6);

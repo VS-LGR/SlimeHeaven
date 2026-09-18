@@ -18,6 +18,12 @@ export interface ResourceHudModel {
   food: number;
 }
 
+export interface MaterialSummaryModel {
+  wood: number;
+  stone: number;
+  vine: number;
+}
+
 /** Season progression is not part of 05.5A. Keep the plaque static. */
 export const STATIC_SEASON = {
   id: "spring",
@@ -49,6 +55,27 @@ export function selectResourceHudModel(
   return {
     wood: snapshot.wood,
     stone: snapshot.stone,
+    food: snapshot.food,
+  };
+}
+
+export function selectMaterialSummaryModel(
+  snapshot: Pick<GameUiSnapshot, "wood" | "stone" | "vine">,
+): MaterialSummaryModel {
+  return {
+    wood: snapshot.wood,
+    stone: snapshot.stone,
+    vine: snapshot.vine,
+  };
+}
+
+export function selectInventoryStockModel(
+  snapshot: Pick<GameUiSnapshot, "wood" | "stone" | "vine" | "food">,
+): MaterialSummaryModel & { food: number } {
+  return {
+    wood: snapshot.wood,
+    stone: snapshot.stone,
+    vine: snapshot.vine,
     food: snapshot.food,
   };
 }

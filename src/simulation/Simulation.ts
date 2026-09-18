@@ -12,7 +12,7 @@ import {
 } from "./systems/FarmSystem";
 import type { GridPosition } from "@/src/world/GridPosition";
 import type { GatherTaskType } from "./entities/Task";
-import { emptyStock } from "./resources";
+import { creditStoredResources, emptyStock } from "./resources";
 import { DEBUG_ADD_FOOD_AMOUNT, DEBUG_HUNGRY_SATIETY } from "./needsConfig";
 import { tickAquatic, spawnAquaticAt, clearAquaticActivities } from "./systems/AquaticActivitySystem";
 import {
@@ -230,7 +230,10 @@ export class Simulation {
   }
 
   addFood(amount: number = DEBUG_ADD_FOOD_AMOUNT): void {
-    this.state.resources.food += amount;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return;
+    }
+    creditStoredResources(this.state.resources, this.state.discoveredResources, { food: Math.floor(amount) });
   }
 
   setAllSlimesHungry(satiety: number = DEBUG_HUNGRY_SATIETY): void {
@@ -251,8 +254,15 @@ export class Simulation {
   }
 
   addTestResource(): void {
-    this.state.resources.wood += 2;
-    this.state.resources.stone += 2;
+    creditStoredResources(this.state.resources, this.state.discoveredResources, { wood: 2, stone: 2 });
+  }
+
+  addVine(amount = 1): void {
+    creditStoredResources(this.state.resources, this.state.discoveredResources, { vine: amount });
+  }
+
+  forceNextWoodVineBonus(force = true): void {
+    this.state.forceNextWoodVineBonus = force;
   }
 
   clearStock(): void {

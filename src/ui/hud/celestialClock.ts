@@ -6,8 +6,8 @@ export interface CelestialClockOrbit {
   /** Slot-local X of the shared orbit center. Matches the face center. */
   centerX: number;
   /**
-   * Slot-local Y of the shared orbit center. The Aseprite pair pivots at the
-   * bottom of the inner disk, not the sphere center.
+   * Slot-local Y of the shared orbit center. Placed one orbit-radius below the
+   * face center so 00:00 / 12:00 sit in the middle of the disk.
    */
   centerY: number;
   radius: number;
@@ -37,7 +37,7 @@ export interface CelestialClockConfig {
   orbit: CelestialClockOrbit;
   sun: CelestialBodySize;
   moon: CelestialBodySize;
-  /** Slot-local Y of the lower rim. Bodies below this are the hidden opposite icon. */
+  /** Slot-local Y of the orbit equator. Matches the pair’s pivot. */
   horizonY: number;
 }
 
@@ -54,11 +54,30 @@ const FACE_CENTER_X = fromNativeClock(61);
 const FACE_CENTER_Y = fromNativeClock(59);
 const FACE_RADIUS = fromNativeClock(47);
 /**
- * Compact Sun–Moon pair. Native 38 is smaller than the inner radius so the
- * opposite icon sits just outside the rim instead of across a full-face orbit.
- * The 82×78 / 80×82 icons still fill the circular window at 00:00 and 12:00.
+ * Max icon side as a fraction of the inner disk. Keeps rays and stars inside
+ * the ring instead of clipping them into a cropped blob.
  */
-const ORBIT_RADIUS = fromNativeClock(38);
+const CELESTIAL_ICON_FACE_FIT = 0.94;
+/** Extra gap so the opposite icon’s stars/rays stay below the inner disk. */
+const OPPOSITE_CLEARANCE = 4;
+
+function sizeIconToFace(native: { width: number; height: number }): CelestialBodySize {
+  const maxSide = Math.round(FACE_RADIUS * 2 * CELESTIAL_ICON_FACE_FIT);
+  const scale = maxSide / Math.max(native.width, native.height);
+  return {
+    width: Math.round(native.width * scale),
+    height: Math.round(native.height * scale),
+  };
+}
+
+const SUN_SIZE = sizeIconToFace(HUD_ASSET_SIZES.sun);
+const MOON_SIZE = sizeIconToFace(HUD_ASSET_SIZES.moon);
+/**
+ * Occupant stays on the face center (pivot = center + radius). Radius is large
+ * enough that the opposite icon, including its box, sits below the inner disk.
+ */
+const ORBIT_RADIUS =
+  (FACE_RADIUS + Math.max(SUN_SIZE.height, MOON_SIZE.height) / 2 + OPPOSITE_CLEARANCE) / 2;
 
 /**
  * Developer-facing celestial-clock layout. Card-local pixels inside the
@@ -67,11 +86,10 @@ const ORBIT_RADIUS = fromNativeClock(38);
  * UI_Clock.png is 122×119, fitted into the weather slot. The brown fill is
  * opaque, so icons sit on the fill and the same asset paints the ring above.
  *
- * Sun and Moon are a rigid 180° pair that rotates around the bottom of the
- * inner disk. The circular face is only a window: at 12:00 the Sun fills it
- * and the Moon sits just below; at 06:00 / 18:00 both rest close on the lower
- * rim. Opposite centers fall outside the disk, so 12:00 reads as Sun-only and
- * 00:00 as Moon-only without hiding the pair.
+ * Sun and Moon are a rigid 180° pair. The orbit pivot sits one radius below
+ * the face center so 12:00 (Sun) and 00:00 (Moon) stay centered in the disk.
+ * The opposite icon is pushed just below the inner rim so it does not peek
+ * through at midday or midnight. At 06:00 / 18:00 both rest on the lower half.
  */
 export const CELESTIAL_CLOCK: CelestialClockConfig = {
   window: {
@@ -85,16 +103,13 @@ export const CELESTIAL_CLOCK: CelestialClockConfig = {
   },
   orbit: {
     centerX: FACE_CENTER_X,
-    centerY: FACE_CENTER_Y + FACE_RADIUS,
+    centerY: FACE_CENTER_Y + ORBIT_RADIUS,
     radius: ORBIT_RADIUS,
     sunAngleOffsetDeg: 90,
   },
-  sun: {
-    width: HUD_LAYOUT.topLeft.weather.icon.width,
-    height: HUD_LAYOUT.topLeft.weather.icon.height,
-  },
-  moon: { width: 80, height: 82 },
-  horizonY: FACE_CENTER_Y + FACE_RADIUS,
+  sun: SUN_SIZE,
+  moon: MOON_SIZE,
+  horizonY: FACE_CENTER_Y + ORBIT_RADIUS,
 };
 
 export interface CelestialBodyPose {

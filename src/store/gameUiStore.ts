@@ -151,6 +151,8 @@ export interface DebugActions {
   resetSlimes: () => void;
   addTestResource: () => void;
   addFood: () => void;
+  addVine: () => void;
+  forceNextWoodVineBonus: () => void;
   setAllSlimesHungry: () => void;
   instantGrowCrops: () => void;
   clearFarms: () => void;
@@ -193,6 +195,9 @@ export interface GameUiSnapshot {
   selectedBuildingTypeId: BuildingTypeId;
   availableBuildingTypeIds: BuildingTypeId[];
   collectionOpen: boolean;
+  /** Centered backpack inventory dialog. */
+  inventoryPanelOpen: boolean;
+  discoveredResources: { wood: boolean; stone: boolean; vine: boolean; food: boolean };
   fps: number;
   cameraX: number;
   cameraY: number;
@@ -216,6 +221,9 @@ export interface GameUiSnapshot {
   wood: number;
   stone: number;
   food: number;
+  vine: number;
+  cargoBundles: string[];
+  forceNextWoodVineBonusArmed: boolean;
   farmTiles: number;
   growingCrops: number;
   readyCrops: number;
@@ -264,6 +272,8 @@ interface GameUiStore extends GameUiSnapshot {
   setWorldTool: (tool: WorldToolMode) => void;
   setSelectedBuildingTypeId: (typeId: BuildingTypeId) => void;
   toggleCollection: () => void;
+  setInventoryPanelOpen: (open: boolean) => void;
+  closeInventoryOverlay: () => boolean;
   clearSelectedSlime: () => void;
   setRuntime: (patch: Partial<Omit<GameUiSnapshot, "debugVisible">>) => void;
   setDebugActions: (actions: DebugActions) => void;
@@ -276,6 +286,8 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   selectedBuildingTypeId: DEFAULT_BUILDING_TYPE_ID,
   availableBuildingTypeIds: [],
   collectionOpen: false,
+  inventoryPanelOpen: false,
+  discoveredResources: { wood: false, stone: false, vine: false, food: false },
   fps: 0,
   cameraX: 0,
   cameraY: 0,
@@ -299,6 +311,9 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   wood: 0,
   stone: 0,
   food: 0,
+  vine: 0,
+  cargoBundles: [],
+  forceNextWoodVineBonusArmed: false,
   farmTiles: 0,
   growingCrops: 0,
   readyCrops: 0,
@@ -347,7 +362,19 @@ export const useGameUiStore = create<GameUiStore>((set) => ({
   toggleDebug: () => set((state) => ({ debugVisible: !state.debugVisible })),
   setWorldTool: (worldTool) => set({ worldTool }),
   setSelectedBuildingTypeId: (selectedBuildingTypeId) => set({ selectedBuildingTypeId }),
-  toggleCollection: () => set((state) => ({ collectionOpen: !state.collectionOpen })),
+  toggleCollection: () =>
+    set((state) => ({
+      collectionOpen: !state.collectionOpen,
+    })),
+  setInventoryPanelOpen: (inventoryPanelOpen) => set({ inventoryPanelOpen }),
+  closeInventoryOverlay: () => {
+    const { inventoryPanelOpen } = useGameUiStore.getState();
+    if (inventoryPanelOpen) {
+      useGameUiStore.setState({ inventoryPanelOpen: false });
+      return true;
+    }
+    return false;
+  },
   clearSelectedSlime: () => set({ selectedSlimeId: null, selectedSlime: null }),
   setRuntime: (patch) => set(patch),
   setDebugActions: (actions) => set({ debugActions: actions }),
