@@ -35,6 +35,9 @@ describe("action toolbar catalog 05.4C", () => {
       "build",
     ]);
     expect(ACTION_TOOLS.find((tool) => tool.id === "plant")?.tooltip).toBe("Designate farmland");
+    expect(ACTION_TOOLS.find((tool) => tool.id === "mine")?.tooltip).toBe(
+      "Mark a rock or copper deposit to mine",
+    );
   });
 
   it("keeps a single active tool and toggles off on a second click", () => {

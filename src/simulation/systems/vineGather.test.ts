@@ -134,7 +134,7 @@ describe("vine gather 05.6A.1", () => {
     expect(state.resources.wood).toBe(GATHER_AMOUNT);
     expect(state.resources.vine).toBe(1);
     expect(state.pendingMaterialToasts).toHaveLength(1);
-    expect(state.pendingMaterialToasts[0]?.vine).toBe(1);
+    expect(state.pendingMaterialToasts[0]?.lines).toEqual([{ type: "vine", amount: 1 }]);
   });
 
   it("does not award materials when gather is interrupted before collection commits", () => {

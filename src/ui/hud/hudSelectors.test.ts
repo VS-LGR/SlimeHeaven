@@ -37,16 +37,28 @@ describe("HUD selectors 05.5A", () => {
   });
 
   it("maps the inventory stock including vine and food without double-counting cargo", () => {
-    const model = selectMaterialSummaryModel({ wood: 4, stone: 2, vine: 7 });
-    expect(model).toEqual({ wood: 4, stone: 2, vine: 7 });
-    expect(selectInventoryStockModel({ wood: 4, stone: 2, vine: 7, food: 8 })).toEqual({
+    const model = selectMaterialSummaryModel({
+      wood: 4,
+      stone: 2,
+      vine: 7,
+      foliage: 0,
+      copperOre: 0,
+    });
+    expect(model).toEqual({ wood: 4, stone: 2, vine: 7, foliage: 0, copperOre: 0 });
+    expect(
+      selectInventoryStockModel({ wood: 4, stone: 2, vine: 7, food: 8, foliage: 1, copperOre: 2 }),
+    ).toEqual({
       wood: 4,
       stone: 2,
       vine: 7,
       food: 8,
+      foliage: 1,
+      copperOre: 2,
     });
     const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
     expect(inventory).toMatch(/vine/);
+    expect(inventory).toMatch(/foliage/);
+    expect(inventory).toMatch(/copperOre/);
     expect(inventory).toMatch(/selectInventoryStockModel/);
     const hud = readFileSync("src/ui/GameHud.tsx", "utf8");
     expect(hud).toMatch(/InventoryHud/);

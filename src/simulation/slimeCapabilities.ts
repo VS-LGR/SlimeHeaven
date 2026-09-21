@@ -6,6 +6,7 @@ export const SLIME_CAPABILITIES = [
   "fishing",
   "farming",
   "gathering",
+  "foraging",
   "construction",
   "build",
   "exploration",
@@ -22,6 +23,7 @@ export const CAPABILITY_LABELS: Record<KnownSlimeCapability, string> = {
   fishing: "Fishing",
   farming: "Farming",
   gathering: "Gathering",
+  foraging: "Foraging",
   construction: "Construction",
   build: "Build",
   exploration: "Exploration",
@@ -84,6 +86,9 @@ export function requiredCapabilitiesForTaskType(type: TaskType): readonly string
   }
   if (isFarmTask(type)) {
     return ["farming"];
+  }
+  if (type === "gather_foliage") {
+    return ["foraging"];
   }
   if (isGatherTask(type)) {
     return ["gathering"];

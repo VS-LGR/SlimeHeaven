@@ -1,7 +1,12 @@
 import type { GridPosition } from "@/src/world/GridPosition";
 import type { ResourceType } from "../resources";
 
-export const GATHER_TASK_TYPES = ["gather_wood", "gather_stone"] as const;
+export const GATHER_TASK_TYPES = [
+  "gather_wood",
+  "gather_stone",
+  "gather_foliage",
+  "gather_copper",
+] as const;
 export type GatherTaskType = (typeof GATHER_TASK_TYPES)[number];
 
 export const FARM_TASK_TYPES = ["till_soil", "plant_crop", "harvest_crop"] as const;
@@ -15,7 +20,7 @@ export type ConstructionTaskType = (typeof CONSTRUCTION_TASK_TYPES)[number];
 
 export type TaskType = GatherTaskType | FarmTaskType | FishingTaskType | ConstructionTaskType;
 
-export type JobCategory = "gathering" | "farming" | "fishing" | "construction";
+export type JobCategory = "gathering" | "farming" | "fishing" | "construction" | "foraging";
 
 export type TaskState =
   | "available"
@@ -38,19 +43,19 @@ export interface Task {
   constructionSiteId?: string;
 }
 
-export function isFarmTask(type: TaskType): boolean {
+export function isFarmTask(type: TaskType): type is FarmTaskType {
   return (FARM_TASK_TYPES as readonly string[]).includes(type);
 }
 
-export function isGatherTask(type: TaskType): boolean {
+export function isGatherTask(type: TaskType): type is GatherTaskType {
   return (GATHER_TASK_TYPES as readonly string[]).includes(type);
 }
 
-export function isFishingTask(type: TaskType): boolean {
+export function isFishingTask(type: TaskType): type is FishingTaskType {
   return (FISHING_TASK_TYPES as readonly string[]).includes(type);
 }
 
-export function isConstructionTask(type: TaskType): boolean {
+export function isConstructionTask(type: TaskType): type is ConstructionTaskType {
   return (CONSTRUCTION_TASK_TYPES as readonly string[]).includes(type);
 }
 
@@ -64,6 +69,9 @@ export function jobCategory(type: TaskType): JobCategory {
   if (isConstructionTask(type)) {
     return "construction";
   }
+  if (type === "gather_foliage") {
+    return "foraging";
+  }
   return "gathering";
 }
 
@@ -73,6 +81,12 @@ export function resourceTypeForTask(type: TaskType): ResourceType | undefined {
   }
   if (type === "gather_stone") {
     return "stone";
+  }
+  if (type === "gather_foliage") {
+    return "foliage";
+  }
+  if (type === "gather_copper") {
+    return "copperOre";
   }
   if (type === "harvest_crop") {
     return "food";

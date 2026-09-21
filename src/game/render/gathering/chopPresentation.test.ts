@@ -169,6 +169,8 @@ describe("gathering presentation contract", () => {
   it("maps wood to axe and stone to pickaxe on one body clip", () => {
     expect(gatheringToolForTask("gather_wood")).toBe("axe");
     expect(gatheringToolForTask("gather_stone")).toBe("pickaxe");
+    expect(gatheringToolForTask("gather_copper")).toBe("pickaxe");
+    expect(gatheringToolForTask("gather_foliage")).toBeNull();
     expect(gatheringToolForTask("till_soil")).toBeNull();
     expect(gatheringToolForTask("construct_building")).toBeNull();
     expect(TITO_CHOP_BODY.animKey).toBe(TITO_GATHER_SWING_BODY_ANIM_KEY);

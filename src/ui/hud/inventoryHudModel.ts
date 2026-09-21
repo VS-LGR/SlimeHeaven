@@ -16,6 +16,8 @@ export interface InventoryStockModel {
   stone: number;
   vine: number;
   food: number;
+  foliage: number;
+  copperOre: number;
 }
 
 export interface InventoryDiscoveryModel {
@@ -23,6 +25,8 @@ export interface InventoryDiscoveryModel {
   stone: boolean;
   vine: boolean;
   food: boolean;
+  foliage: boolean;
+  copperOre: boolean;
 }
 
 export interface InventoryHudViewItem {
@@ -41,13 +45,15 @@ export interface InventoryHudViewItem {
 }
 
 export function selectInventoryStockModel(
-  snapshot: Pick<InventoryStockModel, "wood" | "stone" | "vine" | "food">,
+  snapshot: Pick<InventoryStockModel, "wood" | "stone" | "vine" | "food" | "foliage" | "copperOre">,
 ): InventoryStockModel {
   return {
     wood: snapshot.wood,
     stone: snapshot.stone,
     vine: snapshot.vine,
     food: snapshot.food,
+    foliage: snapshot.foliage,
+    copperOre: snapshot.copperOre,
   };
 }
 
@@ -170,7 +176,14 @@ export function stockableDiscoveryCount(discovered: InventoryDiscoveryModel): {
 }
 
 export function defaultDiscovery(): InventoryDiscoveryModel {
-  return { wood: false, stone: false, vine: false, food: false };
+  return {
+    wood: false,
+    stone: false,
+    vine: false,
+    food: false,
+    foliage: false,
+    copperOre: false,
+  };
 }
 
 export function discoveryFromStock(stock: ResourceStock): InventoryDiscoveryModel {
@@ -179,6 +192,8 @@ export function discoveryFromStock(stock: ResourceStock): InventoryDiscoveryMode
     stone: stock.stone > 0,
     vine: stock.vine > 0,
     food: stock.food > 0,
+    foliage: stock.foliage > 0,
+    copperOre: stock.copperOre > 0,
   };
 }
 

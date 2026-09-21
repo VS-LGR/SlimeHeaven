@@ -11,6 +11,44 @@ import { constructionProgress } from "@/src/simulation/entities/ConstructionSite
 import { isConstructionTask } from "@/src/simulation/entities/Task";
 import type { TileInspect } from "@/src/store/gameUiStore";
 import { shoreMaskLabel } from "@/src/world/autotile/resolveShoreline";
+import { inspectFoliageTarget, inspectMiningTarget } from "@/src/simulation/systems/JobSystem";
+import { RESOURCE_IDS } from "@/src/simulation/resources";
+import { dayNumberFromTotal, formatClock, minuteOfDayFromTotal } from "@/src/simulation/worldTime";
+import { timeOfDayFromMinutes } from "@/src/simulation/timeConfig";
+
+export function foliageDebugLine(state: GameState, x: number, y: number): string | null {
+  const inspected = inspectFoliageTarget(state, { x, y });
+  if (!inspected) {
+    return null;
+  }
+  if (inspected.reason === "ready") {
+    return "Foliage: ready";
+  }
+  if (inspected.reason === "reserved") {
+    return "Foliage: reserved";
+  }
+  const readyAt = inspected.node.foliageReadyAtMinute ?? 0;
+  const { hour, minute } = timeOfDayFromMinutes(minuteOfDayFromTotal(readyAt));
+  return `Foliage: regen until ${formatClock(hour, minute)} D${dayNumberFromTotal(readyAt)}`;
+}
+
+export function copperDebugLine(state: GameState, x: number, y: number): string | null {
+  const node = state.nodesAtTile(x, y).find((entry) => entry.type === RESOURCE_IDS.COPPER_ORE);
+  if (!node) {
+    return null;
+  }
+  if (node.depleted) {
+    return "Copper: depleted";
+  }
+  const reserved = inspectMiningTarget(state, { x, y });
+  const task = state
+    .activeTasks()
+    .find((entry) => state.nodeById(entry.nodeId)?.occupancyKey === node.occupancyKey);
+  if (reserved && !reserved.valid) {
+    return `Copper: present reserved ${task?.type ?? "job"}`;
+  }
+  return "Copper: present";
+}
 
 export function inspectWorldTile(grid: Grid, state: GameState, x: number, y: number): TileInspect | null {
   const tile = grid.getTile(x, y);

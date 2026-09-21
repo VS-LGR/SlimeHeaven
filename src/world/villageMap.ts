@@ -11,6 +11,18 @@ import type { WorldObject } from "./Tile";
 export const MAP_WIDTH = 20;
 export const MAP_HEIGHT = 15;
 
+/**
+ * Seeded copper deposits for 05.6A.2. Session/map lifecycle only; they reset with a new GameState.
+ * Keep off trees/rocks/bushes/storage/water, unique-home footprints at (5,11)/(7,11),
+ * farm test tile (2,12), and its east till stance (3,12).
+ * (16,6) east clearing north of the lake; (6,10) west of the house belt; (3,13) southwest grass.
+ */
+export const COPPER_DEPOSIT_SEEDS: ReadonlyArray<{ x: number; y: number }> = [
+  { x: 16, y: 6 },
+  { x: 6, y: 10 },
+  { x: 3, y: 13 },
+];
+
 function createFilledTerrain(type: TileType): TileType[][] {
   return Array.from({ length: MAP_HEIGHT }, () =>
     Array.from({ length: MAP_WIDTH }, () => type),
@@ -177,6 +189,7 @@ export function createVillageMap(): Grid {
     { type: ObjectType.ROCK, x: 9, y: 12 },
     { type: ObjectType.ROCK, x: 12, y: 6 },
     { type: ObjectType.ROCK, x: 8, y: 9 },
+    ...COPPER_DEPOSIT_SEEDS.map((seed) => ({ type: ObjectType.COPPER_ORE, x: seed.x, y: seed.y })),
   ];
 
   return new Grid(

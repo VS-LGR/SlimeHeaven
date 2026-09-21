@@ -57,6 +57,7 @@ describe("slime card presentation 05.4D", () => {
     expect(playerSpecialties(["Fishing", "Exploration"])).toEqual(["Pescador", "Exploração"]);
     expect(playerSpecialties(["Gathering", "Construction", "Build"])).toEqual(["Coletor", "Construtor"]);
     expect(playerSpecialties(["Farming"])).toEqual(["Agricultora"]);
+    expect(playerSpecialties(["Farming", "Foraging"])).toEqual(["Agricultora", "Forrageira"]);
     expect(specialtiesLine(["Farming"])).toBe("Agricultora");
     expect(playerSpecialties(["test_special", "gather"])).toEqual([]);
   });

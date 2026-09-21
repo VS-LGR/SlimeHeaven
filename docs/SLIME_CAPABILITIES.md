@@ -26,7 +26,7 @@ Carrying and delivery after an eligible job are continuation states. They do not
 
 Open tags in `src/simulation/slimeCapabilities.ts`. Known values:
 
-`fishing` · `farming` · `gathering` · `construction` · `exploration`
+`fishing` · `farming` · `gathering` · `foraging` · `construction` · `exploration`
 
 New tags (for example `"smelting"` or a test `"test_special"`) do not require rewriting JobSystem. `hasRequiredCapabilities` / `isSlimeEligibleForJob` take string lists. ALL listed requirements must be present. A job with no / empty `requiredCapabilities` stays universal.
 
@@ -35,8 +35,8 @@ New tags (for example `"smelting"` or a test `"test_special"`) do not require re
 | Slime | Capabilities | Productive jobs now |
 | --- | --- | --- |
 | Pingo | fishing, exploration | Fishing. Exploration is metadata only. |
-| Momo | farming | Till, plant, harvest (whole farm pipeline). |
-| Tito | gathering, construction | Wood and stone. Construction is metadata only. |
+| Momo | farming, foraging | Till, plant, harvest; foliage collection. |
+| Tito | gathering, construction, build | Wood, stone, copper; construction. |
 
 A future slime may combine tags, for example `["fishing", "farming"]`. There is no Fisher / Farmer class object.
 
@@ -46,9 +46,10 @@ Requirements live on the job, not in slime-id conditionals:
 
 - `fish_activity` → `fishing`
 - `till_soil` / `plant_crop` / `harvest_crop` → `farming`
-- `gather_wood` / `gather_stone` → `gathering`
+- `gather_wood` / `gather_stone` / `gather_copper` → `gathering`
+- `gather_foliage` → `foraging`
 
-Eligibility is checked **before** distance, attributes, affinity, or priority.
+Eligibility is checked **before** distance, attributes, affinity, or priority. Momo’s `jobAffinity.foraging` prefers foliage when multiple foragers exist.
 
 ## Fishing when Pingo is busy
 

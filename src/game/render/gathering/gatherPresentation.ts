@@ -69,7 +69,7 @@ export function gatherStanceGround(
   tileX: number,
   tileY: number,
 ): { x: number; y: number } | undefined {
-  if (!task || (task.type !== "gather_wood" && task.type !== "gather_stone")) {
+  if (!task || (task.type !== "gather_wood" && task.type !== "gather_stone" && task.type !== "gather_copper")) {
     return undefined;
   }
   if (tileX !== task.workTile.x || tileY !== task.workTile.y) {

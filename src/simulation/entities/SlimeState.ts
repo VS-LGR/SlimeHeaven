@@ -91,6 +91,7 @@ export interface SlimeSpawnDef {
   attributes: SlimeAttributes;
   interest: AmbientInterestProfile;
   capabilities: readonly SlimeCapability[];
+  jobAffinity?: Partial<Record<JobCategory, number>>;
 }
 
 export const SLIME_SPAWNS: readonly SlimeSpawnDef[] = [
@@ -112,7 +113,8 @@ export const SLIME_SPAWNS: readonly SlimeSpawnDef[] = [
     wanderOffsetTicks: 4,
     attributes: { technique: 4, strength: 2, instinct: 4, luck: 3 },
     interest: MOMO_AMBIENT_INTEREST,
-    capabilities: ["farming"],
+    capabilities: ["farming", "foraging"],
+    jobAffinity: { foraging: 1.25 },
   },
   {
     id: SLIME_IDS.TITO,
@@ -155,5 +157,6 @@ export function createSlimeState(
     fishingCelebrateUntilTick: 0,
     routinePhase: "awake",
     routineRetryAtTick: 0,
+    jobAffinity: def.jobAffinity ? { ...def.jobAffinity } : undefined,
   };
 }

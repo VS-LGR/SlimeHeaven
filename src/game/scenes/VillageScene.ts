@@ -6,7 +6,7 @@ import { FarmDesignationController } from "../input/FarmDesignationController";
 import { GatherDesignationController } from "../input/GatherDesignationController";
 import { FishingController } from "../input/FishingController";
 import { BuildPlacementController } from "../input/BuildPlacementController";
-import { inspectWorldTile } from "../inspectWorld";
+import { copperDebugLine, foliageDebugLine, inspectWorldTile } from "../inspectWorld";
 import { DETAIL_DEFS, OBJECT_DEFS } from "@/src/world/tileTypes";
 import { tileToWorld } from "@/src/world/constants";
 import { farmKey } from "@/src/simulation/entities/FarmPlot";
@@ -53,8 +53,10 @@ import { placedHomeForResident, playerBuildableBuildingTypes, residentHomeStatus
 import type { SlimeState } from "@/src/simulation/entities/SlimeState";
 import { formatCapabilitiesDebug, knownSpecialtyLabels, canPerformTaskCapabilities } from "@/src/simulation/slimeCapabilities";
 import { isConstructionTask } from "@/src/simulation/entities/Task";
-import { formatCargo, hasCargo } from "@/src/simulation/resources";
+import { formatCargo, hasCargo, RESOURCE_IDS } from "@/src/simulation/resources";
 import { gatheringToolForTask } from "../render/gathering/chopPresentation";
+import { inspectFoliageTarget } from "@/src/simulation/systems/JobSystem";
+import { formatMaterialDeliveryToast } from "@/src/simulation/data/materials";
 
 const UI_PUSH_MS = 100;
 
@@ -76,6 +78,7 @@ export class VillageScene extends Phaser.Scene {
   private selection: SelectionController | undefined;
   private dayNight: DayNightOverlay | undefined;
   private readonly detailSprites = new Map<string, Phaser.GameObjects.Image>();
+  private readonly objectSprites = new Map<string, Phaser.GameObjects.Image>();
   private lastUiPush = 0;
   private lastPersistedTotalMinutes = Number.NaN;
   private readonly toastedBiteIds = new Set<string>();
@@ -145,7 +148,7 @@ export class VillageScene extends Phaser.Scene {
     for (const object of grid.objects) {
       const def = OBJECT_DEFS[object.type];
       const { x, y } = tileToWorld(object.x, object.y);
-      this.add
+      const sprite = this.add
         .image(
           x + def.originX * def.footprintWidth * TILE_SIZE,
           y + def.originY * def.footprintHeight * TILE_SIZE,
@@ -153,6 +156,7 @@ export class VillageScene extends Phaser.Scene {
         )
         .setOrigin(def.originX, def.originY)
         .setDepth(DEPTH.OBJECTS + object.y + def.footprintHeight - 1);
+      this.objectSprites.set(farmKey(object.x, object.y), sprite);
     }
 
     this.cameras.main.setRoundPixels(true);
@@ -187,6 +191,9 @@ export class VillageScene extends Phaser.Scene {
     useGameUiStore.getState().setDebugActions({
       spawnGatherWood: () => this.spawnTask("gather_wood"),
       spawnGatherStone: () => this.spawnTask("gather_stone"),
+      spawnGatherFoliage: () => this.spawnTask("gather_foliage"),
+      spawnGatherCopper: () => this.spawnTask("gather_copper"),
+      readyHoveredFoliage: () => this.readyHoveredFoliage(),
       clearTasks: () => simulation.clearTasks(),
       resetSlimes: () => simulation.resetSlimes(),
       addTestResource: () => simulation.addTestResource(),
@@ -265,6 +272,17 @@ export class VillageScene extends Phaser.Scene {
           selectedSlime: this.selectedSlimeInfo(selectedId),
         });
       },
+      designateFoliageAt: (x, y) => {
+        const inspected = inspectFoliageTarget(simulation.state, { x, y });
+        if (!inspected) {
+          return "none";
+        }
+        if (!inspected.valid) {
+          return inspected.reason === "regenerating" ? "regenerating" : "reserved";
+        }
+        const task = simulation.designateGatherAt("gather_foliage", { x, y });
+        return task ? "ok" : "reserved";
+      },
     });
 
     useGameUiStore.getState().setRuntime({
@@ -321,6 +339,7 @@ export class VillageScene extends Phaser.Scene {
     this.persistClockIfNeeded(simulation);
     simulation.advanceFishingClock(this.time.now);
     this.syncFarmVisuals();
+    this.syncRemovedObjects();
     this.farmPlots?.sync(simulation);
     this.constructionSites?.sync(simulation);
     this.buildings?.sync(simulation);
@@ -401,6 +420,8 @@ export class VillageScene extends Phaser.Scene {
       stone: state.resources.stone,
       food: state.resources.food,
       vine: state.resources.vine,
+      foliage: state.resources.foliage,
+      copperOre: state.resources.copperOre,
       discoveredResources: { ...state.discoveredResources },
       cargoBundles: Object.values(state.slimes)
         .filter((slime) => hasCargo(slime.carriedResource))
@@ -466,6 +487,18 @@ export class VillageScene extends Phaser.Scene {
       accessPointCount: state.fishingAccessPoints.length,
       fishCollection: state.fishCollection,
       visitorDebug: visitorDebugLines(state, this.slimeRenderer),
+      foliageInspect:
+        currentUi.hoveredX !== null && currentUi.hoveredY !== null
+          ? foliageDebugLine(state, currentUi.hoveredX, currentUi.hoveredY)
+          : null,
+      copperInspect:
+        currentUi.hoveredX !== null && currentUi.hoveredY !== null
+          ? copperDebugLine(state, currentUi.hoveredX, currentUi.hoveredY)
+          : null,
+      foliageSelectedInspect:
+        currentUi.selectedX !== null && currentUi.selectedY !== null
+          ? foliageDebugLine(state, currentUi.selectedX, currentUi.selectedY)
+          : null,
     });
   }
 
@@ -482,7 +515,24 @@ export class VillageScene extends Phaser.Scene {
     }
   }
 
-  private spawnTask(type: "gather_wood" | "gather_stone"): void {
+  private syncRemovedObjects(): void {
+    const simulation = this.simulation;
+    if (!simulation) {
+      return;
+    }
+    for (const pos of simulation.state.consumeRemovedObjects()) {
+      const key = farmKey(pos.x, pos.y);
+      const sprite = this.objectSprites.get(key);
+      if (sprite) {
+        sprite.destroy();
+        this.objectSprites.delete(key);
+      }
+    }
+  }
+
+  private spawnTask(
+    type: "gather_wood" | "gather_stone" | "gather_foliage" | "gather_copper",
+  ): void {
     const simulation = this.simulation;
     if (!simulation) {
       return;
@@ -491,6 +541,21 @@ export class VillageScene extends Phaser.Scene {
     const preferred =
       selectedX !== null && selectedY !== null ? { x: selectedX, y: selectedY } : undefined;
     simulation.spawnGatherTask(type, preferred);
+  }
+
+  private readyHoveredFoliage(): void {
+    const simulation = this.simulation;
+    if (!simulation) {
+      return;
+    }
+    const { hoveredX, hoveredY } = useGameUiStore.getState();
+    if (hoveredX === null || hoveredY === null) {
+      return;
+    }
+    const node = simulation.state.gatherNodeAtTile(RESOURCE_IDS.FOLIAGE, hoveredX, hoveredY);
+    if (node) {
+      node.foliageReadyAtMinute = 0;
+    }
   }
 
   private handleSlimeClick(pointer: Phaser.Input.Pointer): boolean {
@@ -612,11 +677,11 @@ export class VillageScene extends Phaser.Scene {
     const notices = simulation.state.pendingMaterialToasts;
     if (notices.length > 0) {
       simulation.state.pendingMaterialToasts = [];
-      const vineNotice = [...notices].reverse().find((notice) => notice.vine > 0);
-      if (vineNotice) {
+      const notice = notices[notices.length - 1];
+      if (notice) {
         useGameUiStore.getState().setRuntime({
           jobToast: {
-            message: `${vineNotice.slimeName} delivered Vine ×${vineNotice.vine}`,
+            message: formatMaterialDeliveryToast(notice),
             hideAt: Date.now() + 2800,
           },
         });

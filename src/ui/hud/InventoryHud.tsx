@@ -76,6 +76,8 @@ export function InventoryHud() {
   const stone = useGameUiStore((state) => state.stone);
   const vine = useGameUiStore((state) => state.vine);
   const food = useGameUiStore((state) => state.food);
+  const foliage = useGameUiStore((state) => state.foliage);
+  const copperOre = useGameUiStore((state) => state.copperOre);
   const discovered = useGameUiStore((state) => state.discoveredResources);
   const inventoryPanelOpen = useGameUiStore((state) => state.inventoryPanelOpen);
   const setInventoryPanelOpen = useGameUiStore((state) => state.setInventoryPanelOpen);
@@ -138,7 +140,7 @@ export function InventoryHud() {
     };
   }, [inventoryPanelOpen]);
 
-  const stock = selectInventoryStockModel({ wood, stone, vine, food });
+  const stock = selectInventoryStockModel({ wood, stone, vine, food, foliage, copperOre });
   const items = filterInventoryItems({
     stock,
     discovered,

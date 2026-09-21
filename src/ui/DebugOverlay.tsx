@@ -37,7 +37,11 @@ export function DebugOverlay() {
   const stone = useGameUiStore((state) => state.stone);
   const food = useGameUiStore((state) => state.food);
   const vine = useGameUiStore((state) => state.vine);
+  const foliage = useGameUiStore((state) => state.foliage);
+  const copperOre = useGameUiStore((state) => state.copperOre);
   const cargoBundles = useGameUiStore((state) => state.cargoBundles);
+  const foliageInspect = useGameUiStore((state) => state.foliageInspect);
+  const copperInspect = useGameUiStore((state) => state.copperInspect);
   const forceNextWoodVineBonusArmed = useGameUiStore((state) => state.forceNextWoodVineBonusArmed);
   const farmTiles = useGameUiStore((state) => state.farmTiles);
   const growingCrops = useGameUiStore((state) => state.growingCrops);
@@ -93,6 +97,9 @@ export function DebugOverlay() {
         <div className="mb-2 flex flex-col gap-1 border-b border-white/10 pb-2">
           <DebugButton label="Gather wood" onClick={debugActions.spawnGatherWood} />
           <DebugButton label="Gather stone" onClick={debugActions.spawnGatherStone} />
+          <DebugButton label="Spawn foliage job" onClick={debugActions.spawnGatherFoliage} />
+          <DebugButton label="Spawn copper job" onClick={debugActions.spawnGatherCopper} />
+          <DebugButton label="Ready hovered foliage" onClick={debugActions.readyHoveredFoliage} />
           <DebugButton label="Clear tasks" onClick={debugActions.clearTasks} />
           <DebugButton label="Reset slimes" onClick={debugActions.resetSlimes} />
           <DebugButton label="Add test resource" onClick={debugActions.addTestResource} />
@@ -169,6 +176,8 @@ export function DebugOverlay() {
         <p>X: {coord(hoveredX)}</p>
         <p>Y: {coord(hoveredY)}</p>
         <TileInspectLines inspect={hoveredTile} />
+        {foliageInspect ? <p>{foliageInspect}</p> : null}
+        {copperInspect ? <p>{copperInspect}</p> : null}
         <p className="mt-1 text-lime-300">Selected:</p>
         <p>X: {coord(selectedX)}</p>
         <p>Y: {coord(selectedY)}</p>
@@ -182,7 +191,7 @@ export function DebugOverlay() {
           Tasks avail/busy: {availableTasks}/{assignedTasks}
         </p>
         <p>
-          Wood: {wood} · Stone: {stone} · Food: {food} · Vine: {vine}
+          Wood: {wood} · Stone: {stone} · Food: {food} · Vine: {vine} · Foliage: {foliage} · Copper: {copperOre}
         </p>
         {cargoBundles.length > 0 ? (
           <>

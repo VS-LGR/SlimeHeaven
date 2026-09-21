@@ -154,7 +154,7 @@ describe("unique resident homes 05.3A", () => {
     const sim = new Simulation();
     expect(SIMULATION_TICKS_PER_SECOND).toBe(4);
     expect(sim.state.slimes[SLIME_IDS.PINGO].capabilities).toEqual(["fishing", "exploration"]);
-    expect(sim.state.slimes[SLIME_IDS.MOMO].capabilities).toEqual(["farming"]);
+    expect(sim.state.slimes[SLIME_IDS.MOMO].capabilities).toEqual(["farming", "foraging"]);
     expect(sim.state.slimes[SLIME_IDS.TITO].capabilities).toEqual(["gathering", "construction", "build"]);
     expect(sim.state.slimes[SLIME_IDS.PINGO].satiety).toBe(SATIETY_INITIAL);
     expect(sim.state.slimes[SLIME_IDS.PINGO].residencyStatus).toBe("resident");

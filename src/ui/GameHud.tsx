@@ -9,6 +9,7 @@ import { InventoryHud } from "./hud/InventoryHud";
 import { ActionToolbar } from "./hud/ActionToolbar";
 import { WorldToolCursor } from "./hud/WorldToolCursor";
 import { SlimeCard } from "./hud/SlimeCard";
+import { FoliageActionChip } from "./hud/FoliageActionChip";
 import { useHudScale } from "./hud/useHudScale";
 import { HUD_LAYOUT } from "./hud/hudLayout";
 
@@ -32,6 +33,7 @@ export function GameHud() {
       <InventoryHud />
       <ActionToolbar />
       <WorldToolCursor />
+      <FoliageActionChip />
       <CollectionPanel />
       <SlimeCard />
       <ToastStack />

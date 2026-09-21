@@ -5,7 +5,7 @@ import { OBJECT_DEFS, ObjectType } from "@/src/world/tileTypes";
 import type { Simulation } from "@/src/simulation/Simulation";
 import type { GatherTaskType } from "@/src/simulation/entities/Task";
 import type { ResourceNode } from "@/src/simulation/entities/ResourceNode";
-import { inspectGatherTarget } from "@/src/simulation/systems/JobSystem";
+import { inspectGatherTarget, inspectMiningTarget } from "@/src/simulation/systems/JobSystem";
 import { useGameUiStore, type WorldToolMode } from "@/src/store/gameUiStore";
 
 const VALID_FILL = 0x7ecb6a;
@@ -22,7 +22,7 @@ function gatherTypeForTool(tool: WorldToolMode): GatherTaskType | null {
 }
 
 function nodeFootprint(node: ResourceNode): { x: number; y: number; width: number; height: number } {
-  if (node.type === "wood") {
+  if (node.type === "wood" || node.type === "foliage") {
     const def = OBJECT_DEFS[ObjectType.TREE];
     return { x: node.tile.x, y: node.tile.y, width: def.footprintWidth, height: def.footprintHeight };
   }
@@ -109,6 +109,14 @@ export class GatherDesignationController {
     if (!type) {
       return;
     }
+    if (type === "gather_stone") {
+      const mining = inspectMiningTarget(this.simulation.state, { x, y });
+      if (!mining?.valid) {
+        return;
+      }
+      this.simulation.designateGatherAt(mining.type, { x, y });
+      return;
+    }
     this.simulation.designateGatherAt(type, { x, y });
   }
 
@@ -118,10 +126,11 @@ export class GatherDesignationController {
     if (!type || this.hoverX === null || this.hoverY === null) {
       return;
     }
-    const inspected = inspectGatherTarget(this.simulation.state, type, {
-      x: this.hoverX,
-      y: this.hoverY,
-    });
+    const tile = { x: this.hoverX, y: this.hoverY };
+    const inspected =
+      type === "gather_stone"
+        ? inspectMiningTarget(this.simulation.state, tile)
+        : inspectGatherTarget(this.simulation.state, type, tile);
     if (!inspected) {
       this.drawTile(this.hoverX, this.hoverY, INVALID_FILL);
       return;

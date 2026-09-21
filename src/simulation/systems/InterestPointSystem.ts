@@ -44,9 +44,9 @@ export function rebuildInterestPoints(state: GameState): void {
         reservedBy: null,
       });
     }
-    if (object.type === ObjectType.ROCK) {
+    if (object.type === ObjectType.ROCK || object.type === ObjectType.COPPER_ORE) {
       next.push({
-        id: `rock:${object.x},${object.y}`,
+        id: `${object.type}:${object.x},${object.y}`,
         type: "rock",
         tile: { x: object.x, y: object.y },
         tags: ["rock", "nature"],

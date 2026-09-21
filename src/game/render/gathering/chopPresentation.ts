@@ -19,13 +19,14 @@ export type GatheringToolName = "axe" | "pickaxe";
  * → tool frame follows body frame → simulation independently controls completion.
  *
  * gather_wood  → tito_gather_swing + axe
- * gather_stone → tito_gather_swing + pickaxe
+ * gather_stone / gather_copper → tito_gather_swing + pickaxe
+ * gather_foliage never shows an axe or pickaxe
  */
 export function gatheringToolForTask(taskType: string | undefined): GatheringToolName | null {
   if (taskType === "gather_wood") {
     return "axe";
   }
-  if (taskType === "gather_stone") {
+  if (taskType === "gather_stone" || taskType === "gather_copper") {
     return "pickaxe";
   }
   return null;
@@ -120,7 +121,7 @@ export function axeWorldPosition(
 }
 
 export function isPickaxeToolActive(slime: Pick<SlimeState, "state">, task: Task | undefined): boolean {
-  return slime.state === "working" && task?.type === "gather_stone";
+  return slime.state === "working" && (task?.type === "gather_stone" || task?.type === "gather_copper");
 }
 
 export function pickaxeFrameForBodyFrame(bodyFrame: number): number {

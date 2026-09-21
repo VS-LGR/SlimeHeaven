@@ -215,7 +215,7 @@ describe("inventory HUD assets 05.6A.UI", () => {
       "8d1798a593cc1f11ad9e722c11f8d42e6da92a23f4db8ae78f6ea278eaa6ea60",
     );
     expect(sha256(HUD_ASSET_FILES.inventoryBackpackPanel)).toBe(
-      "acc691189667a5d0b54f3690a7bdefe307bc454cf9d13138a9d98015667be1e5",
+      "1d62c416560c7fe4514f054beca30fd9b81dc088369cd41aab9b4b9199c9a0e1",
     );
     expect(sha256(HUD_ASSET_FILES.inventoryCompact)).toBe(
       "56aea9b6c3d3b879a4eb092d3db96e68fd1afe1e2ba3f5f510ab77d6152cb27f",

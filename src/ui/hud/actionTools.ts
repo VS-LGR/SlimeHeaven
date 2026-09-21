@@ -32,7 +32,7 @@ export const ACTION_TOOLS: readonly ActionToolDef[] = [
     id: "mine",
     worldTool: "gather_stone",
     label: "Mine Stone",
-    tooltip: "Mark a rock to mine",
+    tooltip: "Mark a rock or copper deposit to mine",
     icon: HUD_ASSETS.iconMining,
   },
   {

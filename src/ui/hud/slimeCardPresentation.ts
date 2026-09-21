@@ -34,6 +34,8 @@ const SPECIALTY_LABELS: Record<string, string> = {
   build: "Construtor",
   Exploration: "Exploração",
   exploration: "Exploração",
+  Foraging: "Forrageira",
+  foraging: "Forrageira",
 };
 
 const BUILDING_NAME_LABELS: Record<string, string> = {

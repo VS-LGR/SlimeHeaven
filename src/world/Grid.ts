@@ -20,8 +20,12 @@ const EMPTY_FARM_FRAME = -1;
 export class Grid {
   readonly width: number;
   readonly height: number;
-  readonly objects: readonly WorldObject[];
+  private mutableObjects: WorldObject[];
   private readonly tiles: WorldTile[][];
+
+  get objects(): readonly WorldObject[] {
+    return this.mutableObjects;
+  }
 
   constructor(
     width: number,
@@ -54,7 +58,7 @@ export class Grid {
 
     this.width = width;
     this.height = height;
-    this.objects = objects;
+    this.mutableObjects = [...objects];
     this.tiles = terrain.map((row, y) =>
       row.map((terrainType, x) => {
         const def = TILE_DEFS[terrainType];
@@ -148,7 +152,7 @@ export class Grid {
   }
 
   objectAt(x: number, y: number): WorldObject | undefined {
-    return this.objects.find((object) => {
+    return this.mutableObjects.find((object) => {
       const def = OBJECT_DEFS[object.type];
       return (
         x >= object.x &&
@@ -157,6 +161,15 @@ export class Grid {
         y < object.y + def.footprintHeight
       );
     });
+  }
+
+  removeObjectAt(x: number, y: number): WorldObject | undefined {
+    const index = this.mutableObjects.findIndex((object) => object.x === x && object.y === y);
+    if (index < 0) {
+      return undefined;
+    }
+    const [removed] = this.mutableObjects.splice(index, 1);
+    return removed;
   }
 
   terrainFrameGrid(): number[][] {

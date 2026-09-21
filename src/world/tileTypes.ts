@@ -38,6 +38,7 @@ export enum ObjectType {
   PINE_TREE = "pine_tree",
   BUSH = "bush",
   ROCK = "rock",
+  COPPER_ORE = "copper_ore",
 }
 
 export interface TileDefinition {
@@ -171,6 +172,17 @@ export const OBJECT_DEFS: Record<ObjectType, ObjectDefinition> = {
     type: ObjectType.ROCK,
     textureKey: "world-object-rock",
     texturePath: "/assets/world/objects/Rock.png",
+    visualWidth: TILE_SIZE,
+    visualHeight: TILE_SIZE,
+    footprintWidth: 1,
+    footprintHeight: 1,
+    originX: 0,
+    originY: 0,
+  },
+  [ObjectType.COPPER_ORE]: {
+    type: ObjectType.COPPER_ORE,
+    textureKey: "world-object-copper-ore",
+    texturePath: "/assets/world/objects/Copper_Ore.png",
     visualWidth: TILE_SIZE,
     visualHeight: TILE_SIZE,
     footprintWidth: 1,

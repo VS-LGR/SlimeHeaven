@@ -59,7 +59,7 @@ export function getGatheringAnimation(
     return WORK_FALLBACK;
   }
 
-  if (taskType !== "gather_wood" && taskType !== "gather_stone") {
+  if (taskType !== "gather_wood" && taskType !== "gather_stone" && taskType !== "gather_copper") {
     return WORK_FALLBACK;
   }
 

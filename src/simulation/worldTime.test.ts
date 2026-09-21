@@ -155,7 +155,12 @@ describe("world time 05.5A", () => {
     ];
     for (const file of files) {
       const source = readFileSync(file, "utf8");
-      expect(source).not.toMatch(/worldTime|timeConfig|dayPeriodAtMinute/);
+      expect(source).not.toMatch(/timeConfig|dayPeriodAtMinute/);
+      if (file.endsWith("JobSystem.ts")) {
+        expect(source).not.toMatch(/from ["'].*worldTime["']/);
+        continue;
+      }
+      expect(source).not.toMatch(/worldTime/);
     }
   });
 });

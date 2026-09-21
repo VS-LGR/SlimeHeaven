@@ -46,9 +46,18 @@ describe("inventory HUD catalog 05.6B.UI", () => {
     expect(INVENTORY_ITEMS.food.iconSrc).toBe("/assets/world/materials/Carrot.png");
     expect(INVENTORY_ITEMS.food.name).toBe("Alimento");
     expect(INVENTORY_ITEMS.food.stockKey).toBe("food");
-    expect(INVENTORY_ITEMS.copper_ore.stockKey).toBeNull();
+    expect(INVENTORY_ITEMS.copper_ore.stockKey).toBe("copperOre");
+    expect(INVENTORY_ITEMS.foliage.stockKey).toBe("foliage");
+    expect(INVENTORY_ITEMS.copper_ingot.stockKey).toBeNull();
     expect(INVENTORY_ITEMS.shell.stockKey).toBeNull();
-    expect(STOCKABLE_INVENTORY_ITEM_IDS).toEqual(["wood", "stone", "vine", "food"]);
+    expect(STOCKABLE_INVENTORY_ITEM_IDS).toEqual([
+      "wood",
+      "stone",
+      "vine",
+      "food",
+      "copper_ore",
+      "foliage",
+    ]);
     expect(INVENTORY_ITEM_IDS).toContain("foliage");
     expect(INVENTORY_ITEMS.wood.usedIn).toEqual(["Construções"]);
   });
@@ -61,8 +70,15 @@ describe("inventory HUD catalog 05.6B.UI", () => {
   });
 
   it("filters stock mode vs catalog mode and keeps undiscovered qty 0", () => {
-    const stock = { wood: 4, stone: 0, vine: 1, food: 0 };
-    const discovered = { wood: true, stone: false, vine: true, food: false };
+    const stock = { wood: 4, stone: 0, vine: 1, food: 0, foliage: 0, copperOre: 0 };
+    const discovered = {
+      wood: true,
+      stone: false,
+      vine: true,
+      food: false,
+      foliage: false,
+      copperOre: false,
+    };
     const stockMode = filterInventoryItems({
       stock,
       discovered,
@@ -72,7 +88,14 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       discoveredOnly: false,
       mode: "stock",
     });
-    expect(stockMode.map((item) => item.id)).toEqual(["food", "wood", "stone", "vine"]);
+    expect(stockMode.map((item) => item.id)).toEqual([
+      "food",
+      "foliage",
+      "wood",
+      "copper_ore",
+      "stone",
+      "vine",
+    ]);
     expect(stockMode.find((item) => item.id === "stone")?.quantity).toBe(0);
 
     const catalog = filterInventoryItems({
@@ -94,7 +117,9 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       "stone",
       "vine",
     ]);
-    expect(catalog.find((item) => item.id === "copper_ore")?.collectable).toBe(false);
+    expect(catalog.find((item) => item.id === "copper_ore")?.collectable).toBe(true);
+    expect(catalog.find((item) => item.id === "copper_ingot")?.collectable).toBe(false);
+    expect(catalog.find((item) => item.id === "copper_ingot")?.discovered).toBe(false);
     expect(catalog.find((item) => item.id === "copper_ore")?.quantity).toBe(0);
 
     const mineralStock = filterInventoryItems({
@@ -106,7 +131,7 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       discoveredOnly: false,
       mode: "stock",
     });
-    expect(mineralStock.map((item) => item.id)).toEqual(["stone"]);
+    expect(mineralStock.map((item) => item.id)).toEqual(["copper_ore", "stone"]);
 
     const mineralCatalog = filterInventoryItems({
       stock,
@@ -144,7 +169,7 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       mode: "stock",
     });
     expect(starred.map((item) => item.id)).toEqual(["vine"]);
-    expect(stockableDiscoveryCount(discovered)).toEqual({ count: 2, total: 4 });
+    expect(stockableDiscoveryCount(discovered)).toEqual({ count: 2, total: 6 });
   });
 
   it("marks discovery on stored credit and keeps it after spending to zero", () => {

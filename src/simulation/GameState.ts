@@ -4,7 +4,7 @@ import { createResourceNodes } from "@/src/world/resourceNodes";
 import type { Grid } from "@/src/world/Grid";
 import type { GridPosition } from "@/src/world/GridPosition";
 import { STORAGE_TILE, IDLE_WANDER_DELAY_TICKS } from "./constants";
-import { emptyDiscovery, emptyStock, type ResourceStock, type ResourceType } from "./resources";
+import { emptyDiscovery, emptyStock, RESOURCE_IDS, type ResourceStock, type ResourceType } from "./resources";
 import type { MaterialDeliveryNotice } from "./data/materials";
 import { createSlimeState, SLIME_SPAWNS, type SlimeState } from "./entities/SlimeState";
 import type { Task } from "./entities/Task";
@@ -88,6 +88,7 @@ export class GameState {
   private nextSiteSeq = 1;
   private warnedKeys = new Set<string>();
   private farmDirty = new Set<string>();
+  private removedObjects = new Set<string>();
 
   constructor(
     grid: Grid = createVillageMap(),
@@ -254,24 +255,47 @@ export class GameState {
     return positions;
   }
 
+  markObjectRemoved(x: number, y: number): void {
+    this.removedObjects.add(farmKey(x, y));
+  }
+
+  consumeRemovedObjects(): GridPosition[] {
+    const positions: GridPosition[] = [];
+    for (const key of this.removedObjects) {
+      positions.push(parseFarmKey(key));
+    }
+    this.removedObjects.clear();
+    return positions;
+  }
+
   nodeById(id: string): ResourceNode | undefined {
     return this.nodes.find((node) => node.id === id);
   }
 
-  nodeAtTile(x: number, y: number): ResourceNode | undefined {
-    return this.nodes.find((node) => {
-      if (node.type === "wood") {
-        const def = OBJECT_DEFS[ObjectType.TREE];
-        return (
-          x >= node.tile.x &&
-          x < node.tile.x + def.footprintWidth &&
-          y >= node.tile.y &&
-          y < node.tile.y + def.footprintHeight
-        );
-      }
-      return node.tile.x === x && node.tile.y === y;
-    });
+  nodesAtTile(x: number, y: number): ResourceNode[] {
+    return this.nodes.filter((node) => nodeCoversTile(node, x, y));
   }
+
+  gatherNodeAtTile(type: ResourceType, x: number, y: number): ResourceNode | undefined {
+    return this.nodesAtTile(x, y).find((node) => node.type === type && node.depleted !== true);
+  }
+
+  nodeAtTile(x: number, y: number): ResourceNode | undefined {
+    return this.nodesAtTile(x, y).find((node) => node.depleted !== true);
+  }
+}
+
+function nodeCoversTile(node: ResourceNode, x: number, y: number): boolean {
+  if (node.type === RESOURCE_IDS.WOOD || node.type === RESOURCE_IDS.FOLIAGE) {
+    const def = OBJECT_DEFS[ObjectType.TREE];
+    return (
+      x >= node.tile.x &&
+      x < node.tile.x + def.footprintWidth &&
+      y >= node.tile.y &&
+      y < node.tile.y + def.footprintHeight
+    );
+  }
+  return node.tile.x === x && node.tile.y === y;
 }
 
 /** Empty village for construction/placement tests. Production uses starting homes. */

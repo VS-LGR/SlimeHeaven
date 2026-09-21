@@ -1,4 +1,4 @@
-import { SIMULATION_TICK_MS, SLIME_HOP_DURATION_MS, WORK_DURATION_MS } from "../constants";
+import { SIMULATION_TICK_MS, SLIME_HOP_DURATION_MS, workDurationMsForTask } from "../constants";
 import { EAT_DURATION_MS, EAT_SATIETY_RESTORE, SATIETY_MAX, workSpeedMultiplier } from "../needsConfig";
 import type { GameState } from "../GameState";
 import type { SlimeState } from "../entities/SlimeState";
@@ -6,13 +6,15 @@ import {
   beginAssignedTask,
   beginCarryToStorage,
   cancelTask,
+  commitCopperDepletion,
+  commitFoliageCollection,
   deliver,
   releaseSlime,
   slimeAtDestination,
   startWorking,
   workFaceTile,
 } from "./JobSystem";
-import { isConstructionTask } from "../entities/Task";
+import { isConstructionTask, isGatherTask } from "../entities/Task";
 import type { Task } from "../entities/Task";
 import { resolveGatherBundle } from "../data/materials";
 import { completeHarvest, completePlant, completeTill } from "./FarmSystem";
@@ -155,7 +157,7 @@ function finishWork(state: GameState, slime: SlimeState): void {
     return;
   }
 
-  if (task.type === "gather_wood" || task.type === "gather_stone") {
+  if (isGatherTask(task.type)) {
     const force =
       task.type === "gather_wood" && state.forceNextWoodVineBonus !== undefined
         ? { forceVineBonus: state.forceNextWoodVineBonus }
@@ -164,6 +166,13 @@ function finishWork(state: GameState, slime: SlimeState): void {
       state.forceNextWoodVineBonus = undefined;
     }
     slime.carriedResource = resolveGatherBundle(task.type, state.rng, force);
+    const node = state.nodeById(task.nodeId);
+    if (node && task.type === "gather_foliage") {
+      commitFoliageCollection(state, node);
+    }
+    if (node && task.type === "gather_copper") {
+      commitCopperDepletion(state, node);
+    }
     beginCarryToStorage(state, slime);
     return;
   }
@@ -270,7 +279,8 @@ function tickSlime(state: GameState, slime: SlimeState): void {
       return;
     }
     slime.workElapsedMs += SIMULATION_TICK_MS * workSpeedMultiplier(slime.satiety);
-    if (slime.workElapsedMs < WORK_DURATION_MS) {
+    const duration = workDurationMsForTask(task?.type ?? "");
+    if (slime.workElapsedMs < duration) {
       return;
     }
     finishWork(state, slime);

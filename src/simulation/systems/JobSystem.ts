@@ -16,8 +16,11 @@ import { FISHING } from "../fishingConfig";
 import { JOB_ATTRIBUTE_WEIGHTS, getAttributeContribution } from "../slimeAttributes";
 import { canPerformTaskCapabilities } from "../slimeCapabilities";
 import { startPlotWorkRecoverHop, startTillRecoverHop, tillStanceWorkTile } from "./tillStance";
+import { rebuildInterestPoints } from "./InterestPointSystem";
 import type { ConstructionSite } from "../entities/ConstructionSite";
 import { buildingById, entranceTile } from "../data/buildings";
+import { FOLIAGE_REGEN_GAME_MINUTES } from "../constants";
+import { deliveryNoticeFromBundle } from "../data/materials";
 
 const SLIME_ASSIGN_ORDER = [SLIME_IDS.PINGO, SLIME_IDS.MOMO, SLIME_IDS.TITO];
 
@@ -27,11 +30,85 @@ function nodeMatches(type: GatherTaskType, node: ResourceNode): boolean {
   if (type === "gather_wood") {
     return node.type === RESOURCE_IDS.WOOD;
   }
+  if (type === "gather_foliage") {
+    return node.type === RESOURCE_IDS.FOLIAGE;
+  }
+  if (type === "gather_copper") {
+    return node.type === RESOURCE_IDS.COPPER_ORE;
+  }
   return node.type === RESOURCE_IDS.STONE;
 }
 
 function nodeHasActiveTask(state: GameState, nodeId: string): boolean {
   return state.activeTasks().some((task) => task.nodeId === nodeId);
+}
+
+function occupancyHasActiveTask(state: GameState, occupancyKey: string): boolean {
+  return state.activeTasks().some((task) => {
+    const node = state.nodeById(task.nodeId);
+    return node?.occupancyKey === occupancyKey;
+  });
+}
+
+function gatherTargetBlocked(state: GameState, node: ResourceNode): boolean {
+  if (node.depleted) {
+    return true;
+  }
+  return occupancyHasActiveTask(state, node.occupancyKey);
+}
+
+export function isFoliageReady(state: GameState, node: ResourceNode): boolean {
+  const readyAt = node.foliageReadyAtMinute ?? 0;
+  return state.worldTime.totalGameMinutes >= readyAt;
+}
+
+export type FoliageInspectReason = "ready" | "regenerating" | "reserved";
+
+export function inspectFoliageTarget(
+  state: GameState,
+  tile: GridPosition,
+): { node: ResourceNode; valid: boolean; reason: FoliageInspectReason } | null {
+  const node = state.gatherNodeAtTile(RESOURCE_IDS.FOLIAGE, tile.x, tile.y);
+  if (!node) {
+    return null;
+  }
+  if (occupancyHasActiveTask(state, node.occupancyKey)) {
+    return { node, valid: false, reason: "reserved" };
+  }
+  if (!isFoliageReady(state, node)) {
+    return { node, valid: false, reason: "regenerating" };
+  }
+  return { node, valid: true, reason: "ready" };
+}
+
+export function inspectMiningTarget(
+  state: GameState,
+  tile: GridPosition,
+): { type: GatherTaskType; node: ResourceNode; valid: boolean } | null {
+  const copper = inspectGatherTarget(state, "gather_copper", tile);
+  if (copper) {
+    return { type: "gather_copper", node: copper.node, valid: copper.valid };
+  }
+  const stone = inspectGatherTarget(state, "gather_stone", tile);
+  if (stone) {
+    return { type: "gather_stone", node: stone.node, valid: stone.valid };
+  }
+  return null;
+}
+
+export function commitFoliageCollection(state: GameState, node: ResourceNode): void {
+  node.foliageReadyAtMinute = state.worldTime.totalGameMinutes + FOLIAGE_REGEN_GAME_MINUTES;
+}
+
+export function commitCopperDepletion(state: GameState, node: ResourceNode): void {
+  if (node.depleted) {
+    return;
+  }
+  node.depleted = true;
+  state.grid.removeObjectAt(node.tile.x, node.tile.y);
+  state.refreshTileBlocking(node.tile.x, node.tile.y);
+  state.markObjectRemoved(node.tile.x, node.tile.y);
+  rebuildInterestPoints(state);
 }
 
 /**
@@ -116,11 +193,22 @@ export function inspectGatherTarget(
   type: GatherTaskType,
   tile: GridPosition,
 ): { node: ResourceNode; valid: boolean } | null {
-  const atTile = state.nodeAtTile(tile.x, tile.y);
+  const resourceType = resourceTypeForTask(type);
+  if (!resourceType) {
+    return null;
+  }
+  const atTile = state.gatherNodeAtTile(resourceType, tile.x, tile.y);
   if (!atTile || !nodeMatches(type, atTile)) {
     return null;
   }
-  return { node: atTile, valid: !nodeHasActiveTask(state, atTile.id) };
+  if (type === "gather_foliage") {
+    const foliage = inspectFoliageTarget(state, tile);
+    if (!foliage) {
+      return null;
+    }
+    return { node: foliage.node, valid: foliage.valid };
+  }
+  return { node: atTile, valid: !gatherTargetBlocked(state, atTile) };
 }
 
 /** Player designation: never falls back to another node. Debug spawn still uses createGatherTask. */
@@ -143,15 +231,21 @@ export function createGatherTask(
 ): Task | undefined {
   let node: ResourceNode | undefined;
   if (preferredTile) {
-    const atTile = state.nodeAtTile(preferredTile.x, preferredTile.y);
-    if (atTile && nodeMatches(type, atTile) && !nodeHasActiveTask(state, atTile.id)) {
-      node = atTile;
+    const inspected = inspectGatherTarget(state, type, preferredTile);
+    if (inspected?.valid) {
+      node = inspected.node;
     }
   }
   if (!node) {
-    node = state.nodes.find(
-      (candidate) => nodeMatches(type, candidate) && !nodeHasActiveTask(state, candidate.id),
-    );
+    node = state.nodes.find((candidate) => {
+      if (!nodeMatches(type, candidate) || gatherTargetBlocked(state, candidate)) {
+        return false;
+      }
+      if (type === "gather_foliage" && !isFoliageReady(state, candidate)) {
+        return false;
+      }
+      return true;
+    });
   }
   if (!node) {
     return undefined;
@@ -300,11 +394,11 @@ export function deliver(state: GameState, slime: SlimeState): void {
   slime.state = "delivering";
   const carried = slime.carriedResource;
   if (hasCargo(carried) && carried) {
-    const vine = carried.vine ?? 0;
     creditStoredResources(state.resources, state.discoveredResources, carried);
     slime.carriedResource = undefined;
-    if (vine > 0) {
-      state.pendingMaterialToasts.push({ slimeName: slime.name, vine });
+    const notice = deliveryNoticeFromBundle(slime.name, carried);
+    if (notice) {
+      state.pendingMaterialToasts.push(notice);
     }
   }
   const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;

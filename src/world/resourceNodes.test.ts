@@ -48,7 +48,9 @@ describe("createResourceNodes", () => {
     const nodes = createResourceNodes(grid);
     const trees = grid.objects.filter((object) => object.type === ObjectType.TREE);
     for (const tree of trees) {
-      const node = nodes.find((entry) => entry.tile.x === tree.x && entry.tile.y === tree.y);
+      const node = nodes.find(
+        (entry) => entry.type === "wood" && entry.tile.x === tree.x && entry.tile.y === tree.y,
+      );
       expect(node).toBeDefined();
       const eastOfTrunk = { x: tree.x + 2, y: tree.y + 1 };
       const westOfTrunk = { x: tree.x - 1, y: tree.y + 1 };
@@ -71,5 +73,17 @@ describe("createResourceNodes", () => {
     expect(state.nodeAtTile(tree!.x, tree!.y)?.type).toBe("wood");
     expect(state.nodeAtTile(tree!.x + 1, tree!.y + 1)?.type).toBe("wood");
     expect(state.nodeAtTile(rock!.x, rock!.y)?.type).toBe("stone");
+  });
+
+  it("adds foliage nodes on trees and copper nodes on deposits", () => {
+    const grid = createVillageMap();
+    const nodes = createResourceNodes(grid);
+    const trees = grid.objects.filter((object) => object.type === ObjectType.TREE);
+    const foliage = nodes.filter((node) => node.type === "foliage");
+    expect(foliage).toHaveLength(trees.length);
+    const copper = nodes.filter((node) => node.type === "copperOre");
+    const deposits = grid.objects.filter((object) => object.type === ObjectType.COPPER_ORE);
+    expect(copper).toHaveLength(deposits.length);
+    expect(deposits.length).toBe(3);
   });
 });

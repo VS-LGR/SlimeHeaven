@@ -147,6 +147,9 @@ export interface FishingHudState {
 export interface DebugActions {
   spawnGatherWood: () => void;
   spawnGatherStone: () => void;
+  spawnGatherFoliage: () => void;
+  spawnGatherCopper: () => void;
+  readyHoveredFoliage: () => void;
   clearTasks: () => void;
   resetSlimes: () => void;
   addTestResource: () => void;
@@ -187,6 +190,7 @@ export interface DebugActions {
 
 export interface HudActions {
   inviteSelectedVisitor: () => void;
+  designateFoliageAt: (x: number, y: number) => "ok" | "regenerating" | "reserved" | "none";
 }
 
 export interface GameUiSnapshot {
@@ -197,7 +201,14 @@ export interface GameUiSnapshot {
   collectionOpen: boolean;
   /** Centered backpack inventory dialog. */
   inventoryPanelOpen: boolean;
-  discoveredResources: { wood: boolean; stone: boolean; vine: boolean; food: boolean };
+  discoveredResources: {
+    wood: boolean;
+    stone: boolean;
+    vine: boolean;
+    food: boolean;
+    foliage: boolean;
+    copperOre: boolean;
+  };
   fps: number;
   cameraX: number;
   cameraY: number;
@@ -222,6 +233,8 @@ export interface GameUiSnapshot {
   stone: number;
   food: number;
   vine: number;
+  foliage: number;
+  copperOre: number;
   cargoBundles: string[];
   forceNextWoodVineBonusArmed: boolean;
   farmTiles: number;
@@ -263,6 +276,9 @@ export interface GameUiSnapshot {
   catchToast: CatchToast | null;
   jobToast: JobToast | null;
   visitorDebug: string[];
+  foliageInspect: string | null;
+  copperInspect: string | null;
+  foliageSelectedInspect: string | null;
 }
 
 interface GameUiStore extends GameUiSnapshot {
@@ -287,7 +303,14 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   availableBuildingTypeIds: [],
   collectionOpen: false,
   inventoryPanelOpen: false,
-  discoveredResources: { wood: false, stone: false, vine: false, food: false },
+  discoveredResources: {
+    wood: false,
+    stone: false,
+    vine: false,
+    food: false,
+    foliage: false,
+    copperOre: false,
+  },
   fps: 0,
   cameraX: 0,
   cameraY: 0,
@@ -312,6 +335,8 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   stone: 0,
   food: 0,
   vine: 0,
+  foliage: 0,
+  copperOre: 0,
   cargoBundles: [],
   forceNextWoodVineBonusArmed: false,
   farmTiles: 0,
@@ -353,6 +378,9 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   catchToast: null,
   jobToast: null,
   visitorDebug: [],
+  foliageInspect: null,
+  copperInspect: null,
+  foliageSelectedInspect: null,
 };
 
 export const useGameUiStore = create<GameUiStore>((set) => ({
