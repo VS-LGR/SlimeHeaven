@@ -36,6 +36,8 @@ const SPECIALTY_LABELS: Record<string, string> = {
   exploration: "Exploração",
   Foraging: "Forrageira",
   foraging: "Forrageira",
+  "Aquatic foraging": "Forrageio aquático",
+  aquatic_foraging: "Forrageio aquático",
 };
 
 const BUILDING_NAME_LABELS: Record<string, string> = {
@@ -192,6 +194,12 @@ function workingActivityLabel(taskLabel: string, constructionActivity: string | 
   }
   if (task.includes("till") || task.includes("plant") || task.includes("harvest") || task.includes("farm")) {
     return "Cuidando da plantação";
+  }
+  if (task.includes("inspect_shore") || task.includes("inspect shore")) {
+    return "Inspecionando a margem";
+  }
+  if (task.includes("collect_coral") || task.includes("collect coral") || task.includes("coral")) {
+    return "Coletando coral";
   }
   if (task.includes("gather") || task.includes("wood") || task.includes("stone")) {
     return "Coletando";

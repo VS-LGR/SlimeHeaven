@@ -103,7 +103,8 @@ export const SLIME_SPAWNS: readonly SlimeSpawnDef[] = [
     wanderOffsetTicks: 0,
     attributes: { technique: 4, strength: 2, instinct: 5, luck: 3 },
     interest: PINGO_AMBIENT_INTEREST,
-    capabilities: ["fishing", "exploration"],
+    capabilities: ["fishing", "exploration", "aquatic_foraging"],
+    jobAffinity: { aquatic_foraging: 1.25 },
   },
   {
     id: SLIME_IDS.MOMO,

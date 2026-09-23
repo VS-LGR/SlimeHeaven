@@ -24,6 +24,8 @@ export interface MaterialSummaryModel {
   vine: number;
   foliage: number;
   copperOre: number;
+  shell: number;
+  coral: number;
 }
 
 /** Season progression is not part of 05.5A. Keep the plaque static. */
@@ -62,7 +64,7 @@ export function selectResourceHudModel(
 }
 
 export function selectMaterialSummaryModel(
-  snapshot: Pick<GameUiSnapshot, "wood" | "stone" | "vine" | "foliage" | "copperOre">,
+  snapshot: Pick<GameUiSnapshot, "wood" | "stone" | "vine" | "foliage" | "copperOre" | "shell" | "coral">,
 ): MaterialSummaryModel {
   return {
     wood: snapshot.wood,
@@ -70,11 +72,16 @@ export function selectMaterialSummaryModel(
     vine: snapshot.vine,
     foliage: snapshot.foliage,
     copperOre: snapshot.copperOre,
+    shell: snapshot.shell,
+    coral: snapshot.coral,
   };
 }
 
 export function selectInventoryStockModel(
-  snapshot: Pick<GameUiSnapshot, "wood" | "stone" | "vine" | "food" | "foliage" | "copperOre">,
+  snapshot: Pick<
+    GameUiSnapshot,
+    "wood" | "stone" | "vine" | "food" | "foliage" | "copperOre" | "shell" | "coral"
+  >,
 ): MaterialSummaryModel & { food: number } {
   return {
     wood: snapshot.wood,
@@ -83,6 +90,8 @@ export function selectInventoryStockModel(
     food: snapshot.food,
     foliage: snapshot.foliage,
     copperOre: snapshot.copperOre,
+    shell: snapshot.shell,
+    coral: snapshot.coral,
   };
 }
 

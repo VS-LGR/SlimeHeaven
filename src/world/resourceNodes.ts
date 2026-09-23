@@ -4,14 +4,19 @@ import type { ResourceNode } from "@/src/simulation/entities/ResourceNode";
 import {
   copperNodeId,
   copperOccupancyKey,
+  coralNodeId,
+  coralOccupancyKey,
   foliageNodeId,
   rockOccupancyKey,
+  shellNodeId,
+  shellOccupancyKey,
   stoneNodeId,
   treeOccupancyKey,
   woodNodeId,
 } from "@/src/simulation/entities/ResourceNode";
 import { RESOURCE_IDS } from "@/src/simulation/resources";
 import { stoneGatherWorkTile, woodGatherWorkTile } from "./gatherStance";
+import type { WaterBody } from "@/src/simulation/entities/WaterBody";
 
 export function createResourceNodes(grid: Grid): ResourceNode[] {
   const nodes: ResourceNode[] = [];
@@ -80,5 +85,39 @@ export function createResourceNodes(grid: Grid): ResourceNode[] {
     });
   }
 
+  for (const object of grid.objects) {
+    if (object.type !== ObjectType.CORAL) {
+      continue;
+    }
+    const origin = { x: object.x, y: object.y };
+    nodes.push({
+      id: coralNodeId(object.x, object.y),
+      type: RESOURCE_IDS.CORAL,
+      tile: origin,
+      workTile: origin,
+      occupancyKey: coralOccupancyKey(object.x, object.y),
+      depleted: false,
+    });
+  }
+
+  return nodes;
+}
+
+export function createShellNodes(bodies: readonly WaterBody[]): ResourceNode[] {
+  const nodes: ResourceNode[] = [];
+  for (const body of bodies) {
+    const tile = body.shallowTiles[0] ?? body.tiles[0];
+    if (!tile) {
+      continue;
+    }
+    nodes.push({
+      id: shellNodeId(body.id),
+      type: RESOURCE_IDS.SHELL,
+      tile,
+      workTile: tile,
+      occupancyKey: shellOccupancyKey(body.id),
+      shellReadyAtMinute: 0,
+    });
+  }
   return nodes;
 }

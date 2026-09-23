@@ -149,7 +149,10 @@ export interface DebugActions {
   spawnGatherStone: () => void;
   spawnGatherFoliage: () => void;
   spawnGatherCopper: () => void;
+  spawnShoreJob: () => void;
+  spawnCoralJob: () => void;
   readyHoveredFoliage: () => void;
+  readyHoveredShore: () => void;
   clearTasks: () => void;
   resetSlimes: () => void;
   addTestResource: () => void;
@@ -191,6 +194,11 @@ export interface DebugActions {
 export interface HudActions {
   inviteSelectedVisitor: () => void;
   designateFoliageAt: (x: number, y: number) => "ok" | "regenerating" | "reserved" | "none";
+  designateShoreAt: (
+    x: number,
+    y: number,
+  ) => "ok" | "regenerating" | "reserved" | "unreachable" | "none";
+  designateCoralAt: (x: number, y: number) => "ok" | "reserved" | "unreachable" | "none";
 }
 
 export interface GameUiSnapshot {
@@ -208,6 +216,8 @@ export interface GameUiSnapshot {
     food: boolean;
     foliage: boolean;
     copperOre: boolean;
+    shell: boolean;
+    coral: boolean;
   };
   fps: number;
   cameraX: number;
@@ -235,6 +245,8 @@ export interface GameUiSnapshot {
   vine: number;
   foliage: number;
   copperOre: number;
+  shell: number;
+  coral: number;
   cargoBundles: string[];
   forceNextWoodVineBonusArmed: boolean;
   farmTiles: number;
@@ -278,7 +290,13 @@ export interface GameUiSnapshot {
   visitorDebug: string[];
   foliageInspect: string | null;
   copperInspect: string | null;
+  shoreInspect: string | null;
+  coralInspect: string | null;
+  aquaticInspect: string | null;
   foliageSelectedInspect: string | null;
+  shoreSelectedInspect: string | null;
+  coralSelectedInspect: string | null;
+  aquaticJobInspect: string | null;
 }
 
 interface GameUiStore extends GameUiSnapshot {
@@ -310,6 +328,8 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
     food: false,
     foliage: false,
     copperOre: false,
+    shell: false,
+    coral: false,
   },
   fps: 0,
   cameraX: 0,
@@ -337,6 +357,8 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   vine: 0,
   foliage: 0,
   copperOre: 0,
+  shell: 0,
+  coral: 0,
   cargoBundles: [],
   forceNextWoodVineBonusArmed: false,
   farmTiles: 0,
@@ -380,7 +402,13 @@ const EMPTY_SNAPSHOT: GameUiSnapshot = {
   visitorDebug: [],
   foliageInspect: null,
   copperInspect: null,
+  shoreInspect: null,
+  coralInspect: null,
+  aquaticInspect: null,
   foliageSelectedInspect: null,
+  shoreSelectedInspect: null,
+  coralSelectedInspect: null,
+  aquaticJobInspect: null,
 };
 
 export const useGameUiStore = create<GameUiStore>((set) => ({

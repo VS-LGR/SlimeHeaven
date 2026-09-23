@@ -1,5 +1,5 @@
 import type { Grid } from "@/src/world/Grid";
-import { OBJECT_DEFS, TileType } from "@/src/world/tileTypes";
+import { isAquaticDetail, ObjectType, OBJECT_DEFS, resolveCoralVariant, TileType } from "@/src/world/tileTypes";
 import type { GameState } from "@/src/simulation/GameState";
 import { farmNodeId } from "@/src/simulation/entities/FarmPlot";
 import { cropById } from "@/src/simulation/data/crops";
@@ -11,10 +11,17 @@ import { constructionProgress } from "@/src/simulation/entities/ConstructionSite
 import { isConstructionTask } from "@/src/simulation/entities/Task";
 import type { TileInspect } from "@/src/store/gameUiStore";
 import { shoreMaskLabel } from "@/src/world/autotile/resolveShoreline";
-import { inspectFoliageTarget, inspectMiningTarget } from "@/src/simulation/systems/JobSystem";
-import { RESOURCE_IDS } from "@/src/simulation/resources";
+import {
+  inspectCoralTarget,
+  inspectFoliageTarget,
+  inspectMiningTarget,
+  inspectShoreTarget,
+} from "@/src/simulation/systems/JobSystem";
+import { formatCargo, RESOURCE_IDS } from "@/src/simulation/resources";
 import { dayNumberFromTotal, formatClock, minuteOfDayFromTotal } from "@/src/simulation/worldTime";
 import { timeOfDayFromMinutes } from "@/src/simulation/timeConfig";
+import { isAquaticForageTask } from "@/src/simulation/entities/Task";
+import { accessPointById, resolveShoreWaterBodyId } from "@/src/simulation/waterBodies";
 
 export function foliageDebugLine(state: GameState, x: number, y: number): string | null {
   const inspected = inspectFoliageTarget(state, { x, y });
@@ -48,6 +55,90 @@ export function copperDebugLine(state: GameState, x: number, y: number): string 
     return `Copper: present reserved ${task?.type ?? "job"}`;
   }
   return "Copper: present";
+}
+
+export function shoreDebugLine(state: GameState, x: number, y: number): string | null {
+  const inspected = inspectShoreTarget(state, { x, y });
+  if (!inspected) {
+    return null;
+  }
+  const bodyId = resolveShoreWaterBodyId(state.waterBodies, { x, y }) ?? "?";
+  const access = inspected.valid
+    ? state.fishingAccessPoints.find(
+        (point) =>
+          point.waterBodyId === bodyId &&
+          point.enabled &&
+          point.reservedBy === null,
+      )
+    : state.fishingAccessPoints.find(
+        (point) =>
+          point.waterBodyId === bodyId && point.reservedBy !== null,
+      );
+  const reservedBy = access?.reservedBy ?? "none";
+  const accessId = access?.id ?? "none";
+  if (inspected.reason === "ready") {
+    return `Shore: ready body=${bodyId} AP=${accessId} reservedBy=${reservedBy}`;
+  }
+  if (inspected.reason === "reserved") {
+    return `Shore: reserved body=${bodyId} AP=${accessId} reservedBy=${reservedBy}`;
+  }
+  if (inspected.reason === "unreachable") {
+    return `Shore: unreachable body=${bodyId} AP=${accessId} reservedBy=${reservedBy}`;
+  }
+  const readyAt = inspected.node.shellReadyAtMinute ?? 0;
+  const { hour, minute } = timeOfDayFromMinutes(minuteOfDayFromTotal(readyAt));
+  return `Shore: regen until ${formatClock(hour, minute)} D${dayNumberFromTotal(readyAt)} body=${bodyId} AP=${accessId}`;
+}
+
+export function coralDebugLine(state: GameState, x: number, y: number): string | null {
+  const inspected = inspectCoralTarget(state, { x, y });
+  if (!inspected) {
+    return null;
+  }
+  const object = state.grid.objectAt(x, y);
+  const variant =
+    object?.type === ObjectType.CORAL ? resolveCoralVariant(object.variant) : resolveCoralVariant(undefined);
+  const fishingSpot = state.fishingSpots.some((spot) => spot.tileX === x && spot.tileY === y);
+  const water = state.grid.getTile(x, y)?.terrain === TileType.WATER;
+  const overlap = `fishingSpot=${fishingSpot ? "yes" : "no"} water=${water ? "yes" : "INVALID"}`;
+  const task = state
+    .activeTasks()
+    .find((entry) => state.nodeById(entry.nodeId)?.occupancyKey === inspected.node.occupancyKey);
+  const access = task?.accessPointId
+    ? accessPointById(state.fishingAccessPoints, task.accessPointId)
+    : undefined;
+  const reservation = access?.reservedBy ?? task?.id ?? "none";
+  if (inspected.reason === "depleted") {
+    return `Coral: depleted variant=${variant} collectable ${overlap}`;
+  }
+  if (inspected.reason === "reserved") {
+    return `Coral: present reserved variant=${variant} collectable ${task?.type ?? "job"} AP=${access?.id ?? "none"} reservedBy=${reservation} ${overlap}`;
+  }
+  if (inspected.reason === "unreachable") {
+    return `Coral: unreachable variant=${variant} collectable AP=${access?.id ?? "none"} reservedBy=${reservation} ${overlap}`;
+  }
+  return `Coral: present variant=${variant} collectable AP=${access?.id ?? "none"} reservedBy=${reservation} ${overlap}`;
+}
+
+export function aquaticDetailDebugLine(state: GameState, x: number, y: number): string | null {
+  const tile = state.grid.getTile(x, y);
+  if (!tile || !isAquaticDetail(tile.detail)) {
+    return null;
+  }
+  const fishingSpot = state.fishingSpots.some((spot) => spot.tileX === x && spot.tileY === y);
+  const water = tile.terrain === TileType.WATER;
+  return `Aquatic: decorative ${tile.detail} stock=none collect=no walkable=${String(tile.walkable)} reservedAP=none fishingSpot=${fishingSpot ? "yes" : "no"} water=${water ? "yes" : "INVALID"}`;
+}
+
+export function aquaticJobDebugLine(state: GameState): string | null {
+  const lines = state.activeTasks()
+    .filter((task) => isAquaticForageTask(task.type))
+    .map((task) => {
+      const slime = task.assignedSlimeId ? state.slimes[task.assignedSlimeId] : undefined;
+      const cargo = slime ? formatCargo(slime.carriedResource) : "Nothing";
+      return `${task.type} ${task.state} AP=${task.accessPointId ?? "none"} cargo=${cargo}`;
+    });
+  return lines.length > 0 ? lines.join(" | ") : null;
 }
 
 export function inspectWorldTile(grid: Grid, state: GameState, x: number, y: number): TileInspect | null {
@@ -108,7 +199,7 @@ export function inspectWorldTile(grid: Grid, state: GameState, x: number, y: num
     growthProgress: plot ? cropGrowthProgress(plot) : null,
     farmTask: farmTask ? farmTask.type.replaceAll("_", " ") : plot ? "None" : null,
     object: object && def
-      ? `${object.type} ${def.footprintWidth}×${def.footprintHeight}${tile.walkable ? "" : " blocking"}`
+      ? `${object.type}${object.variant ? `:${object.variant}` : ""} ${def.footprintWidth}×${def.footprintHeight}${tile.walkable ? "" : " blocking"}`
       : null,
     walkable: tile.walkable,
     buildable: tile.buildable,

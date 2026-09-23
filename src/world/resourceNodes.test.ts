@@ -85,5 +85,16 @@ describe("createResourceNodes", () => {
     const deposits = grid.objects.filter((object) => object.type === ObjectType.COPPER_ORE);
     expect(copper).toHaveLength(deposits.length);
     expect(deposits.length).toBe(3);
+    const coral = nodes.filter((node) => node.type === "coral");
+    const coralObjects = grid.objects.filter((object) => object.type === ObjectType.CORAL);
+    expect(coral).toHaveLength(coralObjects.length);
+    expect(coralObjects.length).toBe(2);
+  });
+
+  it("adds one shell node per water body", () => {
+    const state = new GameState();
+    const shells = state.nodes.filter((node) => node.type === "shell");
+    expect(shells).toHaveLength(state.waterBodies.length);
+    expect(shells.length).toBe(1);
   });
 });

@@ -43,10 +43,29 @@ describe("HUD selectors 05.5A", () => {
       vine: 7,
       foliage: 0,
       copperOre: 0,
+      shell: 0,
+      coral: 0,
     });
-    expect(model).toEqual({ wood: 4, stone: 2, vine: 7, foliage: 0, copperOre: 0 });
+    expect(model).toEqual({
+      wood: 4,
+      stone: 2,
+      vine: 7,
+      foliage: 0,
+      copperOre: 0,
+      shell: 0,
+      coral: 0,
+    });
     expect(
-      selectInventoryStockModel({ wood: 4, stone: 2, vine: 7, food: 8, foliage: 1, copperOre: 2 }),
+      selectInventoryStockModel({
+        wood: 4,
+        stone: 2,
+        vine: 7,
+        food: 8,
+        foliage: 1,
+        copperOre: 2,
+        shell: 0,
+        coral: 0,
+      }),
     ).toEqual({
       wood: 4,
       stone: 2,
@@ -54,11 +73,15 @@ describe("HUD selectors 05.5A", () => {
       food: 8,
       foliage: 1,
       copperOre: 2,
+      shell: 0,
+      coral: 0,
     });
     const inventory = readFileSync("src/ui/hud/InventoryHud.tsx", "utf8");
     expect(inventory).toMatch(/vine/);
     expect(inventory).toMatch(/foliage/);
     expect(inventory).toMatch(/copperOre/);
+    expect(inventory).toMatch(/shell/);
+    expect(inventory).toMatch(/coral/);
     expect(inventory).toMatch(/selectInventoryStockModel/);
     const hud = readFileSync("src/ui/GameHud.tsx", "utf8");
     expect(hud).toMatch(/InventoryHud/);

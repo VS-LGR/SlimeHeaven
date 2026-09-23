@@ -1,7 +1,9 @@
 import {
   COPPER_ORE_GATHER_AMOUNT,
+  CORAL_GATHER_AMOUNT,
   FOLIAGE_GATHER_AMOUNT,
   GATHER_AMOUNT,
+  SHELL_GATHER_AMOUNT,
 } from "../constants";
 import type { GatherTaskType } from "../entities/Task";
 import { RESOURCE_IDS, bundleAmount, type ResourceBundle, type ResourceType } from "../resources";
@@ -21,6 +23,8 @@ export const MATERIAL_IDS = {
   VINE: "vine",
   FOLIAGE: "foliage",
   COPPER_ORE: "copperOre",
+  SHELL: "shell",
+  CORAL: "coral",
 } as const;
 
 export type MaterialId = (typeof MATERIAL_IDS)[keyof typeof MATERIAL_IDS];
@@ -31,6 +35,8 @@ export const MATERIAL_ID_LIST = [
   MATERIAL_IDS.VINE,
   MATERIAL_IDS.FOLIAGE,
   MATERIAL_IDS.COPPER_ORE,
+  MATERIAL_IDS.SHELL,
+  MATERIAL_IDS.CORAL,
 ] as const;
 
 export interface MaterialDefinition {
@@ -65,6 +71,16 @@ export const MATERIALS: Record<MaterialId, MaterialDefinition> = {
     name: "Copper ore",
     iconSrc: "/assets/world/materials/Copper_Ore.png",
   },
+  shell: {
+    id: "shell",
+    name: "Shell",
+    iconSrc: "/assets/world/materials/Shell.png",
+  },
+  coral: {
+    id: "coral",
+    name: "Coral",
+    iconSrc: "/assets/world/objects/Coral_Red.png",
+  },
 };
 
 export const MATERIAL_ICON_FILES = {
@@ -73,6 +89,8 @@ export const MATERIAL_ICON_FILES = {
   vine: "public/assets/world/materials/Vine.png",
   foliage: "public/assets/world/materials/Foliage.png",
   copperOre: "public/assets/world/materials/Copper_Ore.png",
+  shell: "public/assets/world/materials/Shell.png",
+  coral: "public/assets/world/objects/Coral_Red.png",
 } as const;
 
 /** New 05.6A.1 balance defaults. Wood quantity remains GATHER_AMOUNT. */
@@ -100,12 +118,16 @@ const TOASTABLE_MATERIALS: readonly ResourceType[] = [
   RESOURCE_IDS.VINE,
   RESOURCE_IDS.FOLIAGE,
   RESOURCE_IDS.COPPER_ORE,
+  RESOURCE_IDS.SHELL,
+  RESOURCE_IDS.CORAL,
 ];
 
 const TOAST_LABELS: Record<string, string> = {
   vine: "Vine",
   foliage: "Foliage",
   copperOre: "Copper ore",
+  shell: "Shell",
+  coral: "Coral",
 };
 
 /**
@@ -126,6 +148,12 @@ export function resolveGatherBundle(
   }
   if (taskType === "gather_copper") {
     return { copperOre: COPPER_ORE_GATHER_AMOUNT };
+  }
+  if (taskType === "inspect_shore") {
+    return { shell: SHELL_GATHER_AMOUNT };
+  }
+  if (taskType === "collect_coral") {
+    return { coral: CORAL_GATHER_AMOUNT };
   }
 
   const bundle: ResourceBundle = { wood: GATHER_AMOUNT };

@@ -26,7 +26,7 @@ Carrying and delivery after an eligible job are continuation states. They do not
 
 Open tags in `src/simulation/slimeCapabilities.ts`. Known values:
 
-`fishing` · `farming` · `gathering` · `foraging` · `construction` · `exploration`
+`fishing` · `farming` · `gathering` · `foraging` · `aquatic_foraging` · `construction` · `exploration`
 
 New tags (for example `"smelting"` or a test `"test_special"`) do not require rewriting JobSystem. `hasRequiredCapabilities` / `isSlimeEligibleForJob` take string lists. ALL listed requirements must be present. A job with no / empty `requiredCapabilities` stays universal.
 
@@ -34,7 +34,7 @@ New tags (for example `"smelting"` or a test `"test_special"`) do not require re
 
 | Slime | Capabilities | Productive jobs now |
 | --- | --- | --- |
-| Pingo | fishing, exploration | Fishing. Exploration is metadata only. |
+| Pingo | fishing, exploration, aquatic_foraging | Fishing; inspect shore / collect coral. Exploration is metadata only. |
 | Momo | farming, foraging | Till, plant, harvest; foliage collection. |
 | Tito | gathering, construction, build | Wood, stone, copper; construction. |
 
@@ -48,8 +48,9 @@ Requirements live on the job, not in slime-id conditionals:
 - `till_soil` / `plant_crop` / `harvest_crop` → `farming`
 - `gather_wood` / `gather_stone` / `gather_copper` → `gathering`
 - `gather_foliage` → `foraging`
+- `inspect_shore` / `collect_coral` → `aquatic_foraging`
 
-Eligibility is checked **before** distance, attributes, affinity, or priority. Momo’s `jobAffinity.foraging` prefers foliage when multiple foragers exist.
+Eligibility is checked **before** distance, attributes, affinity, or priority. Momo’s `jobAffinity.foraging` prefers foliage when multiple foragers exist. Pingo’s `jobAffinity.aquatic_foraging` prefers shore inspect and coral when multiple aquatic foragers exist.
 
 ## Fishing when Pingo is busy
 

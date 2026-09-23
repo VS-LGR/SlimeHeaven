@@ -17,6 +17,7 @@ import { useGameUiStore } from "@/src/store/gameUiStore";
 import { HUD_ASSETS } from "./hudAssets";
 import { selectInventoryStockModel } from "./hudSelectors";
 import {
+  INVENTORY_CATEGORY_IDS,
   INVENTORY_CATEGORY_LABELS,
   INVENTORY_MODE_LABELS,
   inventoryItemOptics,
@@ -78,6 +79,8 @@ export function InventoryHud() {
   const food = useGameUiStore((state) => state.food);
   const foliage = useGameUiStore((state) => state.foliage);
   const copperOre = useGameUiStore((state) => state.copperOre);
+  const shell = useGameUiStore((state) => state.shell);
+  const coral = useGameUiStore((state) => state.coral);
   const discovered = useGameUiStore((state) => state.discoveredResources);
   const inventoryPanelOpen = useGameUiStore((state) => state.inventoryPanelOpen);
   const setInventoryPanelOpen = useGameUiStore((state) => state.setInventoryPanelOpen);
@@ -140,7 +143,7 @@ export function InventoryHud() {
     };
   }, [inventoryPanelOpen]);
 
-  const stock = selectInventoryStockModel({ wood, stone, vine, food, foliage, copperOre });
+  const stock = selectInventoryStockModel({ wood, stone, vine, food, foliage, copperOre, shell, coral });
   const items = filterInventoryItems({
     stock,
     discovered,
@@ -333,14 +336,25 @@ function InventoryDialogContents({
   const chrome = scaleInventorySlot(panel.chrome, scale);
   const grid = scaleInventorySlot(panel.grid, scale);
   const details = scaleInventorySlot(panel.details, scale);
-  const tabW = Math.round(INVENTORY_LAYOUT.wideCard.width * scale);
-  const tabH = Math.round(INVENTORY_LAYOUT.wideCard.height * scale);
   const shortW = Math.round(INVENTORY_LAYOUT.short.width * scale);
   const shortH = Math.round(INVENTORY_LAYOUT.short.height * scale);
   const cardW = Math.round(INVENTORY_LAYOUT.largeCard.width * scale);
   const cardH = Math.round(INVENTORY_LAYOUT.largeCard.height * scale);
   const fontScale = Math.min(1.1, Math.max(0.82, scale));
   const chromeGap = Math.round(8 * scale);
+  const dividerW = Math.round(2 * scale) + Math.round(4 * scale);
+  const categoryIds = INVENTORY_CATEGORY_IDS;
+  const chromeChildren = 2 + 1 + categoryIds.length;
+  const remainingTabs =
+    chrome.width - 2 * shortW - dividerW - chromeGap * Math.max(0, chromeChildren - 1);
+  const tabW = Math.max(
+    48,
+    Math.min(
+      Math.round(INVENTORY_LAYOUT.wideCard.width * scale),
+      Math.floor(remainingTabs / categoryIds.length),
+    ),
+  );
+  const tabH = Math.round(INVENTORY_LAYOUT.wideCard.height * scale);
 
   const setMode = (mode: InventoryHubMode) => {
     onPrefs((current) => ({ ...current, mode }));
@@ -451,7 +465,7 @@ function InventoryDialogContents({
             borderRadius: 1,
           }}
         />
-        {(["all", "natural", "mineral"] as const).map((category) => {
+        {INVENTORY_CATEGORY_IDS.map((category) => {
           const selectedTab = prefs.category === category;
           return (
             <button

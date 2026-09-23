@@ -13,7 +13,11 @@ import {
 describe("slime capabilities", () => {
   it("loads Pingo, Momo, and Tito identities without duplicate tags", () => {
     const state = new GameState();
-    expect(state.slimes[SLIME_IDS.PINGO].capabilities).toEqual(["fishing", "exploration"]);
+    expect(state.slimes[SLIME_IDS.PINGO].capabilities).toEqual([
+      "fishing",
+      "exploration",
+      "aquatic_foraging",
+    ]);
     expect(state.slimes[SLIME_IDS.MOMO].capabilities).toEqual(["farming", "foraging"]);
     expect(state.slimes[SLIME_IDS.TITO].capabilities).toEqual(["gathering", "construction", "build"]);
     for (const slime of Object.values(state.slimes)) {
@@ -45,6 +49,8 @@ describe("slime capabilities", () => {
     expect(requiredCapabilitiesForTask({ type: "gather_stone" })).toEqual(["gathering"]);
     expect(requiredCapabilitiesForTask({ type: "gather_copper" })).toEqual(["gathering"]);
     expect(requiredCapabilitiesForTask({ type: "gather_foliage" })).toEqual(["foraging"]);
+    expect(requiredCapabilitiesForTask({ type: "inspect_shore" })).toEqual(["aquatic_foraging"]);
+    expect(requiredCapabilitiesForTask({ type: "collect_coral" })).toEqual(["aquatic_foraging"]);
     expect(requiredCapabilitiesForTask({ type: "construct_building" })).toEqual(["build"]);
   });
 

@@ -63,7 +63,7 @@ describe("gather designation 05.4C", () => {
     expect(scene).toMatch(/FarmDesignationController/);
     expect(scene).toMatch(/GatherDesignationController/);
     expect(scene).toMatch(/FishingController/);
-    expect(scene).toMatch(/BuildPlacementController/);
+    expect(scene).toMatch(/AquaticContextController/);
   });
 
   it("converts clicks through Phaser world coordinates with no compensating offsets", () => {

@@ -39,9 +39,15 @@ export function DebugOverlay() {
   const vine = useGameUiStore((state) => state.vine);
   const foliage = useGameUiStore((state) => state.foliage);
   const copperOre = useGameUiStore((state) => state.copperOre);
+  const shell = useGameUiStore((state) => state.shell);
+  const coral = useGameUiStore((state) => state.coral);
   const cargoBundles = useGameUiStore((state) => state.cargoBundles);
   const foliageInspect = useGameUiStore((state) => state.foliageInspect);
   const copperInspect = useGameUiStore((state) => state.copperInspect);
+  const shoreInspect = useGameUiStore((state) => state.shoreInspect);
+  const coralInspect = useGameUiStore((state) => state.coralInspect);
+  const aquaticInspect = useGameUiStore((state) => state.aquaticInspect);
+  const aquaticJobInspect = useGameUiStore((state) => state.aquaticJobInspect);
   const forceNextWoodVineBonusArmed = useGameUiStore((state) => state.forceNextWoodVineBonusArmed);
   const farmTiles = useGameUiStore((state) => state.farmTiles);
   const growingCrops = useGameUiStore((state) => state.growingCrops);
@@ -99,7 +105,10 @@ export function DebugOverlay() {
           <DebugButton label="Gather stone" onClick={debugActions.spawnGatherStone} />
           <DebugButton label="Spawn foliage job" onClick={debugActions.spawnGatherFoliage} />
           <DebugButton label="Spawn copper job" onClick={debugActions.spawnGatherCopper} />
+          <DebugButton label="Spawn shore job" onClick={debugActions.spawnShoreJob} />
+          <DebugButton label="Spawn coral job" onClick={debugActions.spawnCoralJob} />
           <DebugButton label="Ready hovered foliage" onClick={debugActions.readyHoveredFoliage} />
+          <DebugButton label="Ready hovered shore" onClick={debugActions.readyHoveredShore} />
           <DebugButton label="Clear tasks" onClick={debugActions.clearTasks} />
           <DebugButton label="Reset slimes" onClick={debugActions.resetSlimes} />
           <DebugButton label="Add test resource" onClick={debugActions.addTestResource} />
@@ -178,6 +187,10 @@ export function DebugOverlay() {
         <TileInspectLines inspect={hoveredTile} />
         {foliageInspect ? <p>{foliageInspect}</p> : null}
         {copperInspect ? <p>{copperInspect}</p> : null}
+        {shoreInspect ? <p>{shoreInspect}</p> : null}
+        {coralInspect ? <p>{coralInspect}</p> : null}
+        {aquaticInspect ? <p>{aquaticInspect}</p> : null}
+        {aquaticJobInspect ? <p>{aquaticJobInspect}</p> : null}
         <p className="mt-1 text-lime-300">Selected:</p>
         <p>X: {coord(selectedX)}</p>
         <p>Y: {coord(selectedY)}</p>
@@ -191,7 +204,7 @@ export function DebugOverlay() {
           Tasks avail/busy: {availableTasks}/{assignedTasks}
         </p>
         <p>
-          Wood: {wood} · Stone: {stone} · Food: {food} · Vine: {vine} · Foliage: {foliage} · Copper: {copperOre}
+          Wood: {wood} · Stone: {stone} · Food: {food} · Vine: {vine} · Foliage: {foliage} · Copper: {copperOre} · Shell: {shell} · Coral: {coral}
         </p>
         {cargoBundles.length > 0 ? (
           <>

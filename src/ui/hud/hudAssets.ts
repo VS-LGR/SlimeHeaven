@@ -41,6 +41,7 @@ export const HUD_ASSETS = {
   inventoryCopperOre: "/assets/world/materials/Copper_Ore.png",
   inventoryCopperIngot: "/assets/world/materials/Copper_Ingot.png",
   inventoryShell: "/assets/world/materials/Shell.png",
+  inventoryCoral: "/assets/world/objects/Coral_Red.png",
   inventoryFoliage: "/assets/world/materials/Foliage.png",
 } as const;
 
@@ -87,6 +88,7 @@ export const HUD_ASSET_FILES = {
   inventoryCopperOre: "public/assets/world/materials/Copper_Ore.png",
   inventoryCopperIngot: "public/assets/world/materials/Copper_Ingot.png",
   inventoryShell: "public/assets/world/materials/Shell.png",
+  inventoryCoral: "public/assets/world/objects/Coral_Red.png",
   inventoryFoliage: "public/assets/world/materials/Foliage.png",
 } as const;
 
@@ -121,6 +123,7 @@ export const HUD_ASSET_SIZES = {
   inventoryCopperOre: { width: 33, height: 22 },
   inventoryCopperIngot: { width: 27, height: 20 },
   inventoryShell: { width: 28, height: 26 },
+  inventoryCoral: { width: 65, height: 65 },
   inventoryFoliage: { width: 60, height: 39 },
 } as const;
 

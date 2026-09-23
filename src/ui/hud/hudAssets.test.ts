@@ -189,6 +189,7 @@ describe("inventory HUD assets 05.6A.UI", () => {
     expect(HUD_ASSETS.inventoryCopperOre).toBe("/assets/world/materials/Copper_Ore.png");
     expect(HUD_ASSETS.inventoryShell).toBe("/assets/world/materials/Shell.png");
     expect(HUD_ASSETS.inventoryFoliage).toBe("/assets/world/materials/Foliage.png");
+    expect(HUD_ASSETS.inventoryCoral).toBe("/assets/world/objects/Coral_Red.png");
     expect(pngSize(HUD_ASSET_FILES.inventoryMinimized)).toEqual(HUD_ASSET_SIZES.inventoryMinimized);
     expect(pngSize(HUD_ASSET_FILES.inventoryBackpackPanel)).toEqual(HUD_ASSET_SIZES.inventoryBackpackPanel);
     expect(pngSize(HUD_ASSET_FILES.inventoryCompact)).toEqual(HUD_ASSET_SIZES.inventoryCompact);
@@ -208,6 +209,7 @@ describe("inventory HUD assets 05.6A.UI", () => {
     expect(pngSize(HUD_ASSET_FILES.inventoryCopperIngot)).toEqual(HUD_ASSET_SIZES.inventoryCopperIngot);
     expect(pngSize(HUD_ASSET_FILES.inventoryShell)).toEqual(HUD_ASSET_SIZES.inventoryShell);
     expect(pngSize(HUD_ASSET_FILES.inventoryFoliage)).toEqual(HUD_ASSET_SIZES.inventoryFoliage);
+    expect(pngSize(HUD_ASSET_FILES.inventoryCoral)).toEqual(HUD_ASSET_SIZES.inventoryCoral);
   });
 
   it("does not modify the authored inventory PNGs", () => {

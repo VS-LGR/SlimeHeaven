@@ -18,6 +18,8 @@ export interface InventoryStockModel {
   food: number;
   foliage: number;
   copperOre: number;
+  shell: number;
+  coral: number;
 }
 
 export interface InventoryDiscoveryModel {
@@ -27,6 +29,8 @@ export interface InventoryDiscoveryModel {
   food: boolean;
   foliage: boolean;
   copperOre: boolean;
+  shell: boolean;
+  coral: boolean;
 }
 
 export interface InventoryHudViewItem {
@@ -45,7 +49,10 @@ export interface InventoryHudViewItem {
 }
 
 export function selectInventoryStockModel(
-  snapshot: Pick<InventoryStockModel, "wood" | "stone" | "vine" | "food" | "foliage" | "copperOre">,
+  snapshot: Pick<
+    InventoryStockModel,
+    "wood" | "stone" | "vine" | "food" | "foliage" | "copperOre" | "shell" | "coral"
+  >,
 ): InventoryStockModel {
   return {
     wood: snapshot.wood,
@@ -54,6 +61,8 @@ export function selectInventoryStockModel(
     food: snapshot.food,
     foliage: snapshot.foliage,
     copperOre: snapshot.copperOre,
+    shell: snapshot.shell,
+    coral: snapshot.coral,
   };
 }
 
@@ -183,6 +192,8 @@ export function defaultDiscovery(): InventoryDiscoveryModel {
     food: false,
     foliage: false,
     copperOre: false,
+    shell: false,
+    coral: false,
   };
 }
 
@@ -194,6 +205,8 @@ export function discoveryFromStock(stock: ResourceStock): InventoryDiscoveryMode
     food: stock.food > 0,
     foliage: stock.foliage > 0,
     copperOre: stock.copperOre > 0,
+    shell: stock.shell > 0,
+    coral: stock.coral > 0,
   };
 }
 

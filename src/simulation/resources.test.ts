@@ -14,13 +14,24 @@ import {
 describe("material inventory 05.6A.1", () => {
   it("starts wood, stone, food, and vine at zero on one stockpile", () => {
     const stock = emptyStock();
-    expect(stock).toEqual({ wood: 0, stone: 0, food: 0, vine: 0, foliage: 0, copperOre: 0 });
+    expect(stock).toEqual({
+      wood: 0,
+      stone: 0,
+      food: 0,
+      vine: 0,
+      foliage: 0,
+      copperOre: 0,
+      shell: 0,
+      coral: 0,
+    });
     expect(RESOURCE_IDS.WOOD).toBe("wood");
     expect(RESOURCE_IDS.STONE).toBe("stone");
     expect(RESOURCE_IDS.FOOD).toBe("food");
     expect(RESOURCE_IDS.VINE).toBe("vine");
     expect(RESOURCE_IDS.FOLIAGE).toBe("foliage");
     expect(RESOURCE_IDS.COPPER_ORE).toBe("copperOre");
+    expect(RESOURCE_IDS.SHELL).toBe("shell");
+    expect(RESOURCE_IDS.CORAL).toBe("coral");
   });
 
   it("credits a bundle onto the same wood and stone fields HUD and construction use", () => {
@@ -42,11 +53,29 @@ describe("material inventory 05.6A.1", () => {
     const stock = emptyStock();
     creditBundle(stock, { wood: 5, stone: 1, vine: 1 });
     expect(tryConsumeBundle(stock, { wood: 3, stone: 1 })).toBe(true);
-    expect(stock).toEqual({ wood: 2, stone: 0, food: 0, vine: 1, foliage: 0, copperOre: 0 });
+    expect(stock).toEqual({
+      wood: 2,
+      stone: 0,
+      food: 0,
+      vine: 1,
+      foliage: 0,
+      copperOre: 0,
+      shell: 0,
+      coral: 0,
+    });
 
     expect(canConsumeBundle(stock, { wood: 2, vine: 2 })).toBe(false);
     expect(tryConsumeBundle(stock, { wood: 2, vine: 2 })).toBe(false);
-    expect(stock).toEqual({ wood: 2, stone: 0, food: 0, vine: 1, foliage: 0, copperOre: 0 });
+    expect(stock).toEqual({
+      wood: 2,
+      stone: 0,
+      food: 0,
+      vine: 1,
+      foliage: 0,
+      copperOre: 0,
+      shell: 0,
+      coral: 0,
+    });
   });
 
   it("never stores a negative balance", () => {

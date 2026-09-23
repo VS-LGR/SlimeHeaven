@@ -8,7 +8,7 @@ import type { ResourceType } from "@/src/simulation/resources";
  * 3. Optional optics — defaults boxScale 1, offset 0.
  */
 
-export type InventoryCategoryId = "all" | "natural" | "mineral";
+export type InventoryCategoryId = "all" | "natural" | "mineral" | "marine";
 export type InventorySortId = "name" | "category";
 export type InventoryHubMode = "stock" | "catalog";
 
@@ -41,12 +41,18 @@ export const INVENTORY_ITEM_IDS = [
   "copper_ore",
   "copper_ingot",
   "shell",
+  "coral",
   "foliage",
 ] as const;
 
 export type InventoryItemId = (typeof INVENTORY_ITEM_IDS)[number];
 
-export const INVENTORY_CATEGORY_IDS: readonly InventoryCategoryId[] = ["all", "natural", "mineral"];
+export const INVENTORY_CATEGORY_IDS: readonly InventoryCategoryId[] = [
+  "all",
+  "natural",
+  "mineral",
+  "marine",
+];
 
 export const INVENTORY_HUB_MODES: readonly InventoryHubMode[] = ["stock", "catalog"];
 
@@ -124,14 +130,26 @@ export const INVENTORY_ITEMS: Record<InventoryItemId, InventoryItemDefinition> =
   shell: {
     id: "shell",
     name: "Concha",
-    category: "natural",
+    category: "marine",
     iconSrc: HUD_ASSETS.inventoryShell,
-    description: "Concha da margem. Registrada no catálogo, sem coleta ativa.",
-    acquired: "Ainda não coletável na vila.",
+    description: "Concha encontrada ao inspecionar a margem da água.",
+    acquired: "Inspecionar a margem com a ação Inspect shore.",
     usedIn: [],
-    stockKey: null,
+    stockKey: "shell",
     optics: { boxScale: 0.88, offsetX: 0, offsetY: 1 },
     iconNative: { width: 28, height: 26 },
+  },
+  coral: {
+    id: "coral",
+    name: "Coral",
+    category: "marine",
+    iconSrc: HUD_ASSETS.inventoryCoral,
+    description: "Coral visível em água rasa, coletado da margem. Ainda sem uso definido.",
+    acquired: "Coletar coral visível na água rasa a partir da margem.",
+    usedIn: [],
+    stockKey: "coral",
+    optics: { boxScale: 0.72, offsetX: 0, offsetY: 1 },
+    iconNative: { width: 65, height: 65 },
   },
   foliage: {
     id: "foliage",
@@ -151,6 +169,7 @@ export const INVENTORY_CATEGORY_LABELS: Record<InventoryCategoryId, string> = {
   all: "Todos",
   natural: "Natural",
   mineral: "Mineral",
+  marine: "Marinho",
 };
 
 export const INVENTORY_MODE_LABELS: Record<InventoryHubMode, string> = {

@@ -67,6 +67,11 @@ export const WATER_VFX = {
   fishShadowAlpha: 0.38,
   maxFishShadows: 2,
   maxAmbientRipples: 2,
+  /** Cool wash so lake-bed sprites sit under the surface instead of on top of it. */
+  vegetationTint: 0x4f9ab8,
+  vegetationAlpha: 0.78,
+  /** Keep in lockstep with DEPTH.WATER_VEGETATION — below surface, above depth wash. */
+  vegetationDepth: 0.16,
 } as const;
 
 export function randomIntervalMs(range: { min: number; max: number }): number {

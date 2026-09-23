@@ -156,6 +156,8 @@ describe("slimeView gathering wiring", () => {
     pingo.state = "working";
     expect(slimeView(pingo, 0, 0, undefined, 0, task("gather_wood")).anim).toBe(SLIME_ANIM.WORK);
     expect(slimeView(pingo, 0, 0, undefined, 0, task("gather_stone")).anim).toBe(SLIME_ANIM.WORK);
+    expect(slimeView(pingo, 0, 0, undefined, 0, task("inspect_shore")).anim).toBe(SLIME_ANIM.IDLE);
+    expect(slimeView(pingo, 0, 0, undefined, 0, task("collect_coral")).anim).toBe(SLIME_ANIM.WORK);
   });
 
   it("keeps the farming resolver on generic work for Tito gather_wood", () => {

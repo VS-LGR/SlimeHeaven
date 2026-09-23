@@ -5,6 +5,7 @@ import {
   GrassVariant,
   ObjectType,
   TileType,
+  type CoralVariant,
 } from "./tileTypes";
 import type { WorldObject } from "./Tile";
 
@@ -21,6 +22,27 @@ export const COPPER_DEPOSIT_SEEDS: ReadonlyArray<{ x: number; y: number }> = [
   { x: 16, y: 6 },
   { x: 6, y: 10 },
   { x: 3, y: 13 },
+];
+
+/**
+ * Sparse large coral deposits in shallow lake water. Session/map lifecycle only.
+ * Color is visual variation of the single `coral` material. Each seed has land access.
+ * Two deposits keep the pond readable: (13,9) west red, (17,12) east yellow.
+ */
+export const CORAL_SEEDS: ReadonlyArray<{ x: number; y: number; variant: CoralVariant }> = [
+  { x: 13, y: 9, variant: "red" },
+  { x: 17, y: 12, variant: "yellow" },
+];
+
+/**
+ * Non-interactive water decorations. Never occupy coral tiles, fishing-interior
+ * cells (15–16,10–11), or land. Algae near shore; one sea mushroom. Small coral
+ * decorations stay registered but are not seeded — the pond should stay sparse.
+ */
+export const AQUATIC_DETAIL_SEEDS: ReadonlyArray<{ x: number; y: number; type: DetailType }> = [
+  { x: 13, y: 10, type: DetailType.ALGAE },
+  { x: 16, y: 9, type: DetailType.ALGAE },
+  { x: 16, y: 13, type: DetailType.SEA_MUSHROOM },
 ];
 
 function createFilledTerrain(type: TileType): TileType[][] {
@@ -169,6 +191,7 @@ export function createVillageMap(): Grid {
     [19, 4, DetailType.SMALL_ROCK],
     [5, 5, DetailType.GRASS_FRUIT],
     [11, 9, DetailType.GRASS_FRUIT],
+    ...AQUATIC_DETAIL_SEEDS.map((seed) => [seed.x, seed.y, seed.type] as [number, number, DetailType]),
   ];
   for (const [x, y, detail] of detailPlacements) {
     setCell(details, x, y, detail);
@@ -190,6 +213,12 @@ export function createVillageMap(): Grid {
     { type: ObjectType.ROCK, x: 12, y: 6 },
     { type: ObjectType.ROCK, x: 8, y: 9 },
     ...COPPER_DEPOSIT_SEEDS.map((seed) => ({ type: ObjectType.COPPER_ORE, x: seed.x, y: seed.y })),
+    ...CORAL_SEEDS.map((seed) => ({
+      type: ObjectType.CORAL,
+      x: seed.x,
+      y: seed.y,
+      variant: seed.variant,
+    })),
   ];
 
   return new Grid(

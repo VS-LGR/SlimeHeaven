@@ -10,7 +10,9 @@ export interface ResourceNode {
   occupancyKey: string;
   /** Authoritative world-time minute when foliage is available again. 0 = ready. */
   foliageReadyAtMinute?: number;
-  /** Copper deposits become true at successful work commit. */
+  /** Authoritative world-time minute when a water-body shell inspect is available again. 0 = ready. */
+  shellReadyAtMinute?: number;
+  /** Copper/coral targets become true at successful work commit. */
   depleted?: boolean;
 }
 
@@ -40,4 +42,20 @@ export function stoneNodeId(x: number, y: number): string {
 
 export function copperNodeId(x: number, y: number): string {
   return `copper_${x}_${y}`;
+}
+
+export function shellOccupancyKey(waterBodyId: string): string {
+  return `shell_${waterBodyId}`;
+}
+
+export function shellNodeId(waterBodyId: string): string {
+  return `shell_${waterBodyId}`;
+}
+
+export function coralOccupancyKey(x: number, y: number): string {
+  return `coral_${x}_${y}`;
+}
+
+export function coralNodeId(x: number, y: number): string {
+  return `coral_${x}_${y}`;
 }

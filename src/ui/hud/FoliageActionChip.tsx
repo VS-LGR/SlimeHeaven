@@ -22,12 +22,16 @@ export function FoliageActionChip() {
   const selectedX = useGameUiStore((state) => state.selectedX);
   const selectedY = useGameUiStore((state) => state.selectedY);
   const foliageInspect = useGameUiStore((state) => state.foliageSelectedInspect);
+  const coralInspect = useGameUiStore((state) => state.coralSelectedInspect);
   const hudActions = useGameUiStore((state) => state.hudActions);
   const [closedKey, setClosedKey] = useState<string | null>(null);
 
   const selectionKey =
     selectedX === null || selectedY === null ? null : `${selectedX},${selectedY}`;
   if (worldTool !== "off" || selectionKey === null || closedKey === selectionKey) {
+    return null;
+  }
+  if (coralInspect) {
     return null;
   }
   if (!foliageInspect) {

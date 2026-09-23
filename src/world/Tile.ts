@@ -1,4 +1,5 @@
 import type {
+  CoralVariant,
   DetailType,
   FarmingVisualState,
   GrassVariant,
@@ -19,4 +20,6 @@ export interface WorldObject {
   type: ObjectType;
   x: number;
   y: number;
+  /** Authored visual only. Large coral colors share the `coral` stock. */
+  variant?: CoralVariant;
 }

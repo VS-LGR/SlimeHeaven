@@ -6,6 +6,8 @@ export const GATHER_TASK_TYPES = [
   "gather_stone",
   "gather_foliage",
   "gather_copper",
+  "inspect_shore",
+  "collect_coral",
 ] as const;
 export type GatherTaskType = (typeof GATHER_TASK_TYPES)[number];
 
@@ -20,7 +22,13 @@ export type ConstructionTaskType = (typeof CONSTRUCTION_TASK_TYPES)[number];
 
 export type TaskType = GatherTaskType | FarmTaskType | FishingTaskType | ConstructionTaskType;
 
-export type JobCategory = "gathering" | "farming" | "fishing" | "construction" | "foraging";
+export type JobCategory =
+  | "gathering"
+  | "farming"
+  | "fishing"
+  | "construction"
+  | "foraging"
+  | "aquatic_foraging";
 
 export type TaskState =
   | "available"
@@ -41,6 +49,8 @@ export interface Task {
   /** Override type-default requirements. Empty array = universal job. */
   requiredCapabilities?: readonly string[];
   constructionSiteId?: string;
+  /** Shore/coral jobs reserve a fishing access land tile without a fishing session. */
+  accessPointId?: string;
 }
 
 export function isFarmTask(type: TaskType): type is FarmTaskType {
@@ -72,7 +82,14 @@ export function jobCategory(type: TaskType): JobCategory {
   if (type === "gather_foliage") {
     return "foraging";
   }
+  if (type === "inspect_shore" || type === "collect_coral") {
+    return "aquatic_foraging";
+  }
   return "gathering";
+}
+
+export function isAquaticForageTask(type: TaskType): boolean {
+  return type === "inspect_shore" || type === "collect_coral";
 }
 
 export function resourceTypeForTask(type: TaskType): ResourceType | undefined {
@@ -87,6 +104,12 @@ export function resourceTypeForTask(type: TaskType): ResourceType | undefined {
   }
   if (type === "gather_copper") {
     return "copperOre";
+  }
+  if (type === "inspect_shore") {
+    return "shell";
+  }
+  if (type === "collect_coral") {
+    return "coral";
   }
   if (type === "harvest_crop") {
     return "food";

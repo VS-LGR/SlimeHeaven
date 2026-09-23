@@ -89,11 +89,17 @@ function animForState(
   tickIndex: number,
   task: Task | undefined,
 ): SlimeAnimName {
-  const presentation = fishingPresentationPhase(slime, session, tickIndex);
-  if (presentation !== "idle") {
-    return fishingSemanticAnim(presentation);
+  const aquatic = task?.type === "inspect_shore" || task?.type === "collect_coral";
+  if (!aquatic) {
+    const presentation = fishingPresentationPhase(slime, session, tickIndex);
+    if (presentation !== "idle") {
+      return fishingSemanticAnim(presentation);
+    }
   }
   if (slime.state === "working") {
+    if (task?.type === "inspect_shore") {
+      return SLIME_ANIM.IDLE;
+    }
     const farming = getFarmingAnimation(slime.id, slime.state, task?.type);
     if (farming.kind === "final") {
       return farming.semantic;
@@ -165,7 +171,7 @@ export function slimeView(
   let scale = { x: 1, y: 1 };
   if (!finalArt) {
     if (
-      slime.state === "working" ||
+      (slime.state === "working" && task?.type !== "inspect_shore") ||
       slime.state === "eating" ||
       anim === SLIME_ANIM.FISH_CAST ||
       anim === SLIME_ANIM.FISH_BITE ||

@@ -24,6 +24,7 @@ export const JOB_ATTRIBUTE_WEIGHTS: Record<JobCategory, AttributeWeights> = {
   fishing: { technique: 0.4, instinct: 0.35, strength: 0.2, luck: 0.05 },
   construction: { technique: 0.5, strength: 0.5, instinct: 0, luck: 0 },
   foraging: { technique: 0, strength: 0, instinct: 0, luck: 0 },
+  aquatic_foraging: { technique: 0, strength: 0, instinct: 0, luck: 0 },
 };
 
 export function clampAttribute(value: number): number {

@@ -5,6 +5,8 @@ export const RESOURCE_IDS = {
   VINE: "vine",
   FOLIAGE: "foliage",
   COPPER_ORE: "copperOre",
+  SHELL: "shell",
+  CORAL: "coral",
 } as const;
 
 export type ResourceType = (typeof RESOURCE_IDS)[keyof typeof RESOURCE_IDS];
@@ -16,6 +18,8 @@ export const RESOURCE_TYPE_LIST = [
   RESOURCE_IDS.VINE,
   RESOURCE_IDS.FOLIAGE,
   RESOURCE_IDS.COPPER_ORE,
+  RESOURCE_IDS.SHELL,
+  RESOURCE_IDS.CORAL,
 ] as const;
 
 export interface ResourceStock {
@@ -25,6 +29,8 @@ export interface ResourceStock {
   vine: number;
   foliage: number;
   copperOre: number;
+  shell: number;
+  coral: number;
 }
 
 /** Sparse in-transit or spend/credit quantities. Missing keys are zero. */
@@ -33,7 +39,7 @@ export type ResourceBundle = Partial<Record<ResourceType, number>>;
 export type CarriedResource = ResourceBundle;
 
 export function emptyStock(): ResourceStock {
-  return { wood: 0, stone: 0, food: 0, vine: 0, foliage: 0, copperOre: 0 };
+  return { wood: 0, stone: 0, food: 0, vine: 0, foliage: 0, copperOre: 0, shell: 0, coral: 0 };
 }
 
 export function emptyDiscovery(): Record<ResourceType, boolean> {
@@ -44,6 +50,8 @@ export function emptyDiscovery(): Record<ResourceType, boolean> {
     vine: false,
     foliage: false,
     copperOre: false,
+    shell: false,
+    coral: false,
   };
 }
 

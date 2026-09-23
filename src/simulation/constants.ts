@@ -9,13 +9,20 @@ export const WORK_DURATION_MS = 1250;
 export const GATHER_AMOUNT = 2;
 export const FOLIAGE_GATHER_AMOUNT = 1;
 export const COPPER_ORE_GATHER_AMOUNT = 1;
+export const SHELL_GATHER_AMOUNT = 1;
+export const CORAL_GATHER_AMOUNT = 1;
 /** Authoritative world-time regen. Not a wall-clock timer. */
 export const FOLIAGE_REGEN_GAME_MINUTES = 6 * 60;
+export const SHELL_INSPECT_REGEN_GAME_MINUTES = 4 * 60;
 export const COPPER_MINING_DURATION_MULTIPLIER = 2;
+export const CORAL_COLLECT_DURATION_MULTIPLIER = 2;
 
 export function workDurationMsForTask(type: string): number {
   if (type === "gather_copper") {
     return WORK_DURATION_MS * COPPER_MINING_DURATION_MULTIPLIER;
+  }
+  if (type === "collect_coral") {
+    return WORK_DURATION_MS * CORAL_COLLECT_DURATION_MULTIPLIER;
   }
   return WORK_DURATION_MS;
 }

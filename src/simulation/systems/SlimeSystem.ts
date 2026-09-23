@@ -7,9 +7,12 @@ import {
   beginCarryToStorage,
   cancelTask,
   commitCopperDepletion,
+  commitCoralDepletion,
   commitFoliageCollection,
+  commitShellInspection,
   deliver,
   releaseSlime,
+  releaseTaskAccess,
   slimeAtDestination,
   startWorking,
   workFaceTile,
@@ -173,6 +176,13 @@ function finishWork(state: GameState, slime: SlimeState): void {
     if (node && task.type === "gather_copper") {
       commitCopperDepletion(state, node);
     }
+    if (node && task.type === "inspect_shore") {
+      commitShellInspection(state, node);
+    }
+    if (node && task.type === "collect_coral") {
+      commitCoralDepletion(state, node);
+    }
+    releaseTaskAccess(state, task);
     beginCarryToStorage(state, slime);
     return;
   }

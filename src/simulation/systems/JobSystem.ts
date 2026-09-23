@@ -5,12 +5,11 @@ import type { ResourceNode } from "../entities/ResourceNode";
 import type { FarmPlot } from "../entities/FarmPlot";
 import { farmNodeId } from "../entities/FarmPlot";
 import type { FarmTaskType, GatherTaskType, Task } from "../entities/Task";
-import { isConstructionTask, isGatherTask, jobCategory, resourceTypeForTask } from "../entities/Task";
+import { isAquaticForageTask, isConstructionTask, isFishingTask, isGatherTask, jobCategory, resourceTypeForTask } from "../entities/Task";
 import { SLIME_IDS, type SlimeState } from "../entities/SlimeState";
 import { creditStoredResources, hasCargo, RESOURCE_IDS } from "../resources";
 import { isIdleAvailable } from "./slimeAvailability";
 import { cancelAmbientBehavior } from "./AmbientBehaviorSystem";
-import { isFishingTask } from "../entities/Task";
 import { cancelFishingOpportunity } from "./FishingOpportunitySystem";
 import { FISHING } from "../fishingConfig";
 import { JOB_ATTRIBUTE_WEIGHTS, getAttributeContribution } from "../slimeAttributes";
@@ -19,8 +18,16 @@ import { startPlotWorkRecoverHop, startTillRecoverHop, tillStanceWorkTile } from
 import { rebuildInterestPoints } from "./InterestPointSystem";
 import type { ConstructionSite } from "../entities/ConstructionSite";
 import { buildingById, entranceTile } from "../data/buildings";
-import { FOLIAGE_REGEN_GAME_MINUTES } from "../constants";
+import { FOLIAGE_REGEN_GAME_MINUTES, SHELL_INSPECT_REGEN_GAME_MINUTES } from "../constants";
 import { deliveryNoticeFromBundle } from "../data/materials";
+import {
+  accessPointById,
+  isLandTileReserved,
+  resolveShoreWaterBodyId,
+  waterBodyIdAt,
+} from "../waterBodies";
+import type { FishingAccessPoint } from "../entities/WaterBody";
+import { shellNodeId } from "../entities/ResourceNode";
 
 const SLIME_ASSIGN_ORDER = [SLIME_IDS.PINGO, SLIME_IDS.MOMO, SLIME_IDS.TITO];
 
@@ -35,6 +42,12 @@ function nodeMatches(type: GatherTaskType, node: ResourceNode): boolean {
   }
   if (type === "gather_copper") {
     return node.type === RESOURCE_IDS.COPPER_ORE;
+  }
+  if (type === "inspect_shore") {
+    return node.type === RESOURCE_IDS.SHELL;
+  }
+  if (type === "collect_coral") {
+    return node.type === RESOURCE_IDS.CORAL;
   }
   return node.type === RESOURCE_IDS.STONE;
 }
@@ -111,6 +124,118 @@ export function commitCopperDepletion(state: GameState, node: ResourceNode): voi
   rebuildInterestPoints(state);
 }
 
+export function isShellReady(state: GameState, node: ResourceNode): boolean {
+  const readyAt = node.shellReadyAtMinute ?? 0;
+  return state.worldTime.totalGameMinutes >= readyAt;
+}
+
+export function shellWaterBodyId(node: ResourceNode): string {
+  return node.id.replace(/^shell_/, "");
+}
+
+export function pickFreeAccessPoint(
+  state: GameState,
+  waterBodyId: string,
+  preferredWater?: GridPosition,
+): FishingAccessPoint | undefined {
+  const candidates = state.fishingAccessPoints.filter(
+    (point) =>
+      point.waterBodyId === waterBodyId &&
+      point.enabled &&
+      point.reservedBy === null &&
+      !isLandTileReserved(state.fishingAccessPoints, point.landTile),
+  );
+  if (preferredWater) {
+    const exact = candidates.find(
+      (point) => point.waterTile.x === preferredWater.x && point.waterTile.y === preferredWater.y,
+    );
+    if (exact) {
+      return exact;
+    }
+  }
+  return candidates[0];
+}
+
+export function releaseTaskAccess(state: GameState, task: Task): void {
+  if (!task.accessPointId) {
+    return;
+  }
+  const access = accessPointById(state.fishingAccessPoints, task.accessPointId);
+  if (access && access.reservedBy === task.id) {
+    access.reservedBy = null;
+  }
+}
+
+export type ShoreInspectReason = "ready" | "regenerating" | "reserved" | "unreachable";
+
+export function inspectShoreTarget(
+  state: GameState,
+  tile: GridPosition,
+): { node: ResourceNode; valid: boolean; reason: ShoreInspectReason } | null {
+  const bodyId = resolveShoreWaterBodyId(state.waterBodies, tile);
+  if (!bodyId) {
+    return null;
+  }
+  const node = state.nodeById(shellNodeId(bodyId));
+  if (!node || node.depleted) {
+    return null;
+  }
+  if (occupancyHasActiveTask(state, node.occupancyKey)) {
+    return { node, valid: false, reason: "reserved" };
+  }
+  if (!pickFreeAccessPoint(state, bodyId, node.tile)) {
+    return { node, valid: false, reason: "unreachable" };
+  }
+  if (!isShellReady(state, node)) {
+    return { node, valid: false, reason: "regenerating" };
+  }
+  return { node, valid: true, reason: "ready" };
+}
+
+export type CoralInspectReason = "ready" | "reserved" | "unreachable" | "depleted";
+
+export function inspectCoralTarget(
+  state: GameState,
+  tile: GridPosition,
+): { node: ResourceNode; valid: boolean; reason: CoralInspectReason } | null {
+  const node = state.nodesAtTile(tile.x, tile.y).find((entry) => entry.type === RESOURCE_IDS.CORAL);
+  if (!node) {
+    return null;
+  }
+  if (node.depleted) {
+    return { node, valid: false, reason: "depleted" };
+  }
+  if (occupancyHasActiveTask(state, node.occupancyKey)) {
+    return { node, valid: false, reason: "reserved" };
+  }
+  const bodyId = waterBodyIdAt(state.waterBodies, node.tile.x, node.tile.y);
+  if (!bodyId || !pickFreeAccessPoint(state, bodyId, node.tile)) {
+    return { node, valid: false, reason: "unreachable" };
+  }
+  return { node, valid: true, reason: "ready" };
+}
+
+export function commitShellInspection(state: GameState, node: ResourceNode): void {
+  node.shellReadyAtMinute = state.worldTime.totalGameMinutes + SHELL_INSPECT_REGEN_GAME_MINUTES;
+}
+
+export function commitCoralDepletion(state: GameState, node: ResourceNode): void {
+  commitCopperDepletion(state, node);
+}
+
+function cancelFishingOwnedBySlime(state: GameState, slime: SlimeState): void {
+  const opportunity = state.opportunities.find(
+    (entry) =>
+      entry.assignedSlimeId === slime.id &&
+      entry.state !== "caught" &&
+      entry.state !== "escaped" &&
+      entry.state !== "expired",
+  );
+  if (opportunity) {
+    cancelFishingOpportunity(state, opportunity.id);
+  }
+}
+
 /**
  * Capability gate. Universal jobs (no requiredCapabilities) stay eligible for every slime.
  * Attributes and affinity are scored only after this returns true.
@@ -169,11 +294,48 @@ function pickWorker(state: GameState, task: Task): SlimeState | undefined {
   return best;
 }
 
+function createAquaticForageTask(
+  state: GameState,
+  type: "inspect_shore" | "collect_coral",
+  node: ResourceNode,
+): Task | undefined {
+  if (gatherTargetBlocked(state, node)) {
+    return undefined;
+  }
+  const bodyId =
+    type === "inspect_shore"
+      ? shellWaterBodyId(node)
+      : waterBodyIdAt(state.waterBodies, node.tile.x, node.tile.y);
+  if (!bodyId) {
+    return undefined;
+  }
+  const access = pickFreeAccessPoint(state, bodyId, node.tile);
+  if (!access) {
+    return undefined;
+  }
+  const task: Task = {
+    id: state.nextTaskId(type),
+    type,
+    target: type === "collect_coral" ? node.tile : access.waterTile,
+    nodeId: node.id,
+    workTile: access.landTile,
+    resourceType: resourceTypeForTask(type),
+    state: "available",
+    accessPointId: access.id,
+  };
+  access.reservedBy = task.id;
+  state.tasks[task.id] = task;
+  return task;
+}
+
 function createGatherTaskForNode(
   state: GameState,
   type: GatherTaskType,
   node: ResourceNode,
-): Task {
+): Task | undefined {
+  if (type === "inspect_shore" || type === "collect_coral") {
+    return createAquaticForageTask(state, type, node);
+  }
   const resourceType = resourceTypeForTask(type);
   const task: Task = {
     id: state.nextTaskId(type),
@@ -193,6 +355,20 @@ export function inspectGatherTarget(
   type: GatherTaskType,
   tile: GridPosition,
 ): { node: ResourceNode; valid: boolean } | null {
+  if (type === "inspect_shore") {
+    const shore = inspectShoreTarget(state, tile);
+    if (!shore) {
+      return null;
+    }
+    return { node: shore.node, valid: shore.valid };
+  }
+  if (type === "collect_coral") {
+    const coral = inspectCoralTarget(state, tile);
+    if (!coral) {
+      return null;
+    }
+    return { node: coral.node, valid: coral.valid };
+  }
   const resourceType = resourceTypeForTask(type);
   if (!resourceType) {
     return null;
@@ -243,6 +419,18 @@ export function createGatherTask(
       }
       if (type === "gather_foliage" && !isFoliageReady(state, candidate)) {
         return false;
+      }
+      if (type === "inspect_shore" && !isShellReady(state, candidate)) {
+        return false;
+      }
+      if (type === "inspect_shore" || type === "collect_coral") {
+        const bodyId =
+          type === "inspect_shore"
+            ? shellWaterBodyId(candidate)
+            : waterBodyIdAt(state.waterBodies, candidate.tile.x, candidate.tile.y);
+        if (!bodyId || !pickFreeAccessPoint(state, bodyId, candidate.tile)) {
+          return false;
+        }
       }
       return true;
     });
@@ -338,6 +526,9 @@ export function beginAssignedTask(state: GameState, slime: SlimeState): void {
     cancelTask(state, task, slime, `Task ${task.id} unreachable from ${slime.id}; cancelled.`);
     return;
   }
+  if (isAquaticForageTask(task.type)) {
+    cancelFishingOwnedBySlime(state, slime);
+  }
   task.state = "in_progress";
   slime.state = task.type === "fish_activity" ? "moving_to_fishing" : "moving_to_task";
   slime.destination = task.workTile;
@@ -404,6 +595,7 @@ export function deliver(state: GameState, slime: SlimeState): void {
   const task = slime.currentTaskId ? state.tasks[slime.currentTaskId] : undefined;
   if (task && task.state !== "completed" && task.state !== "cancelled") {
     task.state = "completed";
+    releaseTaskAccess(state, task);
   }
   releaseSlime(slime);
 }
@@ -422,6 +614,7 @@ export function cancelTask(
       return;
     }
   }
+  releaseTaskAccess(state, task);
   const siteId = isConstructionTask(task.type) ? (task.constructionSiteId ?? task.nodeId) : undefined;
   const site = siteId ? state.constructionSites[siteId] : undefined;
   task.state = "cancelled";

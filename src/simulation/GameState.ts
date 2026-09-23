@@ -1,6 +1,6 @@
 import { createVillageMap } from "@/src/world/villageMap";
 import { OBJECT_DEFS, ObjectType } from "@/src/world/tileTypes";
-import { createResourceNodes } from "@/src/world/resourceNodes";
+import { createResourceNodes, createShellNodes } from "@/src/world/resourceNodes";
 import type { Grid } from "@/src/world/Grid";
 import type { GridPosition } from "@/src/world/GridPosition";
 import { STORAGE_TILE, IDLE_WANDER_DELAY_TICKS } from "./constants";
@@ -24,7 +24,7 @@ import {
   upsertFishingSession,
   type FishingSession,
 } from "./entities/FishingSession";
-import { buildWaterWorld } from "./waterBodies";
+import { buildWaterWorld, waterBodyIdAt } from "./waterBodies";
 import type { WaterBody, FishingAccessPoint } from "./entities/WaterBody";
 import type { FishingOpportunity, FishingCandidateScore } from "./entities/FishingOpportunity";
 import type { InterestPoint, InterestTag } from "./entities/InterestPoint";
@@ -98,11 +98,34 @@ export class GameState {
     this.grid = grid;
     this.rng = rng;
     this.storage = { x: STORAGE_TILE.x, y: STORAGE_TILE.y };
-    this.nodes = createResourceNodes(grid);
     const water = buildWaterWorld(grid, this.storage);
     this.fishingSpots = water.spots;
     this.waterBodies = water.bodies;
     this.fishingAccessPoints = water.accessPoints;
+    this.nodes = [
+      ...createResourceNodes(grid),
+      ...createShellNodes(water.bodies),
+    ].filter((node) => {
+      if (node.type !== RESOURCE_IDS.CORAL) {
+        return true;
+      }
+      // Authored coral seeds keep a water-body AP. Color is visual only.
+      const bodyId = waterBodyIdAt(water.bodies, node.tile.x, node.tile.y);
+      if (!bodyId) {
+        return false;
+      }
+      const bodyPoints = water.accessPoints.filter(
+        (point) => point.enabled && point.waterBodyId === bodyId,
+      );
+      if (bodyPoints.length === 0) {
+        return false;
+      }
+      return bodyPoints.some(
+        (point) =>
+          (point.waterTile.x === node.tile.x && point.waterTile.y === node.tile.y) ||
+          point.waterBodyId === bodyId,
+      );
+    });
     this.slimes = {};
     this.tasks = {};
     this.resources = emptyStock();

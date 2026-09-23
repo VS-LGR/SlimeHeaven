@@ -6,9 +6,24 @@ import { FarmDesignationController } from "../input/FarmDesignationController";
 import { GatherDesignationController } from "../input/GatherDesignationController";
 import { FishingController } from "../input/FishingController";
 import { BuildPlacementController } from "../input/BuildPlacementController";
-import { copperDebugLine, foliageDebugLine, inspectWorldTile } from "../inspectWorld";
-import { DETAIL_DEFS, OBJECT_DEFS } from "@/src/world/tileTypes";
+import { AquaticContextController } from "../input/AquaticContextController";
+import {
+  aquaticDetailDebugLine,
+  aquaticJobDebugLine,
+  copperDebugLine,
+  coralDebugLine,
+  foliageDebugLine,
+  inspectWorldTile,
+  shoreDebugLine,
+} from "../inspectWorld";
+import { coralTextureKey, DETAIL_DEFS, isAquaticDetail, OBJECT_DEFS, ObjectType } from "@/src/world/tileTypes";
 import { tileToWorld } from "@/src/world/constants";
+import {
+  applyAquaticUnderwaterLook,
+  aquaticTileCenter,
+  coralDisplaySize,
+  detailDisplaySize,
+} from "../render/water/aquaticPresentation";
 import { farmKey } from "@/src/simulation/entities/FarmPlot";
 import type { Simulation } from "@/src/simulation/Simulation";
 import { SIMULATION_TICK_MS, SIMULATION_TICKS_PER_SECOND } from "@/src/simulation/constants";
@@ -55,7 +70,9 @@ import { formatCapabilitiesDebug, knownSpecialtyLabels, canPerformTaskCapabiliti
 import { isConstructionTask } from "@/src/simulation/entities/Task";
 import { formatCargo, hasCargo, RESOURCE_IDS } from "@/src/simulation/resources";
 import { gatheringToolForTask } from "../render/gathering/chopPresentation";
-import { inspectFoliageTarget } from "@/src/simulation/systems/JobSystem";
+import { inspectCoralTarget, inspectFoliageTarget, inspectShoreTarget } from "@/src/simulation/systems/JobSystem";
+import { resolveShoreWaterBodyId } from "@/src/simulation/waterBodies";
+import { shellNodeId } from "@/src/simulation/entities/ResourceNode";
 import { formatMaterialDeliveryToast } from "@/src/simulation/data/materials";
 
 const UI_PUSH_MS = 100;
@@ -70,6 +87,7 @@ export class VillageScene extends Phaser.Scene {
   private constructionSites: ConstructionSiteRenderer | undefined;
   private farmTool: FarmDesignationController | undefined;
   private gatherTool: GatherDesignationController | undefined;
+  private aquaticContext: AquaticContextController | undefined;
   private fishingTool: FishingController | undefined;
   private buildTool: BuildPlacementController | undefined;
   private fishingRenderer: FishingRenderer | undefined;
@@ -79,6 +97,7 @@ export class VillageScene extends Phaser.Scene {
   private dayNight: DayNightOverlay | undefined;
   private readonly detailSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly objectSprites = new Map<string, Phaser.GameObjects.Image>();
+  private readonly aquaticSprites: Phaser.GameObjects.Image[] = [];
   private lastUiPush = 0;
   private lastPersistedTotalMinutes = Number.NaN;
   private readonly toastedBiteIds = new Set<string>();
@@ -136,6 +155,18 @@ export class VillageScene extends Phaser.Scene {
           continue;
         }
         const def = DETAIL_DEFS[detail];
+        if (isAquaticDetail(detail)) {
+          const size = detailDisplaySize(detail);
+          if (!size) {
+            continue;
+          }
+          const center = aquaticTileCenter(x, y);
+          const sprite = this.add.image(center.x, center.y, def.textureKey).setOrigin(0.5, 0.5);
+          applyAquaticUnderwaterLook(sprite, size);
+          this.aquaticSprites.push(sprite);
+          this.detailSprites.set(farmKey(x, y), sprite);
+          continue;
+        }
         const pos = tileToWorld(x, y);
         const sprite = this.add
           .image(pos.x, pos.y, def.textureKey)
@@ -148,14 +179,21 @@ export class VillageScene extends Phaser.Scene {
     for (const object of grid.objects) {
       const def = OBJECT_DEFS[object.type];
       const { x, y } = tileToWorld(object.x, object.y);
+      const textureKey =
+        object.type === ObjectType.CORAL ? coralTextureKey(object.variant) : def.textureKey;
       const sprite = this.add
         .image(
           x + def.originX * def.footprintWidth * TILE_SIZE,
           y + def.originY * def.footprintHeight * TILE_SIZE,
-          def.textureKey,
+          textureKey,
         )
-        .setOrigin(def.originX, def.originY)
-        .setDepth(DEPTH.OBJECTS + object.y + def.footprintHeight - 1);
+        .setOrigin(def.originX, def.originY);
+      if (object.type === ObjectType.CORAL) {
+        applyAquaticUnderwaterLook(sprite, coralDisplaySize());
+        this.aquaticSprites.push(sprite);
+      } else {
+        sprite.setDepth(DEPTH.OBJECTS + object.y + def.footprintHeight - 1);
+      }
       this.objectSprites.set(farmKey(object.x, object.y), sprite);
     }
 
@@ -169,7 +207,11 @@ export class VillageScene extends Phaser.Scene {
     this.waterRenderer = new WaterRenderer(this, grid, () =>
       Boolean(this.fishingTool?.ownsPointer() || this.buildTool?.isToolActive()),
     );
-    this.waterClues = new WaterClueSystem(this, this.waterRenderer.getWaterMask(), (x, y, type) => {
+    const waterMask = this.waterRenderer.getWaterMask();
+    for (const sprite of this.aquaticSprites) {
+      sprite.setMask(waterMask);
+    }
+    this.waterClues = new WaterClueSystem(this, waterMask, (x, y, type) => {
       this.waterRenderer?.spawnRipple(x, y, type);
     });
     this.fishingRenderer = new FishingRenderer(this, (x, y, type) => {
@@ -179,6 +221,7 @@ export class VillageScene extends Phaser.Scene {
     this.syncDayNight(0);
     this.farmTool = new FarmDesignationController(this, simulation);
     this.gatherTool = new GatherDesignationController(this, simulation);
+    this.aquaticContext = new AquaticContextController(this, simulation);
     this.fishingTool = new FishingController(this, simulation);
     this.buildTool = new BuildPlacementController(this, simulation);
     this.selection = new SelectionController(
@@ -193,7 +236,10 @@ export class VillageScene extends Phaser.Scene {
       spawnGatherStone: () => this.spawnTask("gather_stone"),
       spawnGatherFoliage: () => this.spawnTask("gather_foliage"),
       spawnGatherCopper: () => this.spawnTask("gather_copper"),
+      spawnShoreJob: () => this.spawnTask("inspect_shore"),
+      spawnCoralJob: () => this.spawnTask("collect_coral"),
       readyHoveredFoliage: () => this.readyHoveredFoliage(),
+      readyHoveredShore: () => this.readyHoveredShore(),
       clearTasks: () => simulation.clearTasks(),
       resetSlimes: () => simulation.resetSlimes(),
       addTestResource: () => simulation.addTestResource(),
@@ -283,6 +329,40 @@ export class VillageScene extends Phaser.Scene {
         const task = simulation.designateGatherAt("gather_foliage", { x, y });
         return task ? "ok" : "reserved";
       },
+      designateShoreAt: (x, y) => {
+        const inspected = inspectShoreTarget(simulation.state, { x, y });
+        if (!inspected) {
+          return "none";
+        }
+        if (!inspected.valid) {
+          if (inspected.reason === "regenerating") {
+            return "regenerating";
+          }
+          if (inspected.reason === "unreachable") {
+            return "unreachable";
+          }
+          return "reserved";
+        }
+        const task = simulation.designateGatherAt("inspect_shore", { x, y });
+        return task ? "ok" : "reserved";
+      },
+      designateCoralAt: (x, y) => {
+        const inspected = inspectCoralTarget(simulation.state, { x, y });
+        if (!inspected) {
+          return "none";
+        }
+        if (!inspected.valid) {
+          if (inspected.reason === "unreachable") {
+            return "unreachable";
+          }
+          if (inspected.reason === "reserved") {
+            return "reserved";
+          }
+          return "none";
+        }
+        const task = simulation.designateGatherAt("collect_coral", { x, y });
+        return task ? "ok" : "reserved";
+      },
     });
 
     useGameUiStore.getState().setRuntime({
@@ -345,6 +425,7 @@ export class VillageScene extends Phaser.Scene {
     this.buildings?.sync(simulation);
     this.farmTool?.sync();
     this.gatherTool?.sync();
+    this.aquaticContext?.sync();
     this.fishingTool?.sync();
     this.buildTool?.sync();
     this.slimeRenderer?.sync(alpha, this.time.now);
@@ -422,6 +503,8 @@ export class VillageScene extends Phaser.Scene {
       vine: state.resources.vine,
       foliage: state.resources.foliage,
       copperOre: state.resources.copperOre,
+      shell: state.resources.shell,
+      coral: state.resources.coral,
       discoveredResources: { ...state.discoveredResources },
       cargoBundles: Object.values(state.slimes)
         .filter((slime) => hasCargo(slime.carriedResource))
@@ -495,10 +578,31 @@ export class VillageScene extends Phaser.Scene {
         currentUi.hoveredX !== null && currentUi.hoveredY !== null
           ? copperDebugLine(state, currentUi.hoveredX, currentUi.hoveredY)
           : null,
+      shoreInspect:
+        currentUi.hoveredX !== null && currentUi.hoveredY !== null
+          ? shoreDebugLine(state, currentUi.hoveredX, currentUi.hoveredY)
+          : null,
+      coralInspect:
+        currentUi.hoveredX !== null && currentUi.hoveredY !== null
+          ? coralDebugLine(state, currentUi.hoveredX, currentUi.hoveredY)
+          : null,
+      aquaticInspect:
+        currentUi.hoveredX !== null && currentUi.hoveredY !== null
+          ? aquaticDetailDebugLine(state, currentUi.hoveredX, currentUi.hoveredY)
+          : null,
       foliageSelectedInspect:
         currentUi.selectedX !== null && currentUi.selectedY !== null
           ? foliageDebugLine(state, currentUi.selectedX, currentUi.selectedY)
           : null,
+      shoreSelectedInspect:
+        currentUi.selectedX !== null && currentUi.selectedY !== null
+          ? shoreDebugLine(state, currentUi.selectedX, currentUi.selectedY)
+          : null,
+      coralSelectedInspect:
+        currentUi.selectedX !== null && currentUi.selectedY !== null
+          ? coralDebugLine(state, currentUi.selectedX, currentUi.selectedY)
+          : null,
+      aquaticJobInspect: aquaticJobDebugLine(state),
     });
   }
 
@@ -531,7 +635,13 @@ export class VillageScene extends Phaser.Scene {
   }
 
   private spawnTask(
-    type: "gather_wood" | "gather_stone" | "gather_foliage" | "gather_copper",
+    type:
+      | "gather_wood"
+      | "gather_stone"
+      | "gather_foliage"
+      | "gather_copper"
+      | "inspect_shore"
+      | "collect_coral",
   ): void {
     const simulation = this.simulation;
     if (!simulation) {
@@ -555,6 +665,28 @@ export class VillageScene extends Phaser.Scene {
     const node = simulation.state.gatherNodeAtTile(RESOURCE_IDS.FOLIAGE, hoveredX, hoveredY);
     if (node) {
       node.foliageReadyAtMinute = 0;
+    }
+  }
+
+  private readyHoveredShore(): void {
+    const simulation = this.simulation;
+    if (!simulation) {
+      return;
+    }
+    const { hoveredX, hoveredY } = useGameUiStore.getState();
+    if (hoveredX === null || hoveredY === null) {
+      return;
+    }
+    const bodyId = resolveShoreWaterBodyId(simulation.state.waterBodies, {
+      x: hoveredX,
+      y: hoveredY,
+    });
+    if (!bodyId) {
+      return;
+    }
+    const node = simulation.state.nodeById(shellNodeId(bodyId));
+    if (node) {
+      node.shellReadyAtMinute = 0;
     }
   }
 

@@ -41,7 +41,16 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       food: 8,
       cargoBundles: ["wood ×9"],
     } as never);
-    expect(model).toEqual({ wood: 3, stone: 1, vine: 2, food: 8 });
+    expect(model).toEqual({
+      wood: 3,
+      stone: 1,
+      vine: 2,
+      food: 8,
+      foliage: undefined,
+      copperOre: undefined,
+      shell: undefined,
+      coral: undefined,
+    });
     expect(model).not.toHaveProperty("cargoBundles");
     expect(INVENTORY_ITEMS.food.iconSrc).toBe("/assets/world/materials/Carrot.png");
     expect(INVENTORY_ITEMS.food.name).toBe("Alimento");
@@ -49,13 +58,20 @@ describe("inventory HUD catalog 05.6B.UI", () => {
     expect(INVENTORY_ITEMS.copper_ore.stockKey).toBe("copperOre");
     expect(INVENTORY_ITEMS.foliage.stockKey).toBe("foliage");
     expect(INVENTORY_ITEMS.copper_ingot.stockKey).toBeNull();
-    expect(INVENTORY_ITEMS.shell.stockKey).toBeNull();
+    expect(INVENTORY_ITEMS.shell.stockKey).toBe("shell");
+    expect(INVENTORY_ITEMS.coral.stockKey).toBe("coral");
+    expect(INVENTORY_ITEMS.coral.iconSrc).toBe("/assets/world/objects/Coral_Red.png");
+    expect(INVENTORY_ITEMS.coral.category).toBe("marine");
+    expect(INVENTORY_ITEM_IDS.filter((id) => id.includes("coral"))).toEqual(["coral"]);
+    expect(INVENTORY_ITEM_IDS).not.toContain("algae");
     expect(STOCKABLE_INVENTORY_ITEM_IDS).toEqual([
       "wood",
       "stone",
       "vine",
       "food",
       "copper_ore",
+      "shell",
+      "coral",
       "foliage",
     ]);
     expect(INVENTORY_ITEM_IDS).toContain("foliage");
@@ -70,7 +86,16 @@ describe("inventory HUD catalog 05.6B.UI", () => {
   });
 
   it("filters stock mode vs catalog mode and keeps undiscovered qty 0", () => {
-    const stock = { wood: 4, stone: 0, vine: 1, food: 0, foliage: 0, copperOre: 0 };
+    const stock = {
+      wood: 4,
+      stone: 0,
+      vine: 1,
+      food: 0,
+      foliage: 0,
+      copperOre: 0,
+      shell: 0,
+      coral: 0,
+    };
     const discovered = {
       wood: true,
       stone: false,
@@ -78,6 +103,8 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       food: false,
       foliage: false,
       copperOre: false,
+      shell: false,
+      coral: false,
     };
     const stockMode = filterInventoryItems({
       stock,
@@ -90,6 +117,8 @@ describe("inventory HUD catalog 05.6B.UI", () => {
     });
     expect(stockMode.map((item) => item.id)).toEqual([
       "food",
+      "shell",
+      "coral",
       "foliage",
       "wood",
       "copper_ore",
@@ -110,6 +139,7 @@ describe("inventory HUD catalog 05.6B.UI", () => {
     expect(catalog.map((item) => item.id)).toEqual([
       "food",
       "shell",
+      "coral",
       "foliage",
       "copper_ingot",
       "wood",
@@ -148,6 +178,17 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       "stone",
     ]);
 
+    const marineCatalog = filterInventoryItems({
+      stock,
+      discovered,
+      favorites: DEFAULT_INVENTORY_FAVORITES,
+      category: "marine",
+      sort: "name",
+      discoveredOnly: false,
+      mode: "catalog",
+    });
+    expect(marineCatalog.map((item) => item.id)).toEqual(["shell", "coral"]);
+
     const found = filterInventoryItems({
       stock,
       discovered,
@@ -169,7 +210,7 @@ describe("inventory HUD catalog 05.6B.UI", () => {
       mode: "stock",
     });
     expect(starred.map((item) => item.id)).toEqual(["vine"]);
-    expect(stockableDiscoveryCount(discovered)).toEqual({ count: 2, total: 6 });
+    expect(stockableDiscoveryCount(discovered)).toEqual({ count: 2, total: 8 });
   });
 
   it("marks discovery on stored credit and keeps it after spending to zero", () => {
@@ -189,7 +230,7 @@ describe("inventory HUD catalog 05.6B.UI", () => {
     const parsed = parseInventoryHudPrefs(
       JSON.stringify({
         settled: "teleport",
-        favorites: ["wood", "coral", "stone"],
+        favorites: ["wood", "kelp", "stone"],
         category: "marinho",
         sort: "rarity",
         discoveredOnly: "yes",
@@ -202,7 +243,7 @@ describe("inventory HUD catalog 05.6B.UI", () => {
     expect(parsed.discoveredOnly).toBe(false);
     expect(parsed.favoritesOnly).toBe(false);
     expect(parsed.mode).toBe("stock");
-    expect(isInventoryItemId("coral")).toBe(false);
+    expect(isInventoryItemId("kelp")).toBe(false);
     expect(parseInventoryHudPrefs("{")).toEqual(parseInventoryHudPrefs(null));
   });
 
@@ -278,6 +319,7 @@ describe("inventory HUD chrome contracts 05.6B.UI", () => {
     expect(hud).toMatch(/data-inventory-backdrop/);
     expect(hud).toMatch(/data-inventory-panel-art/);
     expect(hud).toMatch(/data-inventory-modes/);
+    expect(hud).toMatch(/INVENTORY_CATEGORY_IDS/);
     expect(hud).toMatch(/mode-stock/);
     expect(hud).toMatch(/mode-catalog/);
     expect(hud).not.toMatch(/filter-favorites|inventoryShortFavorite|onToggleFavorite/);

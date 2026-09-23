@@ -105,7 +105,7 @@ describe("slime card model 05.4D", () => {
     ]);
     expect(new Set(pingo.attributes.map((row) => row.icon)).size).toBe(4);
     expect(new Set(pingo.attributes.map((row) => row.label)).size).toBe(4);
-    expect(pingo.specialtyLine).toBe("Pescador · Exploração");
+    expect(pingo.specialtyLine).toBe("Pescador · Exploração · Forrageio aquático");
     expect(pingo.home).toBe("Casa do Pingo");
     expect(pingo.hunger).toBe("Satisfeito");
     expect(catalogHomeName("small_blue_house")).toBe(BUILDINGS.small_blue_house.name);

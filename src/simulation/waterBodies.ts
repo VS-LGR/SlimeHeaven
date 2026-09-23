@@ -140,6 +140,31 @@ export function buildWaterWorld(grid: Grid, pathOrigin: GridPosition): WaterWorl
   return { bodies, accessPoints, spots };
 }
 
+export function waterBodyIdAt(
+  bodies: readonly WaterBody[],
+  x: number,
+  y: number,
+): string | undefined {
+  return bodies.find((body) => body.tiles.some((tile) => tile.x === x && tile.y === y))?.id;
+}
+
+export function resolveShoreWaterBodyId(
+  bodies: readonly WaterBody[],
+  tile: GridPosition,
+): string | undefined {
+  const direct = waterBodyIdAt(bodies, tile.x, tile.y);
+  if (direct) {
+    return direct;
+  }
+  for (const step of CARDINALS) {
+    const neighbor = waterBodyIdAt(bodies, tile.x + step.dx, tile.y + step.dy);
+    if (neighbor) {
+      return neighbor;
+    }
+  }
+  return undefined;
+}
+
 export function accessPointById(
   points: readonly FishingAccessPoint[],
   id: string | null,

@@ -24,6 +24,8 @@ export const SCENE_KEYS = {
 export const DEPTH = {
   GROUND: 0,
   WATER_DEPTH: 0.15,
+  /** Lake-bed plants and corals — below the surface overlay so they read as submerged. */
+  WATER_VEGETATION: 0.16,
   WATER_FISH: 0.18,
   WATER_SURFACE: 0.22,
   WATER_SHORE: 0.26,
