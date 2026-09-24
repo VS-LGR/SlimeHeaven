@@ -97,9 +97,9 @@ export function resolveCoralVariant(variant: string | undefined): CoralVariant {
 
 /**
  * Drawn size in world pixels for large corals. Source PNGs stay 65×65; do not edit the files.
- * Smaller than a tile so the deposit sits inside the water cell.
+ * Authored pond deposits render at one tile (32×32).
  */
-export const CORAL_DISPLAY_SIZE = 18;
+export const CORAL_DISPLAY_SIZE = TILE_SIZE;
 
 export const CORAL_VARIANT_DEFS: Record<
   CoralVariant,

@@ -16,6 +16,8 @@ export interface CharacterDefinition {
   visitorInterestLabel: string | null;
   attributes: SlimeAttributes;
   interest: AmbientInterestProfile;
+  /** Residents with false stay in needs/sleep/idle but skip job assignment. */
+  participatesInWork: boolean;
 }
 
 export const CHARACTERS: Record<ResidentTypeId, CharacterDefinition> = {
@@ -31,6 +33,7 @@ export const CHARACTERS: Record<ResidentTypeId, CharacterDefinition> = {
     visitorInterestLabel: null,
     attributes: { technique: 4, strength: 2, instinct: 5, luck: 3 },
     interest: DEFAULT_AMBIENT_INTEREST,
+    participatesInWork: true,
   },
   momo: {
     residentTypeId: "momo",
@@ -44,6 +47,7 @@ export const CHARACTERS: Record<ResidentTypeId, CharacterDefinition> = {
     visitorInterestLabel: null,
     attributes: { technique: 4, strength: 2, instinct: 4, luck: 3 },
     interest: DEFAULT_AMBIENT_INTEREST,
+    participatesInWork: true,
   },
   tito: {
     residentTypeId: "tito",
@@ -57,6 +61,7 @@ export const CHARACTERS: Record<ResidentTypeId, CharacterDefinition> = {
     visitorInterestLabel: null,
     attributes: { technique: 3, strength: 5, instinct: 2, luck: 2 },
     interest: DEFAULT_AMBIENT_INTEREST,
+    participatesInWork: true,
   },
   lily: {
     residentTypeId: "lily",
@@ -70,6 +75,7 @@ export const CHARACTERS: Record<ResidentTypeId, CharacterDefinition> = {
     visitorInterestLabel: "Interested in flowers",
     attributes: { technique: 3, strength: 2, instinct: 3, luck: 3 },
     interest: DEFAULT_AMBIENT_INTEREST,
+    participatesInWork: false,
   },
 };
 

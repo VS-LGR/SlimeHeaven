@@ -74,9 +74,8 @@ describe("aquatic environment assets 05.6A.3", () => {
     expect(nodes).toHaveLength(CORAL_SEEDS.length);
     expect(new Set(CORAL_SEEDS.map((seed) => seed.variant)).size).toBe(CORAL_SEEDS.length);
     expect(CORAL_SEEDS).toHaveLength(2);
-    expect(OBJECT_DEFS[ObjectType.CORAL].visualWidth).toBe(18);
-    expect(OBJECT_DEFS[ObjectType.CORAL].visualHeight).toBe(18);
-    expect(OBJECT_DEFS[ObjectType.CORAL].visualWidth).toBeLessThan(TILE_SIZE);
+    expect(OBJECT_DEFS[ObjectType.CORAL].visualWidth).toBe(TILE_SIZE);
+    expect(OBJECT_DEFS[ObjectType.CORAL].visualHeight).toBe(TILE_SIZE);
     for (const seed of CORAL_SEEDS) {
       const object = state.grid.objectAt(seed.x, seed.y);
       expect(object?.type).toBe(ObjectType.CORAL);

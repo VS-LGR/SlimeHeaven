@@ -31,9 +31,9 @@ describe("character catalog 05.3B.1", () => {
     expect(STARTING_HOMES.some((home) => home.residentTypeId === "lily")).toBe(false);
   });
 
-  it("reports Lily home status as not_defined", () => {
+  it("reports Lily home status as locked until she is invited", () => {
     const state = new GameState();
-    expect(residentHomeStatus(state, "lily")).toBe("not_defined");
+    expect(residentHomeStatus(state, "lily")).toBe("locked");
     expect(Object.keys(state.slimes)).not.toContain(SLIME_IDS.LILY);
   });
 });

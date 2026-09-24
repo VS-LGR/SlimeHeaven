@@ -114,6 +114,7 @@ export function DebugOverlay() {
           <DebugButton label="Add test resource" onClick={debugActions.addTestResource} />
           <DebugButton label="Add food" onClick={debugActions.addFood} />
           <DebugButton label="Add vine" onClick={debugActions.addVine} />
+          <DebugButton label="Grant Lily house materials" onClick={debugActions.grantLilyHouseMaterials} />
           <DebugButton
             label={
               forceNextWoodVineBonusArmed
@@ -160,6 +161,10 @@ export function DebugOverlay() {
           <DebugButton label="Force social greet" onClick={debugActions.forceSocialGreet} />
           <DebugButton label="Clear ambient" onClick={debugActions.clearAmbientBehaviors} />
           <DebugButton label="Spawn Lily visitor (debug)" onClick={debugActions.spawnLilyVisitor} />
+          <DebugButton
+            label="Prepare Lily move-in (debug)"
+            onClick={debugActions.prepareLilyMoveIn}
+          />
           <DebugButton label="Set dawn" onClick={debugActions.setDawn} />
           <DebugButton label="Set midday" onClick={debugActions.setMidday} />
           <DebugButton label="Set dusk" onClick={debugActions.setDusk} />
@@ -232,12 +237,15 @@ export function DebugOverlay() {
             <p>buildMode: {String(buildingPlacementDebug.buildMode)}</p>
             <p>buildingType: {buildingPlacementDebug.buildingType}</p>
             <p>
-              cost: {buildingPlacementDebug.costWood},{buildingPlacementDebug.costStone}
+              cost: {buildingPlacementDebug.costLine} ({buildingPlacementDebug.costWood},
+              {buildingPlacementDebug.costStone},{buildingPlacementDebug.costVine},
+              {buildingPlacementDebug.costFoliage},{buildingPlacementDebug.costShell})
             </p>
             <p>affordable: {String(buildingPlacementDebug.affordable)}</p>
             <p>footprintOrigin: {buildingPlacementDebug.footprintOrigin}</p>
             <p>footprint: {buildingPlacementDebug.footprint}</p>
             <p>entranceTile: {buildingPlacementDebug.entranceTile}</p>
+            <p>workPosition: {buildingPlacementDebug.workPosition}</p>
             <p>placementValid: {String(buildingPlacementDebug.placementValid)}</p>
             <p>
               invalidReasons: [
@@ -341,9 +349,9 @@ export function DebugOverlay() {
         ))}
         {visitorDebug.length > 0 ? (
           <>
-            <p className="mt-1 text-lime-300">Visitor (debug)</p>
-            {visitorDebug.map((line) => (
-              <p key={line}>{line}</p>
+            <p className="mt-1 text-lime-300">Lily (debug)</p>
+            {visitorDebug.map((line, index) => (
+              <p key={`${index}:${line}`}>{line}</p>
             ))}
           </>
         ) : null}

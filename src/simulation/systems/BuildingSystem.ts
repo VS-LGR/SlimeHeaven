@@ -7,17 +7,29 @@ import { BASE_CONSTRUCTION_WORK_MS, STORAGE_TILE } from "../constants";
 import type { GameState } from "../GameState";
 import {
   buildingById,
+  buildingCostBundle,
   entranceTile,
   footprintTiles,
+  isBuildingCostAffordable,
+  missingBuildingResources,
   type BuildingTypeId,
 } from "../data/buildings";
 import type { PlacedBuilding } from "../entities/PlacedBuilding";
 import type { ConstructionSite } from "../entities/ConstructionSite";
 import { cancelTask, createConstructTask, releaseSlime } from "./JobSystem";
 import { isConstructionTask } from "../entities/Task";
-import { constructionSiteForResident, placedHomeForResident } from "../residentHomes";
+import {
+  constructionSiteForResident,
+  isUniqueHomePlanUnlocked,
+  placedHomeForResident,
+} from "../residentHomes";
 import { STARTING_HOMES } from "../data/startingHomes";
-import { creditStoredResources, tryConsumeBundle } from "../resources";
+import {
+  creditStoredResources,
+  tryConsumeBundle,
+  type ResourceBundle,
+  type ResourceType,
+} from "../resources";
 
 export type BuildingPlacementReason =
   | "out_of_bounds"
@@ -36,8 +48,12 @@ export type BuildingPlacementReason =
   | "entrance_unreachable"
   | "insufficient_wood"
   | "insufficient_stone"
+  | "insufficient_vine"
+  | "insufficient_foliage"
+  | "insufficient_shell"
   | "unique_home_completed"
-  | "unique_home_site";
+  | "unique_home_site"
+  | "unique_home_locked";
 
 export interface BuildingPlacementEvaluation {
   valid: boolean;
@@ -46,9 +62,17 @@ export interface BuildingPlacementEvaluation {
   origin: GridPosition;
   footprint: GridPosition[];
   entrance: GridPosition;
-  cost: { wood: number; stone: number };
+  cost: ResourceBundle;
   affordable: boolean;
 }
+
+const INSUFFICIENT_COST_REASON: Partial<Record<ResourceType, BuildingPlacementReason>> = {
+  wood: "insufficient_wood",
+  stone: "insufficient_stone",
+  vine: "insufficient_vine",
+  foliage: "insufficient_foliage",
+  shell: "insufficient_shell",
+};
 
 function uniqueReasons(reasons: BuildingPlacementReason[]): BuildingPlacementReason[] {
   return [...new Set(reasons)];
@@ -149,13 +173,12 @@ function withFootprintBlocked<T>(grid: Grid, tiles: GridPosition[], fn: () => T)
 }
 
 function collectCostReasons(state: GameState, typeId: BuildingTypeId): BuildingPlacementReason[] {
-  const cost = buildingById(typeId).cost;
   const reasons: BuildingPlacementReason[] = [];
-  if (state.resources.wood < cost.wood) {
-    reasons.push("insufficient_wood");
-  }
-  if (state.resources.stone < cost.stone) {
-    reasons.push("insufficient_stone");
+  for (const type of missingBuildingResources(buildingById(typeId), state.resources)) {
+    const reason = INSUFFICIENT_COST_REASON[type];
+    if (reason) {
+      reasons.push(reason);
+    }
   }
   return reasons;
 }
@@ -171,6 +194,9 @@ function collectUniqueHomeReasons(state: GameState, typeId: BuildingTypeId): Bui
   }
   if (constructionSiteForResident(state, home.residentTypeId)) {
     reasons.push("unique_home_site");
+  }
+  if (!isUniqueHomePlanUnlocked(state, home.residentTypeId)) {
+    reasons.push("unique_home_locked");
   }
   return reasons;
 }
@@ -223,7 +249,6 @@ export function evaluateBuildingPlacement(
   reasons.push(...collectUniqueHomeReasons(state, typeId));
 
   const unique = uniqueReasons(reasons);
-  const affordable = !unique.includes("insufficient_wood") && !unique.includes("insufficient_stone");
   return {
     valid: unique.length === 0,
     reasons: unique,
@@ -231,8 +256,8 @@ export function evaluateBuildingPlacement(
     origin: { x: origin.x, y: origin.y },
     footprint,
     entrance,
-    cost: { wood: def.cost.wood, stone: def.cost.stone },
-    affordable,
+    cost: buildingCostBundle(def),
+    affordable: isBuildingCostAffordable(def, state.resources),
   };
 }
 
@@ -259,16 +284,18 @@ function closeConstructionTask(state: GameState, site: ConstructionSite, recreat
 }
 
 function consumeConstructionCost(state: GameState, typeId: BuildingTypeId): boolean {
-  const cost = buildingById(typeId).cost;
-  return tryConsumeBundle(state.resources, { wood: cost.wood, stone: cost.stone });
+  return tryConsumeBundle(state.resources, buildingCostBundle(buildingById(typeId)));
 }
 
 function refundConstructionCost(state: GameState, site: ConstructionSite): void {
   if (site.refunded) {
     return;
   }
-  const cost = buildingById(site.buildingTypeId).cost;
-  creditStoredResources(state.resources, state.discoveredResources, { wood: cost.wood, stone: cost.stone });
+  creditStoredResources(
+    state.resources,
+    state.discoveredResources,
+    buildingCostBundle(buildingById(site.buildingTypeId)),
+  );
   site.refunded = true;
 }
 

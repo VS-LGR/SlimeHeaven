@@ -43,16 +43,24 @@ describe("unique resident homes 05.3A", () => {
     expect(homeDefinitionForResident("pingo")?.id).toBe("small_blue_house");
     expect(homeDefinitionForResident("tito")?.id).toBe("brown_house");
     expect(homeDefinitionForResident("momo")?.id).toBe("green_house");
-    expect(homeDefinitionForResident("lily")).toBeUndefined();
+    expect(homeDefinitionForResident("lily")?.id).toBe("lily_house");
     const claimed = Object.values(BUILDINGS)
       .map((def) => def.residentHome?.residentTypeId)
       .filter((id): id is NonNullable<typeof id> => Boolean(id));
-    expect(claimed.sort()).toEqual(["momo", "pingo", "tito"]);
+    expect(claimed.sort()).toEqual(["lily", "momo", "pingo", "tito"]);
     expect(new Set(claimed).size).toBe(claimed.length);
-    for (const def of Object.values(BUILDINGS)) {
-      expect(def.residentHome?.unique).toBe(true);
-      expect(def.residentHome?.startingHome).toBe(true);
+    for (const spec of STARTING_HOMES) {
+      const def = homeDefinitionForResident(spec.residentTypeId);
+      expect(def?.residentHome?.unique).toBe(true);
+      expect(def?.residentHome?.startingHome).toBe(true);
+      expect(def?.residentHome?.recipeUnlocked).toBe(true);
     }
+    expect(homeDefinitionForResident("lily")?.residentHome).toEqual({
+      residentTypeId: "lily",
+      unique: true,
+      startingHome: false,
+      recipeUnlocked: false,
+    });
   });
 
   it("seeds three completed homes with no sites, costs, or duplicates", () => {
@@ -64,6 +72,7 @@ describe("unique resident homes 05.3A", () => {
     expect(residentHomeStatus(state, "pingo")).toBe("completed");
     expect(residentHomeStatus(state, "momo")).toBe("completed");
     expect(residentHomeStatus(state, "tito")).toBe("completed");
+    expect(residentHomeStatus(state, "lily")).toBe("locked");
     initializeStartingHomes(state);
     expect(Object.keys(state.buildings)).toHaveLength(3);
     expect(playerBuildableBuildingTypes(state)).toEqual([]);

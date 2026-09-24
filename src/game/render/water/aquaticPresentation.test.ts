@@ -29,11 +29,11 @@ describe("aquatic underwater presentation", () => {
     expect(aquaticSitsUnderSurface()).toBe(true);
   });
 
-  it("keeps every water asset smaller than a tile", () => {
-    expect(CORAL_DISPLAY_SIZE).toBeLessThan(TILE_SIZE);
-    expect(OBJECT_DEFS[ObjectType.CORAL].visualWidth).toBe(CORAL_DISPLAY_SIZE);
-    expect(OBJECT_DEFS[ObjectType.CORAL].visualHeight).toBe(CORAL_DISPLAY_SIZE);
-    expect(coralDisplaySize()).toEqual({ width: 18, height: 18 });
+  it("renders authored large corals at one tile and keeps decorations smaller", () => {
+    expect(CORAL_DISPLAY_SIZE).toBe(TILE_SIZE);
+    expect(OBJECT_DEFS[ObjectType.CORAL].visualWidth).toBe(TILE_SIZE);
+    expect(OBJECT_DEFS[ObjectType.CORAL].visualHeight).toBe(TILE_SIZE);
+    expect(coralDisplaySize()).toEqual({ width: TILE_SIZE, height: TILE_SIZE });
     for (const type of [
       DetailType.ALGAE,
       DetailType.SEA_MUSHROOM,
@@ -42,8 +42,8 @@ describe("aquatic underwater presentation", () => {
     ]) {
       const size = aquaticDetailDisplay(type);
       expect(size).not.toBeNull();
-      expect(size!.width).toBeLessThan(TILE_SIZE);
-      expect(size!.height).toBeLessThan(TILE_SIZE);
+      expect(size!.width).toBeLessThanOrEqual(TILE_SIZE);
+      expect(size!.height).toBeLessThanOrEqual(TILE_SIZE);
       expect(size!.width).toBe(DETAIL_DEFS[type].visualWidth);
       expect(size!.height).toBe(DETAIL_DEFS[type].visualHeight);
       expect(detailDisplaySize(type)).toEqual(size);

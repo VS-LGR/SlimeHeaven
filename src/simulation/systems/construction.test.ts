@@ -77,10 +77,13 @@ describe("construction 05.2", () => {
   it("keeps catalog costs on existing wood and stone only", () => {
     const blue = buildingById("small_blue_house");
     const brown = buildingById("brown_house");
+    const green = buildingById("green_house");
     expect(blue.cost).toEqual({ wood: 8, stone: 2 });
     expect(brown.cost).toEqual({ wood: 6, stone: 4 });
+    expect(green.cost).toEqual({ wood: 7, stone: 3 });
     expect("food" in blue.cost).toBe(false);
     expect("food" in brown.cost).toBe(false);
+    expect("vine" in green.cost).toBe(false);
   });
 
   it("gives Tito build and withholds it from Pingo and Momo", () => {

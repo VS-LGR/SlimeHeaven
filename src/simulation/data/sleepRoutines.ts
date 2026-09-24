@@ -32,6 +32,10 @@ export const RESIDENT_SLEEP_SCHEDULES: Partial<Record<ResidentTypeId, SleepSched
     wakeMinute: minutesFromTimeOfDay(11, 0),
     bedtimeMinute: minutesFromTimeOfDay(3, 0),
   },
+  lily: {
+    wakeMinute: minutesFromTimeOfDay(8, 0),
+    bedtimeMinute: minutesFromTimeOfDay(22, 0),
+  },
 };
 
 export function sleepScheduleFor(residentTypeId: ResidentTypeId): SleepSchedule | undefined {

@@ -191,7 +191,8 @@ describe("Lily visitor lifecycle 05.3B.1", () => {
     expect(first.ok).toBe(true);
     const lily = sim.state.slimes[SLIME_IDS.LILY];
     expect(lily.residencyStatus).toBe("invited_waiting_for_house");
-    expect(residentHomeStatus(sim.state, "lily")).toBe("not_defined");
+    expect(residentHomeStatus(sim.state, "lily")).toBe("available");
+    expect(first.message).toMatch(/house plan is now available/i);
     expect(isJobAssignable(sim.state, lily)).toBe(false);
     const after = snapshot(sim.state);
     expect(after.buildings).toEqual(before.buildings);

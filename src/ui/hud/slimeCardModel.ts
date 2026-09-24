@@ -76,6 +76,7 @@ export interface SlimeCardViewModel {
   home: string | null;
   homeDetail: string | null;
   showInvite: boolean;
+  showMoveIn: boolean;
   attributes: SlimeCardAttributeRow[];
   portrait: SlimeCardPortraitSpec | null;
 }
@@ -176,6 +177,7 @@ export function selectSlimeCardModel(info: SlimeInfo): SlimeCardViewModel {
     home: home.home,
     homeDetail: home.homeDetail,
     showInvite: variant === "visitor",
+    showMoveIn: variant === "invited_visitor" && info.readyForMoveIn,
     attributes: attributeRows(info),
     portrait: idlePortraitSpec(info.id),
   };

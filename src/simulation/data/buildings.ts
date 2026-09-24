@@ -1,8 +1,17 @@
 import { TILE_SIZE } from "@/src/world/constants";
 import type { GridPosition } from "@/src/world/GridPosition";
+import {
+  bundleAmount,
+  canConsumeBundle,
+  normalizeBundle,
+  RESOURCE_TYPE_LIST,
+  type ResourceBundle,
+  type ResourceStock,
+  type ResourceType,
+} from "../resources";
 import type { ResidentTypeId } from "./residents";
 
-export const BUILDING_TYPE_IDS = ["small_blue_house", "brown_house", "green_house"] as const;
+export const BUILDING_TYPE_IDS = ["small_blue_house", "brown_house", "green_house", "lily_house"] as const;
 
 export type BuildingTypeId = (typeof BUILDING_TYPE_IDS)[number];
 
@@ -49,6 +58,21 @@ export const SMALL_BLUE_HOUSE_BLUEPRINT_FEET_Y = 93;
 export const BROWN_HOUSE_CANVAS = { width: 121, height: 114 } satisfies BuildingCanvasSize;
 export const BROWN_HOUSE_FEET_Y = 112;
 
+/** Lily's house PNG is a 121×114 authored frame; last opaque row is 108, so feet sit at 109. */
+export const LILY_HOUSE_CANVAS = { width: 121, height: 114 } satisfies BuildingCanvasSize;
+export const LILY_HOUSE_FEET_Y = 109;
+
+export const BUILDING_RESOURCE_LABELS: Record<ResourceType, string> = {
+  wood: "Wood",
+  stone: "Stone",
+  food: "Food",
+  vine: "Vine",
+  foliage: "Foliage",
+  copperOre: "Copper",
+  shell: "Shell",
+  coral: "Coral",
+};
+
 export interface BuildingDefinition {
   id: BuildingTypeId;
   name: string;
@@ -78,10 +102,7 @@ export interface BuildingDefinition {
     completedCanvas: BuildingCanvasSize;
     blueprintCanvas: BuildingCanvasSize;
   };
-  cost: {
-    wood: number;
-    stone: number;
-  };
+  cost: ResourceBundle;
   residentHome?: ResidentHomeMeta;
 }
 
@@ -96,13 +117,20 @@ const SMALL_HOUSE_VISUAL = {
   blueprintCanvas: { ...SMALL_HOUSE_VISUAL_CLASS.blueprintCanvas },
 };
 
-function uniqueStartingHome(residentTypeId: ResidentTypeId): ResidentHomeMeta {
+function uniqueResidentHome(
+  residentTypeId: ResidentTypeId,
+  options: { startingHome: boolean; recipeUnlocked: boolean },
+): ResidentHomeMeta {
   return {
     residentTypeId,
     unique: true,
-    startingHome: true,
-    recipeUnlocked: true,
+    startingHome: options.startingHome,
+    recipeUnlocked: options.recipeUnlocked,
   };
+}
+
+function uniqueStartingHome(residentTypeId: ResidentTypeId): ResidentHomeMeta {
+  return uniqueResidentHome(residentTypeId, { startingHome: true, recipeUnlocked: true });
 }
 
 export const BUILDINGS: Record<BuildingTypeId, BuildingDefinition> = {
@@ -163,6 +191,27 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingDefinition> = {
     cost: { wood: 7, stone: 3 },
     residentHome: uniqueStartingHome("momo"),
   },
+  lily_house: {
+    id: "lily_house",
+    name: "Lily's House",
+    category: "residential",
+    enabled: true,
+    assetKey: "world-building-lily-house",
+    assetPath: "/assets/world/houses/Lily_House.png",
+    blueprintKey: "world-building-lily-house-blueprint",
+    blueprintPath: "/assets/world/houses/Lily_House_BP.png",
+    footprint: { ...SMALL_HOUSE_VISUAL_CLASS.footprint },
+    entrance: { ...SHARED_ENTRANCE },
+    visual: {
+      ...SMALL_HOUSE_VISUAL,
+      completedCanvas: { ...LILY_HOUSE_CANVAS },
+      blueprintCanvas: { ...LILY_HOUSE_CANVAS },
+      originY: LILY_HOUSE_FEET_Y / LILY_HOUSE_CANVAS.height,
+      blueprintOriginY: LILY_HOUSE_FEET_Y / LILY_HOUSE_CANVAS.height,
+    },
+    cost: { wood: 10, stone: 4, vine: 3, foliage: 4, shell: 1 },
+    residentHome: uniqueResidentHome("lily", { startingHome: false, recipeUnlocked: false }),
+  },
 };
 
 /** Completed-texture pixel size from catalog metadata. Not occupancy. */
@@ -170,6 +219,7 @@ export const BUILDING_NATIVE_TEXTURE_SIZE: Record<BuildingTypeId, BuildingCanvas
   small_blue_house: BUILDINGS.small_blue_house.visual.completedCanvas,
   brown_house: BUILDINGS.brown_house.visual.completedCanvas,
   green_house: BUILDINGS.green_house.visual.completedCanvas,
+  lily_house: BUILDINGS.lily_house.visual.completedCanvas,
 };
 
 export const DEFAULT_BUILDING_TYPE_ID: BuildingTypeId = "small_blue_house";
@@ -249,6 +299,35 @@ export function buildingVisualLayout(
     displayHeight: canvas.height,
     textureKey: buildingTextureKey(typeId, phase),
   };
+}
+
+export function buildingCostBundle(def: BuildingDefinition): ResourceBundle {
+  return normalizeBundle(def.cost);
+}
+
+export function isBuildingCostAffordable(def: BuildingDefinition, stock: ResourceStock): boolean {
+  return canConsumeBundle(stock, def.cost);
+}
+
+export function missingBuildingResources(def: BuildingDefinition, stock: ResourceStock): ResourceType[] {
+  const cost = buildingCostBundle(def);
+  return RESOURCE_TYPE_LIST.filter(
+    (type) => bundleAmount(cost, type) > 0 && stock[type] < bundleAmount(cost, type),
+  );
+}
+
+export function formatBuildingCost(def: BuildingDefinition, stock?: ResourceStock): string {
+  const cost = buildingCostBundle(def);
+  return RESOURCE_TYPE_LIST.filter((type) => bundleAmount(cost, type) > 0)
+    .map((type) => {
+      const need = bundleAmount(cost, type);
+      const label = BUILDING_RESOURCE_LABELS[type];
+      if (stock) {
+        return `${label} ${stock[type]}/${need}`;
+      }
+      return `${need} ${label}`;
+    })
+    .join(" · ");
 }
 
 export function resolveBuildingAppearance(typeId: BuildingTypeId): {

@@ -7,7 +7,8 @@ export type ResidentTypeId = (typeof RESIDENT_TYPE_IDS)[number];
 
 /**
  * Occupancy kinds. Starting slimes are `resident`. Lily may be `visitor` then
- * `invited_waiting_for_house`. `moving_in` is unused in 05.3B.1.
+ * `invited_waiting_for_house`, then `resident` after player-confirmed move-in.
+ * `moving_in` is unused.
  */
 export type ResidencyStatus = "resident" | "visitor" | "invited_waiting_for_house" | "moving_in";
 

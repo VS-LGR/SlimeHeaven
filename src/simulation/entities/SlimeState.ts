@@ -62,6 +62,8 @@ export interface SlimeState {
   attributes: SlimeAttributes;
   capabilities: SlimeCapability[];
   residencyStatus: ResidencyStatus;
+  /** False keeps the slime in resident life but out of job assignment. */
+  participatesInWork: boolean;
   interest: AmbientInterestProfile;
   faceTile?: GridPosition;
   ambientBehaviorId?: AmbientBehaviorId;
@@ -92,6 +94,7 @@ export interface SlimeSpawnDef {
   interest: AmbientInterestProfile;
   capabilities: readonly SlimeCapability[];
   jobAffinity?: Partial<Record<JobCategory, number>>;
+  participatesInWork?: boolean;
 }
 
 export const SLIME_SPAWNS: readonly SlimeSpawnDef[] = [
@@ -150,6 +153,7 @@ export function createSlimeState(
     attributes: clampAttributes(def.attributes),
     capabilities: uniqueCapabilities(def.capabilities),
     residencyStatus,
+    participatesInWork: def.participatesInWork !== false,
     interest: def.interest ?? DEFAULT_AMBIENT_INTEREST,
     ambientUntilTick: 0,
     ambientCooldownUntilTick: 0,

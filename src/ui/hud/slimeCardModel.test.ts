@@ -60,6 +60,7 @@ function slimeInfo(overrides: Partial<SlimeInfo> & Pick<SlimeInfo, "id" | "name"
     routineJobAvailable: true,
     routineHomeDestination: null,
     routineBlockReason: null,
+    readyForMoveIn: false,
     ...overrides,
   };
 }
@@ -196,6 +197,7 @@ describe("slime card model 05.4D", () => {
     );
     expect(visitor.variant).toBe("visitor");
     expect(visitor.showInvite).toBe(true);
+    expect(visitor.showMoveIn).toBe(false);
     expect(visitor.hunger).toBeNull();
     expect(visitor.specialtyLine).toBeNull();
     expect(visitor.home).toBe("Sem residência");
@@ -205,6 +207,7 @@ describe("slime card model 05.4D", () => {
 
     expect(invited.variant).toBe("invited_visitor");
     expect(invited.showInvite).toBe(false);
+    expect(invited.showMoveIn).toBe(false);
     expect(invited.home).toBe("Sem residência");
     expect(invited.homeDetail).toBe("Aguardando o projeto da casa");
     expect(invited.hunger).toBeNull();
@@ -214,6 +217,64 @@ describe("slime card model 05.4D", () => {
       homeBuildingType: "small_blue_house",
       homeStatus: "not_defined",
     }).home).toBe("Sem residência");
+  });
+
+  it("shows the house-ready action only for eligible invited Lily", () => {
+    const ready = selectSlimeCardModel(
+      slimeInfo({
+        id: SLIME_IDS.LILY,
+        name: CHARACTERS.lily.displayName,
+        ...CHARACTERS.lily.attributes,
+        residencyStatus: "invited_waiting_for_house",
+        homeBuildingType: "lily_house",
+        homeStatus: "completed",
+        readyForMoveIn: true,
+        needsActive: false,
+        eligibleForJobs: false,
+        specialties: [],
+      }),
+    );
+    expect(ready.variant).toBe("invited_visitor");
+    expect(ready.showInvite).toBe(false);
+    expect(ready.showMoveIn).toBe(true);
+    expect(ready.home).toBe("Sem residência");
+    expect(ready.specialtyLine).toBeNull();
+
+    const resident = selectSlimeCardModel(
+      slimeInfo({
+        id: SLIME_IDS.LILY,
+        name: CHARACTERS.lily.displayName,
+        ...CHARACTERS.lily.attributes,
+        residencyStatus: "resident",
+        homeBuildingType: "lily_house",
+        homeStatus: "completed",
+        readyForMoveIn: false,
+        needsActive: true,
+        consumesFood: true,
+        eligibleForJobs: false,
+        specialties: [],
+      }),
+    );
+    expect(resident.variant).toBe("resident");
+    expect(resident.showInvite).toBe(false);
+    expect(resident.showMoveIn).toBe(false);
+    expect(resident.home).toBe("Casa da Lily");
+    expect(resident.specialtyLine).toBeNull();
+    expect(resident.hunger).toBe("Satisfeito");
+
+    const pingo = selectSlimeCardModel(
+      slimeInfo({
+        id: SLIME_IDS.PINGO,
+        name: CHARACTERS.pingo.displayName,
+        residencyStatus: "resident",
+        readyForMoveIn: true,
+        homeBuildingType: "small_blue_house",
+        homeStatus: "completed",
+      }),
+    );
+    expect(pingo.showMoveIn).toBe(false);
+    expect(readFileSync("src/ui/hud/SlimeCard.tsx", "utf8")).toMatch(/data-hud-slime-move-in/);
+    expect(readFileSync("src/ui/hud/slimeCardPresentation.ts", "utf8")).toMatch(/Sua casa está pronta!/);
   });
 
   it("clears selection when the selected slime disappears and replaces on a new id", () => {

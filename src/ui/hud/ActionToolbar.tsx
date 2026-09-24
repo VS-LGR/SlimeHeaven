@@ -4,7 +4,15 @@
 
 import type { MouseEvent, PointerEvent } from "react";
 import { useGameUiStore } from "@/src/store/gameUiStore";
-import { BUILDINGS, type BuildingTypeId } from "@/src/simulation/data/buildings";
+import {
+  BUILDING_RESOURCE_LABELS,
+  BUILDINGS,
+  formatBuildingCost,
+  isBuildingCostAffordable,
+  missingBuildingResources,
+  type BuildingTypeId,
+} from "@/src/simulation/data/buildings";
+import type { ResourceStock } from "@/src/simulation/resources";
 import { HUD_ASSETS } from "./hudAssets";
 import {
   HUD_LAYOUT,
@@ -27,6 +35,12 @@ function stopHudPointer(event: MouseEvent | PointerEvent): void {
 export function ActionToolbar() {
   const wood = useGameUiStore((state) => state.wood);
   const stone = useGameUiStore((state) => state.stone);
+  const food = useGameUiStore((state) => state.food);
+  const vine = useGameUiStore((state) => state.vine);
+  const foliage = useGameUiStore((state) => state.foliage);
+  const copperOre = useGameUiStore((state) => state.copperOre);
+  const shell = useGameUiStore((state) => state.shell);
+  const coral = useGameUiStore((state) => state.coral);
   const worldTool = useGameUiStore((state) => state.worldTool);
   const setWorldTool = useGameUiStore((state) => state.setWorldTool);
   const selectedBuildingTypeId = useGameUiStore((state) => state.selectedBuildingTypeId);
@@ -38,6 +52,10 @@ export function ActionToolbar() {
   const farmFamily = worldTool === "designate" || worldTool === "remove";
   const buildOpen = worldTool === "build";
   const stack = actionToolbarBaseSize();
+  const stock: ResourceStock = { wood, stone, food, vine, foliage, copperOre, shell, coral };
+  const hintTypeId = availableBuildingTypeIds.includes(selectedBuildingTypeId)
+    ? selectedBuildingTypeId
+    : availableBuildingTypeIds[0];
 
   return (
     <div
@@ -99,21 +117,20 @@ export function ActionToolbar() {
           {buildOpen
             ? availableBuildingTypeIds.map((typeId) => {
                 const def = BUILDINGS[typeId];
-                const affordable = wood >= def.cost.wood && stone >= def.cost.stone;
                 return (
                   <SecondaryChip
                     key={typeId}
                     label={def.name}
-                    subtitle={`${def.cost.wood} Wood · ${def.cost.stone} Stone`}
+                    subtitle={formatBuildingCost(def, stock)}
                     selected={selectedBuildingTypeId === typeId}
-                    muted={!affordable}
+                    muted={!isBuildingCostAffordable(def, stock)}
                     onActivate={() => setSelectedBuildingTypeId(typeId)}
                   />
                 );
               })
             : null}
-          {buildOpen && availableBuildingTypeIds.length > 0 ? (
-            <BuildAffordHint typeId={selectedBuildingTypeId} wood={wood} stone={stone} />
+          {buildOpen && hintTypeId ? (
+            <BuildAffordHint typeId={hintTypeId} stock={stock} />
           ) : null}
           <div className="ml-auto flex" style={{ gap: 6 }}>
             <SecondaryChip label="Collection" selected={collectionOpen} onActivate={toggleCollection} />
@@ -304,21 +321,14 @@ function SecondaryChip({
 
 function BuildAffordHint({
   typeId,
-  wood,
-  stone,
+  stock,
 }: {
   typeId: BuildingTypeId;
-  wood: number;
-  stone: number;
+  stock: ResourceStock;
 }) {
-  const cost = BUILDINGS[typeId].cost;
-  const missing: string[] = [];
-  if (wood < cost.wood) {
-    missing.push("wood");
-  }
-  if (stone < cost.stone) {
-    missing.push("stone");
-  }
+  const missing = missingBuildingResources(BUILDINGS[typeId], stock).map(
+    (type) => BUILDING_RESOURCE_LABELS[type].toLowerCase(),
+  );
   if (missing.length === 0) {
     return null;
   }

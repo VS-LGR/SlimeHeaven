@@ -44,7 +44,10 @@ const BUILDING_NAME_LABELS: Record<string, string> = {
   "Pingo's House": "Casa do Pingo",
   "Momo's House": "Casa da Momo",
   "Tito's House": "Casa do Tito",
+  "Lily's House": "Casa da Lily",
 };
+
+export const MOVE_IN_ACTION_LABEL = "Sua casa está pronta!";
 
 const VISITOR_INTEREST_LABELS: Record<string, string> = {
   "Interested in flowers": "Interessada em flores",

@@ -59,16 +59,21 @@ import {
 import { worldToolBlocksSlimeSelection } from "../render/slimeHitTest";
 import type { BuildingPlacementDebug } from "@/src/store/gameUiStore";
 import type { BuildingPlacementEvaluation } from "@/src/simulation/systems/BuildingSystem";
-import { buildingById, entranceTile } from "@/src/simulation/data/buildings";
+import { buildingById, entranceTile, formatBuildingCost } from "@/src/simulation/data/buildings";
+import { bundleAmount, formatCargo, hasCargo, RESOURCE_IDS } from "@/src/simulation/resources";
 import { residentTypeIdForSlime, isVillageResident, isVisitorLifecycle } from "@/src/simulation/data/residents";
 import { CHARACTERS } from "@/src/simulation/data/characters";
 import { VISITOR_ARRIVAL } from "@/src/simulation/data/visitorArrival";
-import { visitorIntent } from "@/src/simulation/systems/VisitorSystem";
-import { placedHomeForResident, playerBuildableBuildingTypes, residentHomeStatus } from "@/src/simulation/residentHomes";
+import { visitorIntent, canMoveInResident } from "@/src/simulation/systems/VisitorSystem";
+import {
+  placedHomeForResident,
+  playerBuildableBuildingTypes,
+  residentHomeStatus,
+  uniqueHomeConstructionDebugLines,
+} from "@/src/simulation/residentHomes";
 import type { SlimeState } from "@/src/simulation/entities/SlimeState";
 import { formatCapabilitiesDebug, knownSpecialtyLabels, canPerformTaskCapabilities } from "@/src/simulation/slimeCapabilities";
 import { isConstructionTask } from "@/src/simulation/entities/Task";
-import { formatCargo, hasCargo, RESOURCE_IDS } from "@/src/simulation/resources";
 import { gatheringToolForTask } from "../render/gathering/chopPresentation";
 import { inspectCoralTarget, inspectFoliageTarget, inspectShoreTarget } from "@/src/simulation/systems/JobSystem";
 import { resolveShoreWaterBodyId } from "@/src/simulation/waterBodies";
@@ -245,6 +250,7 @@ export class VillageScene extends Phaser.Scene {
       addTestResource: () => simulation.addTestResource(),
       addFood: () => simulation.addFood(),
       addVine: () => simulation.addVine(),
+      grantLilyHouseMaterials: () => simulation.grantLilyHouseMaterials(),
       forceNextWoodVineBonus: () => simulation.forceNextWoodVineBonus(true),
       setAllSlimesHungry: () => simulation.setAllSlimesHungry(),
       instantGrowCrops: () => simulation.instantGrowCrops(),
@@ -298,6 +304,12 @@ export class VillageScene extends Phaser.Scene {
           jobToast: { message: result.message, hideAt: Date.now() + 2800 },
         });
       },
+      prepareLilyMoveIn: () => {
+        const result = simulation.prepareLilyMoveInPreconditions();
+        useGameUiStore.getState().setRuntime({
+          jobToast: { message: result.message, hideAt: Date.now() + 2800 },
+        });
+      },
       setDawn: () => this.applyClockDebug(() => simulation.setClockPreset("dawn")),
       setMidday: () => this.applyClockDebug(() => simulation.setClockPreset("midday")),
       setDusk: () => this.applyClockDebug(() => simulation.setClockPreset("dusk")),
@@ -313,6 +325,20 @@ export class VillageScene extends Phaser.Scene {
           return;
         }
         const result = simulation.inviteVisitor(selectedId);
+        useGameUiStore.getState().setRuntime({
+          jobToast: { message: result.message, hideAt: Date.now() + 4000 },
+          selectedSlime: this.selectedSlimeInfo(selectedId),
+        });
+      },
+      moveInSelectedVisitor: () => {
+        const selectedId = useGameUiStore.getState().selectedSlimeId;
+        if (!selectedId) {
+          return;
+        }
+        const result = simulation.moveInVisitor(selectedId);
+        if (!result.ok) {
+          return;
+        }
         useGameUiStore.getState().setRuntime({
           jobToast: { message: result.message, hideAt: Date.now() + 4000 },
           selectedSlime: this.selectedSlimeInfo(selectedId),
@@ -485,6 +511,7 @@ export class VillageScene extends Phaser.Scene {
       .filter((slime) => isVillageResident(slime))
       .map((slime) => hungerState(slime.satiety));
     this.selection?.refreshInspect();
+    const availableBuildingTypeIds = playerBuildableBuildingTypes(state);
     useGameUiStore.getState().setRuntime({
       fps: Math.round(this.game.loop.actualFps),
       cameraX: Math.round(camera.midPoint.x),
@@ -510,7 +537,11 @@ export class VillageScene extends Phaser.Scene {
         .filter((slime) => hasCargo(slime.carriedResource))
         .map((slime) => `${slime.name}: ${formatCargo(slime.carriedResource)}`),
       forceNextWoodVineBonusArmed: state.forceNextWoodVineBonus === true,
-      availableBuildingTypeIds: playerBuildableBuildingTypes(state),
+      availableBuildingTypeIds: availableBuildingTypeIds,
+      ...(availableBuildingTypeIds.includes(currentUi.selectedBuildingTypeId) ||
+      availableBuildingTypeIds.length === 0
+        ? {}
+        : { selectedBuildingTypeId: availableBuildingTypeIds[0] }),
       farmTiles: farms.length,
       growingCrops: farms.filter((plot) => plot.state === "growing" || plot.state === "planted").length,
       readyCrops: farms.filter((plot) => plot.state === "ready").length,
@@ -947,6 +978,7 @@ function slimeInfo(
     routineJobAvailable: debugRoutine.jobs,
     routineHomeDestination: debugRoutine.destination,
     routineBlockReason: debugRoutine.block,
+    readyForMoveIn: canMoveInResident(state, slime.id),
   };
 }
 
@@ -973,18 +1005,35 @@ function visitorDebugLines(
   }
   const debug = renderer?.visualDebug(lily);
   const dest = lily.destination ? `${lily.destination.x},${lily.destination.y}` : "—";
+  const path = lily.path[0] ? `${lily.path[0].x},${lily.path[0].y}` : dest;
+  const lilyEntities = Object.values(state.slimes).filter(
+    (slime) => slime.id === SLIME_IDS.LILY || residentTypeIdForSlime(slime.id) === "lily",
+  );
+  const routine = routineDebug(state, lily);
   return [
+    `lilyLifecycle: ${isVillageResident(lily) ? "resident" : "visitor"}`,
     `visitorInstanceId: ${lily.id}`,
     `residentTypeId: lily`,
     `residencyStatus: ${lily.residencyStatus}`,
     `arrivalTile: ${VISITOR_ARRIVAL.arrivalTile.x},${VISITOR_ARRIVAL.arrivalTile.y}`,
     `currentTile: ${lily.tileX},${lily.tileY}`,
-    `visitorIntent: ${visitorIntent(lily)}`,
+    `visitorIntent: ${isVisitorLifecycle(lily) ? visitorIntent(lily) : "—"}`,
     `wanderDestination: ${dest}`,
-    "eligibleForJobs: false",
-    "needsActive: false",
-    "consumesFood: false",
-    `homeStatus: ${residentHomeStatus(state, "lily")}`,
+    `eligibleForJobs: ${isJobAssignable(state, lily)}`,
+    `needsActive: ${isVillageResident(lily)}`,
+    `consumesFood: ${isVillageResident(lily)}`,
+    `residentRegistry: ${isVillageResident(lily)}`,
+    `visitorRegistry: ${isVisitorLifecycle(lily)}`,
+    `moveInActionEligible: ${canMoveInResident(state, lily.id)}`,
+    `satiety: ${Math.round(lily.satiety)}`,
+    `routinePhase: ${routine.phase}`,
+    `wake: ${routine.wake ?? "—"}`,
+    `bedtime: ${routine.bedtime ?? "—"}`,
+    `homeEntrance: ${routine.destination ?? "—"}`,
+    `pathTarget: ${path}`,
+    `duplicateLilyEntities: ${lilyEntities.length}`,
+    `presentationSprites: ${renderer?.hasSlimePresentation(lily.id) ? 1 : 0}`,
+    ...uniqueHomeConstructionDebugLines(state, "lily"),
     `currentAnimation: ${lilyAnimationLabel(lily.id, debug?.anim ?? "idle")}`,
     "activeSpecialistAnimation: none",
   ];
@@ -1031,17 +1080,22 @@ function buildingDebugFromEvaluation(
   if (!evaluation) {
     return null;
   }
-    const def = buildingById(evaluation.typeId);
-    return {
-      buildMode: true,
-      buildingType: evaluation.typeId,
-      costWood: evaluation.cost.wood,
-      costStone: evaluation.cost.stone,
-      affordable: evaluation.affordable,
-      footprintOrigin: `${evaluation.origin.x},${evaluation.origin.y}`,
-      footprint: `${def.footprint.width}x${def.footprint.height}`,
-      entranceTile: `${evaluation.entrance.x},${evaluation.entrance.y}`,
-      placementValid: evaluation.valid,
-      invalidReasons: evaluation.reasons,
-    };
+  const def = buildingById(evaluation.typeId);
+  return {
+    buildMode: true,
+    buildingType: evaluation.typeId,
+    costWood: bundleAmount(evaluation.cost, "wood"),
+    costStone: bundleAmount(evaluation.cost, "stone"),
+    costVine: bundleAmount(evaluation.cost, "vine"),
+    costFoliage: bundleAmount(evaluation.cost, "foliage"),
+    costShell: bundleAmount(evaluation.cost, "shell"),
+    costLine: formatBuildingCost(def),
+    affordable: evaluation.affordable,
+    footprintOrigin: `${evaluation.origin.x},${evaluation.origin.y}`,
+    footprint: `${def.footprint.width}x${def.footprint.height}`,
+    entranceTile: `${evaluation.entrance.x},${evaluation.entrance.y}`,
+    workPosition: `${evaluation.entrance.x},${evaluation.entrance.y}`,
+    placementValid: evaluation.valid,
+    invalidReasons: evaluation.reasons,
+  };
 }

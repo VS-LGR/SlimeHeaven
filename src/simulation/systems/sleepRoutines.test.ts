@@ -36,13 +36,15 @@ describe("sleep schedules 05.5D", () => {
     expect(sleepScheduleFor("momo")).toEqual(RESIDENT_SLEEP_SCHEDULES.momo);
     expect(sleepScheduleFor("tito")).toEqual(RESIDENT_SLEEP_SCHEDULES.tito);
     expect(sleepScheduleFor("pingo")).toEqual(RESIDENT_SLEEP_SCHEDULES.pingo);
-    expect(sleepScheduleFor("lily")).toBeUndefined();
+    expect(sleepScheduleFor("lily")).toEqual(RESIDENT_SLEEP_SCHEDULES.lily);
     expect(RESIDENT_SLEEP_SCHEDULES.momo?.wakeMinute).toBe(minutesFromTimeOfDay(5, 30));
     expect(RESIDENT_SLEEP_SCHEDULES.momo?.bedtimeMinute).toBe(minutesFromTimeOfDay(21, 30));
     expect(RESIDENT_SLEEP_SCHEDULES.tito?.wakeMinute).toBe(minutesFromTimeOfDay(7, 0));
     expect(RESIDENT_SLEEP_SCHEDULES.tito?.bedtimeMinute).toBe(minutesFromTimeOfDay(23, 0));
     expect(RESIDENT_SLEEP_SCHEDULES.pingo?.wakeMinute).toBe(minutesFromTimeOfDay(11, 0));
     expect(RESIDENT_SLEEP_SCHEDULES.pingo?.bedtimeMinute).toBe(minutesFromTimeOfDay(3, 0));
+    expect(RESIDENT_SLEEP_SCHEDULES.lily?.wakeMinute).toBe(minutesFromTimeOfDay(8, 0));
+    expect(RESIDENT_SLEEP_SCHEDULES.lily?.bedtimeMinute).toBe(minutesFromTimeOfDay(22, 0));
   });
 
   it("handles Momo/Tito midnight wrap and Pingo's same-day sleep window", () => {
@@ -301,7 +303,7 @@ describe("sleep lifecycle 05.5D", () => {
     expect(lily.state).not.toBe("sleeping");
     expect(lily.state).not.toBe("moving_to_home");
     expect(isJobAssignable(sim.state, lily)).toBe(false);
-    expect(sleepScheduleFor("lily")).toBeUndefined();
+    expect(sleepScheduleFor("lily")).toEqual(RESIDENT_SLEEP_SCHEDULES.lily);
     expect(formatRoutineBlockLabel("missing_home")).toBe("Aguardando casa");
     expect(formatRoutineBlockLabel("unreachable")).toBe("Casa inacessível");
   });

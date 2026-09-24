@@ -204,6 +204,10 @@ export class SlimeRenderer {
     this.drawPath(selectedId);
   }
 
+  hasSlimePresentation(id: string): boolean {
+    return this.sprites.has(id);
+  }
+
   visualDebug(slime: SlimeState): SlimeVisualDebug {
     const view = this.viewFor(slime);
     const sprites = this.sprites.get(slime.id);

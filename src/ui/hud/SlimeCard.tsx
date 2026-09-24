@@ -8,6 +8,7 @@ import { HUD_LAYOUT, slimeCardAttributeClusterWidth, slimeCardStarStripWidth, sl
 import { SLIME_CARD_ASSET, SLIME_CARD_ICON_ASSETS } from "./hudAssets";
 import { HudSlot, HudSlotLabel } from "./HudCard";
 import { selectSlimeCardModel, portraitDrawScale, type SlimeCardPortraitSpec } from "./slimeCardModel";
+import { MOVE_IN_ACTION_LABEL } from "./slimeCardPresentation";
 
 const PIXEL = { imageRendering: "pixelated" as const };
 const layout = HUD_LAYOUT.slimeCard;
@@ -237,6 +238,30 @@ export function SlimeCard() {
               <FooterLine label="Atividade" value={model.activity} valueKey="slime-activity" />
               <FooterLine label="Moradia" value={model.home ?? "—"} valueKey="slime-home" />
             </div>
+            {model.showMoveIn ? (
+              <button
+                type="button"
+                data-hud-interactive="true"
+                data-hud-slime-move-in="true"
+                className="pointer-events-auto w-full shrink-0 cursor-pointer border-0 font-mono hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#6E3E2E]"
+                style={{
+                  height: layout.invite.height,
+                  background: chrome.cream,
+                  color: chrome.ink,
+                  boxShadow: `inset 0 0 0 2px ${chrome.wood}`,
+                  borderRadius: 6,
+                  fontSize: 14,
+                  fontWeight: 800,
+                }}
+                onPointerDown={stopHudPointer}
+                onClick={(event) => {
+                  stopHudPointer(event);
+                  hudActions?.moveInSelectedVisitor();
+                }}
+              >
+                {MOVE_IN_ACTION_LABEL}
+              </button>
+            ) : null}
             {model.showInvite ? (
               <button
                 type="button"

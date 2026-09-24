@@ -11,6 +11,8 @@ import {
   SMALL_BLUE_HOUSE_FEET_Y,
   BROWN_HOUSE_CANVAS,
   BROWN_HOUSE_FEET_Y,
+  LILY_HOUSE_CANVAS,
+  LILY_HOUSE_FEET_Y,
   SMALL_HOUSE_VISUAL_CLASS,
   buildingById,
   buildingImageLoads,
@@ -27,10 +29,11 @@ function pngSize(publicPath: string): { width: number; height: number } {
 
 describe("building catalog", () => {
   it("registers both house definitions with unique IDs", () => {
-    expect(BUILDING_TYPE_IDS).toEqual(["small_blue_house", "brown_house", "green_house"]);
+    expect(BUILDING_TYPE_IDS).toEqual(["small_blue_house", "brown_house", "green_house", "lily_house"]);
     expect(BUILDINGS.small_blue_house).toBeDefined();
     expect(BUILDINGS.brown_house).toBeDefined();
     expect(BUILDINGS.green_house).toBeDefined();
+    expect(BUILDINGS.lily_house).toBeDefined();
     const ids = Object.values(BUILDINGS).map((def) => def.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -78,7 +81,18 @@ describe("building catalog", () => {
         { key: green.blueprintKey, path: green.blueprintPath },
       ]),
     );
-    expect(loads).toHaveLength(6);
+    const lily = buildingById("lily_house");
+    expect(lily.assetKey).toBe("world-building-lily-house");
+    expect(lily.assetPath).toBe("/assets/world/houses/Lily_House.png");
+    expect(lily.blueprintKey).toBe("world-building-lily-house-blueprint");
+    expect(lily.blueprintPath).toBe("/assets/world/houses/Lily_House_BP.png");
+    expect(loads).toEqual(
+      expect.arrayContaining([
+        { key: lily.assetKey, path: lily.assetPath },
+        { key: lily.blueprintKey, path: lily.blueprintPath },
+      ]),
+    );
+    expect(loads).toHaveLength(8);
   });
 
   it("keeps the 2×2 small_house footprint while Pingo and Tito use their authored frames", () => {
@@ -116,7 +130,17 @@ describe("building catalog", () => {
     expect(pngSize(green.assetPath)).toEqual(green.visual.completedCanvas);
     expect(pngSize(green.blueprintPath)).toEqual(green.visual.blueprintCanvas);
 
-    for (const def of [blue, brown, green]) {
+    const lily = buildingById("lily_house");
+    expect(lily.visual.completedCanvas).toEqual(LILY_HOUSE_CANVAS);
+    expect(lily.visual.blueprintCanvas).toEqual(LILY_HOUSE_CANVAS);
+    expect(lily.visual.originY).toBe(LILY_HOUSE_FEET_Y / LILY_HOUSE_CANVAS.height);
+    expect(lily.visual.blueprintOriginY).toBe(LILY_HOUSE_FEET_Y / LILY_HOUSE_CANVAS.height);
+    expect(pngSize(lily.assetPath)).toEqual(lily.visual.completedCanvas);
+    expect(pngSize(lily.blueprintPath)).toEqual(lily.visual.blueprintCanvas);
+    expect(LILY_HOUSE_CANVAS).toEqual({ width: 121, height: 114 });
+    expect(LILY_HOUSE_FEET_Y).toBe(109);
+
+    for (const def of [blue, brown, green, lily]) {
       expect(def.footprint).toEqual({ ...SMALL_HOUSE_VISUAL_CLASS.footprint });
       const completed = readFileSync(resolve("public", def.assetPath.replace(/^\//, "")));
       const blueprint = readFileSync(resolve("public", def.blueprintPath.replace(/^\//, "")));
@@ -185,5 +209,12 @@ describe("building catalog", () => {
     expect(green.cost).toEqual({ wood: 7, stone: 3 });
     expect(Object.keys(blue.cost).sort()).toEqual(["stone", "wood"]);
     expect(Object.keys(brown.cost).sort()).toEqual(["stone", "wood"]);
+    expect(buildingById("lily_house").cost).toEqual({
+      wood: 10,
+      stone: 4,
+      vine: 3,
+      foliage: 4,
+      shell: 1,
+    });
   });
 });

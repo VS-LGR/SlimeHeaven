@@ -102,6 +102,7 @@ export interface SlimeInfo {
   routineJobAvailable: boolean | null;
   routineHomeDestination: string | null;
   routineBlockReason: string | null;
+  readyForMoveIn: boolean;
 }
 
 export interface BuildingPlacementDebug {
@@ -109,10 +110,15 @@ export interface BuildingPlacementDebug {
   buildingType: string;
   costWood: number;
   costStone: number;
+  costVine: number;
+  costFoliage: number;
+  costShell: number;
+  costLine: string;
   affordable: boolean;
   footprintOrigin: string;
   footprint: string;
   entranceTile: string;
+  workPosition: string;
   placementValid: boolean;
   invalidReasons: BuildingPlacementReason[];
 }
@@ -158,6 +164,7 @@ export interface DebugActions {
   addTestResource: () => void;
   addFood: () => void;
   addVine: () => void;
+  grantLilyHouseMaterials: () => void;
   forceNextWoodVineBonus: () => void;
   setAllSlimesHungry: () => void;
   instantGrowCrops: () => void;
@@ -182,6 +189,7 @@ export interface DebugActions {
   forceSocialGreet: () => void;
   clearAmbientBehaviors: () => void;
   spawnLilyVisitor: () => void;
+  prepareLilyMoveIn: () => void;
   setDawn: () => void;
   setMidday: () => void;
   setDusk: () => void;
@@ -193,6 +201,7 @@ export interface DebugActions {
 
 export interface HudActions {
   inviteSelectedVisitor: () => void;
+  moveInSelectedVisitor: () => void;
   designateFoliageAt: (x: number, y: number) => "ok" | "regenerating" | "reserved" | "none";
   designateShoreAt: (
     x: number,

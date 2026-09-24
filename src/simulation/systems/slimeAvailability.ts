@@ -38,6 +38,9 @@ export function isJobAssignable(state: GameState, slime: SlimeState): boolean {
   if (!isVillageResident(slime)) {
     return false;
   }
+  if (!slime.participatesInWork) {
+    return false;
+  }
   if (isSleepWindow(state, slime) || isRoutineUnavailable(slime)) {
     return false;
   }

@@ -177,6 +177,7 @@ describe("slime card presentation 05.4D", () => {
     expect(playerBuildingName("Pingo's House")).toBe("Casa do Pingo");
     expect(playerBuildingName("Momo's House")).toBe("Casa da Momo");
     expect(playerBuildingName("Tito's House")).toBe("Casa do Tito");
+    expect(playerBuildingName("Lily's House")).toBe("Casa da Lily");
     expect(playerVisitorInterest(CHARACTERS.lily.visitorInterestLabel)).toBe("Interessada em flores");
     expect(residencyStatusLabel(slimeCardVariant("visitor"))).toBe("Visitante");
     expect(residencyStatusLabel(slimeCardVariant("invited_waiting_for_house"))).toBe("Visitante convidada");

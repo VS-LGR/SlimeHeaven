@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { GameState } from "../GameState";
 import { Simulation } from "../Simulation";
 import { SLIME_IDS } from "../entities/SlimeState";
+import { TileType } from "@/src/world/tileTypes";
+import { findPath } from "@/src/world/pathfinding";
 import {
   assignAvailableTasks,
   beginAssignedTask,
@@ -283,5 +285,54 @@ describe("shell inspect 05.6A.3", () => {
     beginAssignedTask(state, pingo);
     expect(pingo.state).toBe("working");
     expect(state.opportunities.every((entry) => entry.assignedSlimeId !== pingo.id || entry.state === "expired" || entry.state === "caught" || entry.state === "escaped")).toBe(true);
+  });
+
+  it("walks the shore inspect loop to storage without teleporting or entering water", () => {
+    const sim = new Simulation();
+    sim.setClock({ hour: 12, minute: 0 });
+    const tile = shoreTile(sim.state);
+    const pingo = sim.state.slimes[SLIME_IDS.PINGO];
+    const task = designateGatherAt(sim.state, "inspect_shore", tile);
+    expect(task?.type).toBe("inspect_shore");
+    expect(Object.values(sim.state.tasks).filter((entry) => entry.type === "inspect_shore")).toHaveLength(1);
+    expect(sim.state.grid.isWalkable(task!.workTile.x, task!.workTile.y)).toBe(true);
+    expect(findPath(sim.state.grid, { x: pingo.tileX, y: pingo.tileY }, task!.workTile)).not.toBeNull();
+    expect(findPath(sim.state.grid, task!.workTile, sim.state.storage)).not.toBeNull();
+
+    const transitions: string[] = [];
+    let last = "";
+    let sawCargo = false;
+    let stockWhileCarrying = 0;
+    for (let i = 0; i < 900; i += 1) {
+      expect(sim.state.grid.getTile(pingo.tileX, pingo.tileY)?.terrain).not.toBe(TileType.WATER);
+      expect(sim.state.grid.isWalkable(pingo.tileX, pingo.tileY)).toBe(true);
+      const label = `${pingo.state}@${pingo.tileX},${pingo.tileY}`;
+      if (label !== last) {
+        transitions.push(label);
+        last = label;
+      }
+      if (pingo.carriedResource) {
+        sawCargo = true;
+        stockWhileCarrying = sim.state.resources.shell;
+        expect(pingo.carriedResource).toEqual({ shell: SHELL_GATHER_AMOUNT });
+        expect(sim.state.discoveredResources.shell).toBe(false);
+      }
+      if (
+        sim.state.resources.shell === SHELL_GATHER_AMOUNT &&
+        !pingo.carriedResource &&
+        (pingo.state === "idle" || pingo.state === "ambient" || pingo.state === "moving_to_ambient")
+      ) {
+        expect(sawCargo).toBe(true);
+        expect(stockWhileCarrying).toBe(0);
+        expect(sim.state.discoveredResources.shell).toBe(true);
+        expect(sim.state.fishingAccessPoints.every((point) => point.reservedBy === null)).toBe(true);
+        expect(transitions.some((entry) => entry.startsWith("moving_to_task"))).toBe(true);
+        expect(transitions.some((entry) => entry.startsWith("working"))).toBe(true);
+        expect(transitions.some((entry) => entry.startsWith("carrying_to_storage"))).toBe(true);
+        return;
+      }
+      sim.tick();
+    }
+    throw new Error(`shell walk-loop timed out; last=${last} transitions=${transitions.join(" -> ")}`);
   });
 });

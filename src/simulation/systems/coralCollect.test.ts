@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { GameState } from "../GameState";
 import { Simulation } from "../Simulation";
 import { SLIME_IDS } from "../entities/SlimeState";
-import { ObjectType } from "@/src/world/tileTypes";
+import { ObjectType, TileType } from "@/src/world/tileTypes";
 import { CORAL_SEEDS } from "@/src/world/villageMap";
+import { findPath } from "@/src/world/pathfinding";
 import {
   assignAvailableTasks,
   cancelTask,
@@ -286,5 +287,58 @@ describe("coral collect 05.6A.3", () => {
     expect(state.resources).not.toHaveProperty("blue_coral");
     expect(state.resources).not.toHaveProperty("red_coral");
     expect(Object.keys(state.resources).filter((key) => key.includes("coral"))).toEqual(["coral"]);
+  });
+
+  it("walks the coral loop to storage without teleporting or entering water", () => {
+    const sim = new Simulation();
+    sim.setClock({ hour: 12, minute: 0 });
+    const origin = coralOrigin(sim.state);
+    const pingo = sim.state.slimes[SLIME_IDS.PINGO];
+    const task = designateGatherAt(sim.state, "collect_coral", origin);
+    expect(task?.type).toBe("collect_coral");
+    expect(Object.values(sim.state.tasks).filter((entry) => entry.type === "collect_coral")).toHaveLength(1);
+    expect(sim.state.grid.isWalkable(task!.workTile.x, task!.workTile.y)).toBe(true);
+    expect(findPath(sim.state.grid, { x: pingo.tileX, y: pingo.tileY }, task!.workTile)).not.toBeNull();
+    expect(findPath(sim.state.grid, task!.workTile, sim.state.storage)).not.toBeNull();
+
+    const transitions: string[] = [];
+    let last = "";
+    let sawCargo = false;
+    let stockWhileCarrying = 0;
+    let coralWhileCarrying = true;
+    for (let i = 0; i < 900; i += 1) {
+      expect(sim.state.grid.getTile(pingo.tileX, pingo.tileY)?.terrain).not.toBe(TileType.WATER);
+      expect(sim.state.grid.isWalkable(pingo.tileX, pingo.tileY)).toBe(true);
+      const label = `${pingo.state}@${pingo.tileX},${pingo.tileY}`;
+      if (label !== last) {
+        transitions.push(label);
+        last = label;
+      }
+      if (pingo.carriedResource) {
+        sawCargo = true;
+        stockWhileCarrying = sim.state.resources.coral;
+        coralWhileCarrying = Boolean(sim.state.grid.objectAt(origin.x, origin.y));
+        expect(pingo.carriedResource).toEqual({ coral: CORAL_GATHER_AMOUNT });
+        expect(sim.state.discoveredResources.coral).toBe(false);
+      }
+      if (
+        sim.state.resources.coral === CORAL_GATHER_AMOUNT &&
+        !pingo.carriedResource &&
+        (pingo.state === "idle" || pingo.state === "ambient" || pingo.state === "moving_to_ambient")
+      ) {
+        expect(sawCargo).toBe(true);
+        expect(stockWhileCarrying).toBe(0);
+        expect(coralWhileCarrying).toBe(false);
+        expect(sim.state.grid.objectAt(origin.x, origin.y)).toBeUndefined();
+        expect(sim.state.discoveredResources.coral).toBe(true);
+        expect(sim.state.fishingAccessPoints.every((point) => point.reservedBy === null)).toBe(true);
+        expect(transitions.some((entry) => entry.startsWith("moving_to_task"))).toBe(true);
+        expect(transitions.some((entry) => entry.startsWith("working"))).toBe(true);
+        expect(transitions.some((entry) => entry.startsWith("carrying_to_storage"))).toBe(true);
+        return;
+      }
+      sim.tick();
+    }
+    throw new Error(`coral walk-loop timed out; last=${last} transitions=${transitions.join(" -> ")}`);
   });
 });

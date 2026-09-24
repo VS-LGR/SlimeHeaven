@@ -237,10 +237,14 @@ function cancelFishingOwnedBySlime(state: GameState, slime: SlimeState): void {
 }
 
 /**
- * Capability gate. Universal jobs (no requiredCapabilities) stay eligible for every slime.
+ * Work-participation gate, then capability gate.
+ * Universal jobs (no requiredCapabilities) stay eligible only for slimes that participate in work.
  * Attributes and affinity are scored only after this returns true.
  */
 export function canPerformTask(slime: SlimeState, task: Task): boolean {
+  if (!slime.participatesInWork) {
+    return false;
+  }
   return canPerformTaskCapabilities(slime, task);
 }
 

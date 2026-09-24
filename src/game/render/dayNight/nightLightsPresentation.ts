@@ -102,6 +102,7 @@ export const BUILDING_NIGHT_LIGHTS: Record<BuildingTypeId, readonly NightLightDe
   small_blue_house: PINGO_HOUSE_LIGHTS,
   brown_house: TITO_HOUSE_LIGHTS,
   green_house: MOMO_HOUSE_LIGHTS,
+  lily_house: [],
 };
 
 /**

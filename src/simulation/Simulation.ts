@@ -12,7 +12,7 @@ import {
 } from "./systems/FarmSystem";
 import type { GridPosition } from "@/src/world/GridPosition";
 import type { GatherTaskType } from "./entities/Task";
-import { creditStoredResources, emptyStock } from "./resources";
+import { creditStoredResources, emptyStock, type ResourceBundle } from "./resources";
 import { DEBUG_ADD_FOOD_AMOUNT, DEBUG_HUNGRY_SATIETY } from "./needsConfig";
 import { tickAquatic, spawnAquaticAt, clearAquaticActivities } from "./systems/AquaticActivitySystem";
 import {
@@ -31,12 +31,18 @@ import {
   cancelFishingOpportunity,
 } from "./systems/FishingOpportunitySystem";
 import { tickAmbientBehaviors, forceAmbientBehavior, forceSocialGreet, clearAllAmbientBehaviors } from "./systems/AmbientBehaviorSystem";
-import { tickVisitors, spawnLilyVisitor, inviteVisitor } from "./systems/VisitorSystem";
+import {
+  tickVisitors,
+  spawnLilyVisitor,
+  inviteVisitor,
+  moveInInvitedResident,
+  prepareLilyMoveInPreconditions,
+} from "./systems/VisitorSystem";
 import { reconcileSleepRoutines, tickSleepRoutines } from "./systems/SleepRoutineSystem";
 import type { AmbientBehaviorId } from "./ambientConfig";
 import type { ClueType, FishId } from "./data/fish";
 import { placeBuilding, cancelConstructionSitesInRect } from "./systems/BuildingSystem";
-import type { BuildingTypeId } from "./data/buildings";
+import { buildingById, type BuildingTypeId } from "./data/buildings";
 import type { ConstructionSite } from "./entities/ConstructionSite";
 import { DEBUG_CLOCK_PRESETS, type TimeOfDay } from "./timeConfig";
 import {
@@ -182,6 +188,14 @@ export class Simulation {
     return inviteVisitor(this.state, slimeId);
   }
 
+  moveInVisitor(slimeId: string) {
+    return moveInInvitedResident(this.state, slimeId);
+  }
+
+  prepareLilyMoveInPreconditions() {
+    return prepareLilyMoveInPreconditions(this.state);
+  }
+
   clueSnapshot(): Array<{
     id: string;
     worldX: number;
@@ -259,6 +273,14 @@ export class Simulation {
 
   addVine(amount = 1): void {
     creditStoredResources(this.state.resources, this.state.discoveredResources, { vine: amount });
+  }
+
+  grantStoredBundle(bundle: ResourceBundle): void {
+    creditStoredResources(this.state.resources, this.state.discoveredResources, bundle);
+  }
+
+  grantLilyHouseMaterials(): void {
+    this.grantStoredBundle(buildingById("lily_house").cost);
   }
 
   forceNextWoodVineBonus(force = true): void {
